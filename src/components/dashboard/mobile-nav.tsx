@@ -5,9 +5,15 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, ShoppingCart, FileText, PlusCircle } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
-export function MobileNav() {
+
+interface User {
+    role: 'admin' | 'cashier';
+}
+
+export function MobileNav({ user }: { user?: User }) {
     const pathname = usePathname();
     const { dict } = useTranslation();
+    const isAdmin = user?.role === 'admin';
 
     const isActive = (href: string) => pathname === href || pathname?.startsWith(href);
 
@@ -29,10 +35,12 @@ export function MobileNav() {
                 </Link>
             </div>
 
-            <Link href="/dashboard/reports/income-statement" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/reports') ? 'text-blue-600' : 'text-gray-400'}`}>
-                <FileText size={24} strokeWidth={isActive('/dashboard/reports') ? 2.5 : 2} />
-                <span className="text-[10px] font-medium mt-1">{dict.Sidebar.Reports}</span>
-            </Link>
+            {isAdmin && (
+                <Link href="/dashboard/reports/income-statement" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/reports') ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <FileText size={24} strokeWidth={isActive('/dashboard/reports') ? 2.5 : 2} />
+                    <span className="text-[10px] font-medium mt-1">{dict.Sidebar.Reports}</span>
+                </Link>
+            )}
         </div>
     );
 }

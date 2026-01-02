@@ -197,6 +197,11 @@ export const invoices = pgTable('invoices', {
     subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
     taxTotal: decimal('tax_total', { precision: 15, scale: 2 }).default('0.00').notNull(),
     totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+
+    // --- AR Fields ---
+    paymentStatus: text('payment_status', { enum: ['paid', 'unpaid', 'partial'] }).default('paid').notNull(), // Default 'paid' for legacy
+    amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
+
     status: text('status', { enum: ['draft', 'issued', 'paid', 'cancelled'] }).default('draft').notNull(),
     qrCodeData: text('qr_code_data'),
     createdBy: uuid('created_by').references(() => users.id), // Add user tracking

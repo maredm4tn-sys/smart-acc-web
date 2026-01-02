@@ -30,6 +30,11 @@ const createProductSchema = z.object({
 
 export async function createProduct(inputData: CreateProductInput) {
     const dict = await getDictionary();
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return { success: false, message: "Unauthorized: Admins only" };
+    }
 
     const validation = createProductSchema.safeParse(inputData);
     if (!validation.success) {
@@ -86,6 +91,11 @@ type UpdateProductInput = {
 
 export async function updateProduct(data: UpdateProductInput) {
     const dict = await getDictionary();
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return { success: false, message: "Unauthorized: Admins only" };
+    }
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
@@ -111,4 +121,72 @@ export async function updateProduct(data: UpdateProductInput) {
         console.error("Error updating product:", error);
         return { success: false, message: dict.Dialogs.EditProduct.Error };
     }
-}
+
+    export async function bulkImportProducts(productsList: { name: string; sku: string; sellPrice: number; buyPrice: number; stockQuantity: number; tenantId?: string }[]) {
+        try {
+            const { getSession } = await import("@/features/auth/actions");
+            const session = await getSession();
+            if (!session || session.role !== 'admin') {
+                return { success: false, message: "Unauthorized: Admins only" };
+            }
+
+            const { getActiveTenantId } = await import("@/lib/actions-utils");
+            const tenantId = await getActiveTenantId(); // Default tenant
+
+            if (!productsList || productsList.length === 0) return { success: false, message: "Empty list" };
+
+            let successCount = 0;
+            let errors = [];
+
+            // Optimize: Batch insert or loop? 
+            // For 2000 products, loop with try/catch per item is safer to allow partial success (skip duplicates), 
+            // but batch is faster. 
+            // "Transaction Safety" requirement suggests we might want all-or-nothing, OR robust report.
+            // Usually, users prefer "Skip duplicates" for bulk import.
+
+            // We will do a robust loop for now to provide detailed feedback.
+            // Can be optimized to batch filtered list later.
+
+            for (const p of productsList) {
+                try {
+                    // Check if SKU exists
+                    const existing = await db.query.products.findFirst({
+                        where: (prod, { and, eq }) => and(eq(prod.sku, p.sku), eq(prod.tenantId, tenantId))
+                    });
+
+                    if (existing) {
+                        // Option: Update stock? Or Skip?
+                        // User request: "Upload CSV to ADD products". 
+                        // Let's Skip duplicates to avoid overwriting data accidentally.
+                        errors.push(`Skipped ${p.sku} (Exists)`);
+                        continue;
+                    }
+
+                    await db.insert(products).values({
+                        tenantId: tenantId,
+                        name: p.name,
+                        sku: p.sku,
+                        type: "goods",
+                        sellPrice: p.sellPrice.toString(),
+                        buyPrice: p.buyPrice.toString(),
+                        stockQuantity: p.stockQuantity.toString(),
+                    });
+                    successCount++;
+                } catch (err) {
+                    console.error(`Error importing ${p.sku}:`, err);
+                    errors.push(`Error ${p.sku}`);
+                }
+            }
+
+            revalidatePath("/dashboard/inventory");
+            return {
+                success: true,
+                message: `Imported ${successCount} products.`,
+                details: errors.length > 0 ? `${errors.length} skipped/failed.` : undefined
+            };
+
+        } catch (e) {
+            console.error("Bulk Import Error:", e);
+            return { success: false, message: "Server Error during import" };
+        }
+    }

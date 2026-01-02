@@ -19,11 +19,13 @@ export async function getDashboardStats() {
 
     // Admin Stats
     try {
-        const [revenueRes, accRes, prodRes, invRes] = await Promise.all([
+        const [revenueRes, accRes, prodRes, invRes, recRes] = await Promise.all([
             db.select({ value: sum(invoices.totalAmount) }).from(invoices).then(res => res[0]),
             db.select({ value: count() }).from(accounts).then(res => res[0]),
             db.select({ value: count() }).from(products).then(res => res[0]),
-            db.select({ value: count() }).from(invoices).then(res => res[0])
+            db.select({ value: count() }).from(invoices).then(res => res[0]),
+            // Receivables: Sum(total - paid)
+            db.select({ value: sql`SUM(${invoices.totalAmount} - COALESCE(${invoices.amountPaid}, 0))` }).from(invoices).then(res => res[0])
         ]);
 
         return {
@@ -32,7 +34,8 @@ export async function getDashboardStats() {
                 totalRevenue: revenueRes?.value || "0.00",
                 totalAccounts: accRes?.value || 0,
                 activeProducts: prodRes?.value || 0,
-                invoicesCount: invRes?.value || 0
+                invoicesCount: invRes?.value || 0,
+                totalReceivables: recRes?.value || "0.00"
             }
         };
     } catch (e) {

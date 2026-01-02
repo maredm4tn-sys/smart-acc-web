@@ -27,31 +27,37 @@ const journalEntrySchema = z.object({
 
 type JournalEntryInput = z.infer<typeof journalEntrySchema>;
 
-export async function createJournalEntry(inputData: JournalEntryInput) {
+
+export async function createJournalEntry(inputData: JournalEntryInput, tx?: any) {
     const validation = journalEntrySchema.safeParse(inputData);
     if (!validation.success) {
         return { success: false, message: "Invalid Entry Data: " + validation.error.errors[0].message };
     }
     const data = validation.data;
 
+    // Use the provided transaction or the global db
+    const queryDb = tx || db;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
 
         // Find open fiscal year
-        let fy = await db.query.fiscalYears.findFirst({
-            where: (fy, { eq, and }) => and(eq(fy.tenantId, tenantId), eq(fy.isClosed, false))
+        let fy = await queryDb.query.fiscalYears.findFirst({
+            where: (fy: any, { eq, and }: any) => and(eq(fy.tenantId, tenantId), eq(fy.isClosed, false))
         });
 
         if (!fy) {
             const currentYear = new Date().getFullYear();
             try {
-                [fy] = await db.insert(fiscalYears).values({
+                // If finding/creating fiscal year involves inserts, use queryDb
+                const result = await queryDb.insert(fiscalYears).values({
                     tenantId: tenantId,
                     name: currentYear.toString(),
                     startDate: `${currentYear}-01-01`,
                     endDate: `${currentYear}-12-31`,
                 }).returning();
+                fy = result[0];
             } catch (err) {
                 return { success: false, message: "Could not create fiscal year" };
             }
@@ -60,7 +66,7 @@ export async function createJournalEntry(inputData: JournalEntryInput) {
         const fyId = fy.id;
 
         // Insert Header
-        const [entry] = await db.insert(journalEntries).values({
+        const [entry] = await queryDb.insert(journalEntries).values({
             tenantId: tenantId,
             fiscalYearId: fyId,
             entryNumber: `JE-${Date.now()}`,
@@ -74,7 +80,7 @@ export async function createJournalEntry(inputData: JournalEntryInput) {
 
         // Insert Lines
         for (const line of data.lines) {
-            await db.insert(journalLines).values({
+            await queryDb.insert(journalLines).values({
                 journalEntryId: entry.id,
                 accountId: line.accountId,
                 description: line.description || data.description,
@@ -82,7 +88,7 @@ export async function createJournalEntry(inputData: JournalEntryInput) {
                 credit: line.credit.toString(),
             });
 
-            await db.execute(sql`
+            await queryDb.execute(sql`
                 UPDATE ${accounts} 
                 SET balance = balance + ${line.debit} - ${line.credit}
                 WHERE id = ${line.accountId}
@@ -90,8 +96,11 @@ export async function createJournalEntry(inputData: JournalEntryInput) {
         }
 
         try {
-            revalidatePath("/dashboard/journal");
-            revalidatePath("/dashboard/accounts");
+            // Revalidation should normally happen outside tx if possible, but safe here
+            if (!tx) {
+                revalidatePath("/dashboard/journal");
+                revalidatePath("/dashboard/accounts");
+            }
         } catch (e) { }
 
         return { success: true, message: "تم ترحيل القيد بنجاح" };
