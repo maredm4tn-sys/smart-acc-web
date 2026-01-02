@@ -4,28 +4,39 @@ import { db } from "@/db";
 import { accounts, journalEntries, journalLines, fiscalYears, tenants } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { sql } from "drizzle-orm";
+import { z } from "zod";
 
-type JournalEntryInput = {
-    date: string;
-    description?: string;
-    lines: {
-        accountId: number;
-        description?: string;
-        debit: number;
-        credit: number;
-    }[];
-    tenantId: string;
-    reference?: string;
-    currency?: string;
-    exchangeRate?: number;
-};
+const journalEntrySchema = z.object({
+    date: z.string().min(1),
+    description: z.string().optional(),
+    lines: z.array(z.object({
+        accountId: z.number(),
+        description: z.string().optional(),
+        debit: z.number().nonnegative(),
+        credit: z.number().nonnegative(),
+    })).min(2).refine(lines => {
+        const totalDebit = lines.reduce((sum, line) => sum + line.debit, 0);
+        const totalCredit = lines.reduce((sum, line) => sum + line.credit, 0);
+        return Math.abs(totalDebit - totalCredit) < 0.01;
+    }, "Entry must be balanced (Debit = Credit)"),
+    tenantId: z.string().optional(),
+    reference: z.string().optional(),
+    currency: z.string().optional(),
+    exchangeRate: z.number().optional(),
+});
 
-export async function createJournalEntry(data: JournalEntryInput) {
-    console.log("createJournalEntry called with:", JSON.stringify(data, null, 2));
+type JournalEntryInput = z.infer<typeof journalEntrySchema>;
+
+export async function createJournalEntry(inputData: JournalEntryInput) {
+    const validation = journalEntrySchema.safeParse(inputData);
+    if (!validation.success) {
+        return { success: false, message: "Invalid Entry Data: " + validation.error.errors[0].message };
+    }
+    const data = validation.data;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
-        console.log("Resolved Tenant ID:", tenantId);
 
         // Find open fiscal year
         let fy = await db.query.fiscalYears.findFirst({
@@ -33,7 +44,6 @@ export async function createJournalEntry(data: JournalEntryInput) {
         });
 
         if (!fy) {
-            console.log("No open fiscal year found. Creating one...");
             const currentYear = new Date().getFullYear();
             try {
                 [fy] = await db.insert(fiscalYears).values({
@@ -42,25 +52,14 @@ export async function createJournalEntry(data: JournalEntryInput) {
                     startDate: `${currentYear}-01-01`,
                     endDate: `${currentYear}-12-31`,
                 }).returning();
-                console.log("Created Fiscal Year:", fy.id);
             } catch (err) {
-                console.error("Failed to create fiscal year:", err);
-                throw new Error("Could not create fiscal year");
+                return { success: false, message: "Could not create fiscal year" };
             }
         }
 
         const fyId = fy.id;
 
-        // Balance Check
-        const totalDebit = data.lines.reduce((s, l) => s + l.debit, 0);
-        const totalCredit = data.lines.reduce((s, l) => s + l.credit, 0);
-        if (Math.abs(totalDebit - totalCredit) > 0.01) {
-            console.warn(`Unbalanced: Debit ${totalDebit} vs Credit ${totalCredit}`);
-            return { success: false, message: "القيد غير متوازن" };
-        }
-
         // Insert Header
-        console.log("Inserting Journal Entry Header...");
         const [entry] = await db.insert(journalEntries).values({
             tenantId: tenantId,
             fiscalYearId: fyId,
@@ -72,10 +71,8 @@ export async function createJournalEntry(data: JournalEntryInput) {
             exchangeRate: (data.exchangeRate || 1).toString(),
             status: "posted",
         }).returning();
-        console.log("Inserted Entry ID:", entry.id);
 
         // Insert Lines
-        console.log("Inserting Lines...");
         for (const line of data.lines) {
             await db.insert(journalLines).values({
                 journalEntryId: entry.id,
@@ -91,7 +88,6 @@ export async function createJournalEntry(data: JournalEntryInput) {
                 WHERE id = ${line.accountId}
             `);
         }
-        console.log("Lines inserted and balances updated.");
 
         try {
             revalidatePath("/dashboard/journal");
@@ -100,20 +96,28 @@ export async function createJournalEntry(data: JournalEntryInput) {
 
         return { success: true, message: "تم ترحيل القيد بنجاح" };
     } catch (error) {
-        console.error("Error creating journal detailed:", error);
-        return { success: false, message: "حدث خطأ أثناء حفظ القيد: " + (error instanceof Error ? error.message : String(error)) };
+        console.error("Error creating journal:", error);
+        return { success: false, message: "حدث خطأ أثناء حفظ القيد" };
     }
 }
 
-type CreateAccountInput = {
-    code: string;
-    name: string;
-    type: "asset" | "liability" | "equity" | "revenue" | "expense";
-    parentId: number | null;
-    tenantId: string;
-};
+const createAccountSchema = z.object({
+    code: z.string().min(1),
+    name: z.string().min(1),
+    type: z.enum(["asset", "liability", "equity", "revenue", "expense"]),
+    parentId: z.number().nullable(),
+    tenantId: z.string().optional()
+});
 
-export async function createAccount(data: CreateAccountInput) {
+type CreateAccountInput = z.infer<typeof createAccountSchema>;
+
+export async function createAccount(inputData: CreateAccountInput) {
+    const validation = createAccountSchema.safeParse(inputData);
+    if (!validation.success) {
+        return { success: false, message: "Invalid Account Data" };
+    }
+    const data = validation.data;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
@@ -136,10 +140,7 @@ export async function createAccount(data: CreateAccountInput) {
             balance: '0.00', // Start with 0
         });
 
-        try {
-            revalidatePath("/dashboard/accounts");
-        } catch (e) { }
-
+        revalidatePath("/dashboard/accounts");
         return { success: true, message: "تم إنشاء الحساب بنجاح" };
 
     } catch (error) {

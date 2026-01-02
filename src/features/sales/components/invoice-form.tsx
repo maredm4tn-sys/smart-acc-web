@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { createInvoice } from "../actions";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
+import { useSWRConfig } from "swr";
 
 interface ProductOption {
     id: number;
@@ -30,6 +31,7 @@ interface CustomerOption {
 export function InvoiceForm({ products, customers }: { products: ProductOption[], customers: CustomerOption[] }) {
     const { dict } = useTranslation();
     const router = useRouter();
+    const { mutate } = useSWRConfig();
     const [totals, setTotals] = useState({ subtotal: 0, tax: 0, total: 0 });
 
     const invoiceSchema = z.object({
@@ -52,6 +54,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             customerName: "",
+            // Use Egypt local time for default date
             issueDate: new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
             currency: "EGP",
             exchangeRate: 1,
@@ -109,6 +112,9 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
             if (res.success && res.id) {
                 toast.success(res.message);
+                // Optimistically refresh the invoices list and dashboard stats
+                mutate('invoices-list');
+                mutate('dashboard-stats'); // Refresh dashboard stats too
                 router.push(`/dashboard/sales/${res.id}/print`);
             } else {
                 toast.error(res.message || dict.Settings.Form.Error);

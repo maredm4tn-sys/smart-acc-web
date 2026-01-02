@@ -3,20 +3,29 @@
 import { db } from "@/db";
 import { customers } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-
-type CreateCustomerInput = {
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    taxId?: string;
-    tenantId: string;
-};
-
+import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
 
-export async function createCustomer(data: CreateCustomerInput) {
+const createCustomerSchema = z.object({
+    name: z.string().min(1),
+    phone: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    address: z.string().optional(),
+    taxId: z.string().optional(),
+    tenantId: z.string().optional()
+});
+
+type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
+
+export async function createCustomer(inputData: CreateCustomerInput) {
     const dict = await getDictionary();
+
+    const validation = createCustomerSchema.safeParse(inputData);
+    if (!validation.success) {
+        return { success: false, message: "Invalid Data" };
+    }
+    const data = validation.data;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
@@ -30,11 +39,7 @@ export async function createCustomer(data: CreateCustomerInput) {
             tenantId: tenantId
         });
 
-        try {
-            revalidatePath("/dashboard/customers");
-        } catch (error) {
-            // Ignore revalidate error in test environment
-        }
+        revalidatePath("/dashboard/customers");
         return { success: true, message: dict.Dialogs.AddCustomer.Success };
     } catch (error) {
         console.error("Error creating customer:", error);

@@ -109,10 +109,12 @@ export function AccountTree({ accounts }: { accounts: AccountWithChildren[] }) {
     }
 
     return (
-        <div className="border rounded-lg p-4 bg-white min-h-[400px]">
-            {accounts.map((account) => (
-                <AccountTreeItem key={account.id} account={account} />
-            ))}
+        <div className="border rounded-lg p-4 bg-white min-h-[400px] overflow-x-auto">
+            <div className="min-w-[500px]">
+                {accounts.map((account) => (
+                    <AccountTreeItem key={account.id} account={account} />
+                ))}
+            </div>
         </div>
     );
 }

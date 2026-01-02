@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 
 import { getLocale, getDictionary } from "@/lib/i18n-server";
 import { I18nProvider } from "@/components/providers/i18n-provider";
+import { SWRProvider } from "@/components/providers/swr-provider";
 
 export default async function RootLayout({
   children,
@@ -42,7 +43,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <SWRProvider>
+              {children}
+            </SWRProvider>
           </ThemeProvider>
         </I18nProvider>
       </body>

@@ -3,7 +3,11 @@
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+import { getDictionary } from "@/lib/i18n-server";
 
+// Re-declaring for external usage compatibility if needed, though usually inferred from schema
 type CreateProductInput = {
     name: string;
     sku: string;
@@ -14,19 +18,30 @@ type CreateProductInput = {
     tenantId: string;
 };
 
-import { getDictionary } from "@/lib/i18n-server";
+const createProductSchema = z.object({
+    name: z.string().min(1),
+    sku: z.string().min(1),
+    type: z.enum(["goods", "service"]),
+    sellPrice: z.number().nonnegative(),
+    buyPrice: z.number().nonnegative(),
+    stockQuantity: z.number().int(),
+    tenantId: z.string().optional()
+});
 
-export async function createProduct(data: CreateProductInput) {
-    console.log("createProduct called", data);
+export async function createProduct(inputData: CreateProductInput) {
     const dict = await getDictionary();
+
+    const validation = createProductSchema.safeParse(inputData);
+    if (!validation.success) {
+        return { success: false, message: "Invalid Data", errors: validation.error.flatten() };
+    }
+    const data = validation.data;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
-        console.log("Resolved Tenant:", tenantId);
-        const { eq, and } = await import("drizzle-orm");
 
         // 1. Check SKU uniqueness
-        // Use db.select() instead of db.query() to minimize RQB dependency issues
         const existingList = await db.select().from(products)
             .where(and(eq(products.sku, data.sku), eq(products.tenantId, tenantId)))
             .limit(1);
@@ -49,14 +64,12 @@ export async function createProduct(data: CreateProductInput) {
         try {
             revalidatePath("/dashboard/inventory");
             revalidatePath("/dashboard/sales/create");
-        } catch (error) {
-            // Ignore revalidate error in test environment
-        }
+        } catch (error) { }
+
         return { success: true, message: dict.Dialogs.AddProduct.Success };
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error creating product:", error);
-        // Return the actual error message if possible for debugging, or a generic one
-        return { success: false, message: error.message || dict.Dialogs.AddProduct.Error };
+        return { success: false, message: dict.Dialogs.AddProduct.Error };
     }
 }
 

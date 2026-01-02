@@ -9,7 +9,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || "default-secret-key-change-me");
+const secret = process.env.JWT_SECRET;
+if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is not defined');
+}
+const SECRET_KEY = new TextEncoder().encode(secret || "default-secret-key-change-me");
 const COOKIE_NAME = "session_token";
 
 export async function getUsers() {
@@ -49,13 +53,25 @@ export async function createUser(firstName: string, username: string, password: 
 }
 
 
-export async function login(currentState: any, formData: FormData) {
-    const username = formData.get("username") as string;
-    const password = formData.get("password") as string;
+import { z } from "zod";
 
-    if (!username || !password) {
-        return { error: "الرجاء إدخال اسم المستخدم وكلمة المرور" };
+const loginSchema = z.object({
+    username: z.string().min(3),
+    password: z.string().min(1)
+});
+
+export async function login(currentState: any, formData: FormData) {
+    const rawData = {
+        username: formData.get("username"),
+        password: formData.get("password")
+    };
+
+    const validation = loginSchema.safeParse(rawData);
+    if (!validation.success) {
+        return { error: "البيانات المدخلة غير صالحة" };
     }
+
+    const { username, password } = validation.data;
 
     try {
         // Find user

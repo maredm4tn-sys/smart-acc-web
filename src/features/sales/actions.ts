@@ -21,10 +21,36 @@ type CreateInvoiceInput = {
     tenantId: string;
 };
 
+import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
 
-export async function createInvoice(data: CreateInvoiceInput) {
+const createInvoiceSchema = z.object({
+    customerName: z.string().min(1),
+    issueDate: z.string().min(1),
+    dueDate: z.string().optional(),
+    currency: z.string(),
+    exchangeRate: z.number().positive(),
+    includeTax: z.boolean(),
+    items: z.array(z.object({
+        productId: z.number(),
+        description: z.string(),
+        quantity: z.number().positive(),
+        unitPrice: z.number().nonnegative(),
+    })).min(1),
+    tenantId: z.string().optional()
+});
+
+export async function createInvoice(inputData: CreateInvoiceInput) {
     const dict = await getDictionary();
+
+    // Secure Input Validation with Zod
+    const validation = createInvoiceSchema.safeParse(inputData);
+    if (!validation.success) {
+        console.error("Validation Error:", validation.error);
+        return { success: false, message: "Invalid Data" };
+    }
+    const data = validation.data;
+
     try {
         // Calculate totals
         let subtotal = 0;
@@ -129,5 +155,16 @@ export async function createInvoice(data: CreateInvoiceInput) {
     } catch (error) {
         console.error("Error creating invoice:", error);
         return { success: false, message: dict.Sales.Invoice.Error };
+    }
+}
+
+import { desc } from "drizzle-orm";
+
+export async function getInvoices() {
+    try {
+        return await db.select().from(invoices).orderBy(desc(invoices.issueDate));
+    } catch (e) {
+        console.warn("DB not ready");
+        return [];
     }
 }

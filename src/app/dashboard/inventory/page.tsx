@@ -17,13 +17,8 @@ export default async function InventoryPage() {
     try {
         productsList = await db.select().from(products);
     } catch (e) {
-        console.warn("DB not ready");
-        // Mock data
-        productsList = [
-            { id: 1, sku: "HP-LAP-001", name: "HP EliteBook 840 G5", type: "goods", sellPrice: "12500.00", buyPrice: "10000.00", stockQuantity: "5" },
-            { id: 2, sku: "DELL-LAP-002", name: "Dell Latitude 5490", type: "goods", sellPrice: "11000.00", buyPrice: "9000.00", stockQuantity: "12" },
-            { id: 3, sku: "SRV-INST-01", name: "تسطيب ويندوز وبرامج", type: "service", sellPrice: "150.00", buyPrice: "0.00", stockQuantity: "0" },
-        ];
+        // Fallback to empty for now, or error state
+        productsList = [];
     }
 
     return (
@@ -45,7 +40,8 @@ export default async function InventoryPage() {
                     <Button variant="outline">{dict.Inventory.Search}</Button>
                 </div>
 
-                <div className="rounded-md border">
+                {/* Desktop Table View */}
+                <div className="hidden md:block rounded-md border">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -95,6 +91,45 @@ export default async function InventoryPage() {
                             )}
                         </TableBody>
                     </Table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                    {productsList.length === 0 ? (
+                        <div className="text-center p-8 text-muted-foreground">{dict.Inventory.Table.NoItems}</div>
+                    ) : (
+                        productsList.map((product) => (
+                            <div key={product.id} className="p-4 border rounded-lg shadow-sm bg-white space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="font-bold flex items-center gap-2">
+                                            <Package size={16} className="text-primary" />
+                                            {product.name}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground mt-1">SKU: {product.sku}</div>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${product.type === 'goods' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                        {product.type === 'goods' ? dict.Inventory.Table.Goods : dict.Inventory.Table.Service}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="bg-slate-50 p-2 rounded">
+                                        <span className="text-muted-foreground block text-xs">{dict.Inventory.Table.SellPrice}</span>
+                                        <span className="font-semibold text-green-600">{Number(product.sellPrice).toFixed(2)}</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded">
+                                        <span className="text-muted-foreground block text-xs">{dict.Inventory.Table.Stock}</span>
+                                        <span className={Number(product.stockQuantity) <= 0 && product.type === 'goods' ? "text-red-500 font-bold" : "font-semibold"}>
+                                            {product.stockQuantity}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end pt-2 border-t">
+                                    <EditProductDialog product={product} />
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

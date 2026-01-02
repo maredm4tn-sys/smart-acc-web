@@ -145,8 +145,8 @@ export default function IncomeStatementPage() {
                         </Card>
                     </div>
 
-                    {/* Detailed Table */}
-                    <Card className="border-none shadow-md bg-white">
+                    {/* Detailed Table (Desktop) */}
+                    <Card className="border-none shadow-md bg-white hidden md:block">
                         <CardHeader className="border-b border-gray-100 pb-4">
                             <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                 <FileText className="h-5 w-5 text-gray-500" />
@@ -158,7 +158,7 @@ export default function IncomeStatementPage() {
                                 <TableHeader className="bg-gray-50/50">
                                     <TableRow>
                                         <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
-                                        <TableHead className="text-left font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
+                                        <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
                                         <TableHead className="text-left font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Percentage}</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -186,6 +186,37 @@ export default function IncomeStatementPage() {
                             </Table>
                         </CardContent>
                     </Card>
+
+                    {/* Mobile Card View (Expenses) */}
+                    <div className="md:hidden space-y-4">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-gray-500" />
+                            {dict.Reports.IncomeStatement.ExpenseDetails}
+                        </h3>
+                        {data.expenseDetails.length > 0 ? (
+                            data.expenseDetails.map((item, index) => (
+                                <Card key={index} className="border-none shadow-sm bg-white">
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium text-gray-900">{item.name}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {data.totalExpenses > 0
+                                                    ? ((item.value / data.totalExpenses) * 100).toFixed(1) + '%'
+                                                    : '0%'}
+                                            </p>
+                                        </div>
+                                        <div className="font-bold text-gray-900 dir-ltr">
+                                            {formatCurrency(item.value)}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="p-8 text-center text-gray-500 bg-white rounded-lg border border-dashed">
+                                {dict.Reports.IncomeStatement.Table.NoExpenses}
+                            </div>
+                        )}
+                    </div>
 
                 </div>
             ) : (

@@ -4,20 +4,27 @@ import { db } from "@/db";
 import { tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
-type UpdateSettingsInput = {
-    tenantId: string;
-    name: string;
-    phone?: string;
-    address?: string;
-    taxId?: string;
-    currency: string;
-    // For logo, we might accept a URL string if uploaded elsewhere, 
-    // or base64 string if small enough. For now, let's assume URL or empty.
-    logoUrl?: string;
-};
+const updateSettingsSchema = z.object({
+    tenantId: z.string().optional(),
+    name: z.string().min(1),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    taxId: z.string().optional(),
+    currency: z.string().min(1),
+    logoUrl: z.string().optional(),
+});
 
-export async function updateSettings(data: UpdateSettingsInput) {
+type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
+
+export async function updateSettings(inputData: UpdateSettingsInput) {
+    const validation = updateSettingsSchema.safeParse(inputData);
+    if (!validation.success) {
+        return { success: false, message: "Invalid Settings Data" };
+    }
+    const data = validation.data;
+
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(data.tenantId);
@@ -36,7 +43,6 @@ export async function updateSettings(data: UpdateSettingsInput) {
 
         try {
             revalidatePath("/dashboard/settings");
-            // Also invoices might change appearance
             revalidatePath("/dashboard/sales");
         } catch (e) { }
 

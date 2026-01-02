@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || "default-secret-key-change-me");
+const secret = process.env.JWT_SECRET;
+if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+}
+const SECRET_KEY = new TextEncoder().encode(secret || "default-secret-key-change-me");
 
 export async function middleware(request: NextRequest) {
     const token = request.cookies.get("session_token")?.value;
