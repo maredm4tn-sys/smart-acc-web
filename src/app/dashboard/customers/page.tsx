@@ -35,12 +35,13 @@ export default async function CustomersPage() {
                                     <TableHead>{dict.Customers.Table.Phone}</TableHead>
                                     <TableHead>{dict.Customers.Table.Email}</TableHead>
                                     <TableHead>{dict.Customers.Table.TaxId}</TableHead>
+                                    <TableHead className="text-right">{"Total Debt"}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {customers.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                                             {dict.Customers.Table.NoCustomers}
                                         </TableCell>
                                     </TableRow>
@@ -51,6 +52,9 @@ export default async function CustomersPage() {
                                             <TableCell>{c.phone || "-"}</TableCell>
                                             <TableCell>{c.email || "-"}</TableCell>
                                             <TableCell>{c.taxId || "-"}</TableCell>
+                                            <TableCell className={`text-right font-bold ${c.totalDebt > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                {c.totalDebt?.toFixed(2) || "0.00"}
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 )}
@@ -77,7 +81,13 @@ export default async function CustomersPage() {
                                 <div className="space-y-1 text-sm text-gray-600">
                                     {c.phone && <div className="flex justify-between border-b pb-1"><span>{dict.Customers.Table.Phone}:</span> <span>{c.phone}</span></div>}
                                     {c.email && <div className="flex justify-between border-b pb-1"><span>{dict.Customers.Table.Email}:</span> <span>{c.email}</span></div>}
-                                    {c.taxId && <div className="flex justify-between"><span>{dict.Customers.Table.TaxId}:</span> <span>{c.taxId}</span></div>}
+                                    {c.taxId && <div className="flex justify-between border-b pb-1"><span>{dict.Customers.Table.TaxId}:</span> <span>{c.taxId}</span></div>}
+                                    <div className="flex justify-between font-bold pt-1">
+                                        <span>Total Debt:</span>
+                                        <span className={c.totalDebt > 0 ? 'text-red-600' : 'text-green-600'}>
+                                            {c.totalDebt?.toFixed(2) || "0.00"}
+                                        </span>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

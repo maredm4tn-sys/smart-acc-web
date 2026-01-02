@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { customers } from "@/db/schema";
+import { customers, invoices } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
@@ -47,11 +48,37 @@ export async function createCustomer(inputData: CreateCustomerInput) {
     }
 }
 
+
 export async function getCustomers() {
     try {
-        const result = await db.select().from(customers);
-        return result;
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = await getActiveTenantId();
+
+        // Calculate Debt: Sum of (Total - Paid) for all 'unpaid'/'partial' invoices
+        // We can do this via raw SQL or robust logic. 
+        // For type safety with Drizzle, let's fetch customers and their invoices or use a raw query if relation heavily nested.
+        // Simplest V2 approach:
+
+        const rows = await db.select({
+            id: customers.id,
+            name: customers.name,
+            phone: customers.phone,
+            email: customers.email,
+            address: customers.address,
+            taxId: customers.taxId,
+            totalDebt: sql<number>`COALESCE(SUM(${invoices.totalAmount} - COALESCE(${invoices.amountPaid}, 0)), 0)`
+        })
+            .from(customers)
+            .leftJoin(invoices, eq(customers.name, invoices.customerName)) // ideally join on ID, but schema uses name currently
+            .where(eq(customers.tenantId, tenantId))
+            .groupBy(customers.id);
+
+        return rows.map(r => ({
+            ...r,
+            totalDebt: Number(r.totalDebt)
+        }));
     } catch (error) {
+        console.error("Get Customers Error:", error);
         return [];
     }
 }
