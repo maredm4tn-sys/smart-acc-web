@@ -24,12 +24,13 @@ export default function LoginPage() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="flex justify-center mb-8">
-                    <div className="relative h-20 w-20 overflow-hidden rounded-2xl border-2 border-white shadow-lg">
+                    <div className="relative h-24 w-24 shadow-2xl rounded-[1.5rem] overflow-hidden bg-white">
                         <Image
                             src="/logo.jpg"
                             alt={dict.Logo}
                             fill
                             className="object-cover"
+                            priority
                         />
                     </div>
                 </div>

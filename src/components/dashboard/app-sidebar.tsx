@@ -49,7 +49,7 @@ export function AppSidebar({ user }: { user?: User }) {
         <aside className="w-72 bg-white text-slate-800 border-l border-gray-200 shadow-sm hidden md:flex flex-col z-20 transition-all duration-300">
             <div className="h-20 flex items-center px-8 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                    <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-gray-100 shadow-sm">
+                    <div className="relative h-10 w-10 overflow-hidden rounded-lg shadow-sm bg-white">
                         <Image
                             src="/logo.jpg"
                             alt="Smart Acc Logo"
