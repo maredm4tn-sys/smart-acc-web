@@ -1,0 +1,373 @@
+{
+    "Logo": "المحاسب الذكي",
+    "General": {
+        "Overview": "نظرة عامة"
+    },
+    "Sidebar": {
+        "MainMenu": "القائمة الرئيسية",
+        "Dashboard": "لوحة التحكم",
+        "ChartOfAccounts": "شجرة الحسابات",
+        "Inventory": "المخزون والمنتجات",
+        "Customers": "العملاء",
+        "FinancialOperations": "العمليات المالية",
+        "JournalEntries": "القيود اليومية",
+        "SalesAndInvoices": "المبيعات والفواتير",
+        "Reports": "التقارير",
+        "IncomeStatement": "تقارير الأرباح",
+        "Management": "الإدارة",
+        "Users": "المستخدمين",
+        "Settings": "الإعدادات",
+        "POS": "نقطة البيع",
+        "NewInvoice": "فاتورة جديدة",
+        "InvoicesList": "قائمة الفواتير",
+        "Logout": "تسجيل خروج"
+    },
+    "Dashboard": {
+        "Welcome": "مرحباً",
+        "FinancialManager": "المدير المالي",
+        "Cashier": "الكاشير",
+        "SummaryText": "إليك ملخص أداء شركتك اليوم.",
+        "POSReady": "نقطة البيع جاهزة. نتمنى لك يوماً موفقاً!",
+        "QuickActions": "إجراءات سريعة",
+        "NewInvoice": "فاتورة جديدة",
+        "NewInvoiceDesc": "إصدار فاتورة مبيعات للعميل",
+        "AddCustomer": "إضافة عميل",
+        "AddCustomerDesc": "تسجيل بيانات عميل جديد",
+        "MySalesToday": "ملخص مبيعاتي اليوم",
+        "MyPerformance": "أداءك الشخصي في المبيعات لهذا اليوم",
+        "InvoicesCount": "عدد الفواتير",
+        "TotalSales": "إجمالي المبيعات",
+        "TotalRevenue": "إجمالي الإيرادات",
+        "SalesInvoices": "فواتير المبيعات",
+        "ActiveProducts": "المنتجات بالمخزن",
+        "FinancialAccounts": "الحسابات المالية",
+        "SystemAlerts": "تنبيهات النظام",
+        "LowStock": "مخزون منخفض",
+        "Invoice": "فاتورة",
+        "Active": "نشط",
+        "Account": "حساب",
+        "CompareLastMonth": "مقارنة بـ الشهر الماضي",
+        "Item": "صنف",
+        "LowStockAlertMock": "المنتج HP EliteBook وصل للحد الأدنى (2 قطع)."
+    },
+    "Login": {
+        "Title": "تسجيل الدخول",
+        "Description": "أدخل بيانات الدخول للوصول إلى لوحة التحكم",
+        "Username": "اسم المستخدم",
+        "Password": "كلمة المرور",
+        "Submit": "تسجيل الدخول"
+    },
+    "RevenueChart": {
+        "Title": "حركة الإيرادات",
+        "Description": "الإيرادات خلال آخر 7 أيام",
+        "Saturday": "السبت",
+        "Sunday": "الأحد",
+        "Monday": "الاثنين",
+        "Tuesday": "الثلاثاء",
+        "Wednesday": "الأربعاء",
+        "Thursday": "الخميس",
+        "Friday": "الجمعة"
+    },
+    "Accounts": {
+        "Title": "شجرة الحسابات",
+        "Description": "إدارة الهيكل المالي وحسابات الأستاذ العام",
+        "NewAccount": "حساب جديد",
+        "ImportDefault": "استيراد افتراضي"
+    },
+    "Inventory": {
+        "Title": "إدارة المخزون",
+        "Description": "قائمة المنتجات والخدمات والأرصدة المخزنية",
+        "NewItem": "صنف جديد",
+        "SearchPlaceholder": "بحث عن منتج...",
+        "Search": "بحث",
+        "Table": {
+            "SKU": "الكود",
+            "Name": "اسم الصنف",
+            "Type": "النوع",
+            "BuyPrice": "سعر الشراء",
+            "SellPrice": "سعر البيع",
+            "Stock": "الرصيد",
+            "Actions": "الإجراءات",
+            "NoItems": "لا توجد منتجات. ابدأ بإضافة صنف جديد.",
+            "Goods": "مخزني",
+            "Service": "خدمة"
+        }
+    },
+    "Customers": {
+        "Title": "العملاء",
+        "Description": "إدارة قائمة العملاء وجهات الاتصال",
+        "NewCustomer": "إضافة عميل",
+        "ListTitle": "قائمة العملاء",
+        "Table": {
+            "Name": "الاسم",
+            "Phone": "الهاتف",
+            "Email": "البريد الإلكتروني",
+            "TaxId": "الرقم الضريبي",
+            "NoCustomers": "لا يوجد عملاء مسجلين حالياً."
+        }
+    },
+    "Dialogs": {
+        "AddProduct": {
+            "Title": "إضافة صنف جديد",
+            "Description": "بيانات المنتج أو الخدمة (المخزون والأسعار).",
+            "SKU": "رمز الصنف (SKU)",
+            "Type": "النوع",
+            "Name": "اسم الصنف",
+            "SellPrice": "سعر البيع",
+            "BuyPrice": "سعر الشراء",
+            "OpeningStock": "الرصيد الافتتاحي",
+            "Save": "حفظ الصنف",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم حفظ الصنف بنجاح",
+            "Error": "فشل حفظ الصنف",
+            "Goods": "منتج مخزني (Goods)",
+            "Service": "خدمة (Service)",
+            "Errors": {
+                "NameRequired": "اسم الصنف مطلوب",
+                "SKURequired": "SKU مطلوب",
+                "PricePositive": "السعر يجب ألا يكون سالباً",
+                "SKUExists": "رمز الصنف (SKU) موجود مسبقاً"
+            }
+        },
+        "EditProduct": {
+            "Title": "تعديل بيانات الصنف",
+            "Description": "تعديل تفاصيل",
+            "Save": "حفظ التعديلات",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم تعديل الصنف بنجاح",
+            "Error": "فشل تعديل الصنف"
+        },
+        "AddAccount": {
+            "Title": "إضافة حساب جديد",
+            "Description": "إضافة حساب فرعي جديد لشجرة الحسابات.",
+            "Parent": "الحساب الرئيسي",
+            "SelectParent": "اختر الحساب الرئيسي (اختياري)",
+            "Name": "اسم الحساب",
+            "Code": "رقم الحساب (Code)",
+            "Type": "نوع الحساب",
+            "SelectType": "اختر نوع الحساب",
+            "Balance": "الرصيد الافتتاحي",
+            "Save": "حفظ الحساب",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم حفظ الحساب بنجاح",
+            "Error": "فشل حفظ الحساب",
+            "Types": {
+                "Asset": "أصول (Asset)",
+                "Liability": "خصوم (Liability)",
+                "Equity": "حقوق ملكية (Equity)",
+                "Revenue": "إيرادات (Revenue)",
+                "Expense": "مصروفات (Expense)"
+            },
+            "Errors": {
+                "CodeExists": "رقم الحساب مستخدم من قبل",
+                "NameRequired": "اسم الحساب مطلوب",
+                "CodeRequired": "رقم الحساب مطلوب"
+            }
+        },
+        "AddCustomer": {
+            "Title": "إضافة عميل جديد",
+            "Description": "أدخل بيانات العميل الجديد.",
+            "Name": "اسم العميل",
+            "Phone": "رقم الهاتف",
+            "Email": "البريد الإلكتروني",
+            "Address": "العنوان",
+            "TaxId": "الرقم الضريبي",
+            "Save": "حفظ بيانات العميل",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم حفظ العميل بنجاح",
+            "Error": "فشل حفظ العميل",
+            "Errors": {
+                "NameRequired": "اسم العميل مطلوب",
+                "InvalidEmail": "بريد إلكتروني غير صحيح"
+            }
+        }
+    },
+    "Journal": {
+        "Title": "دفتر اليومية",
+        "Description": "عرض واجهة قيود اليومية العامة (General Ledger).",
+        "NewEntry": "قيد جديد",
+        "FinancialLog": "سجل العمليات المالية",
+        "Success": "تم ترحيل القيد بنجاح",
+        "Error": "فشل ترحيل القيد",
+        "Errors": {
+            "NotBalanced": "القيد غير متوازن"
+        },
+        "Table": {
+            "EntryNumber": "رقم القيد",
+            "Date": "التاريخ",
+            "Description": "البيان / الوصف",
+            "Currency": "العملة",
+            "Total": "الإجمالي",
+            "Status": "الحالة",
+            "EntriesCount": "أطراف للقيد",
+            "NoEntries": "لا توجد قيود مسجلة حتى الآن.",
+            "Posted": "مرحل",
+            "Draft": "مسودة"
+        }
+    },
+    "Sales": {
+        "Title": "فواتير المبيعات",
+        "Description": "إدارة المبيعات والفواتير الضريبية.",
+        "NewInvoice": "فاتورة جديدة",
+        "Invoice": {
+            "NewTitle": "إصدار فاتورة جديدة",
+            "NewDescription": "إنشاء فاتورة مبيعات للعميل.",
+            "BackToList": "العودة للقائمة",
+            "Success": "تم إصدار الفاتورة بنجاح",
+            "Error": "فشل إصدار الفاتورة",
+            "Form": {
+                "Customer": "العميل",
+                "SelectCustomer": "اختر العميل...",
+                "SelectProduct": "اختر المنتج...",
+                "IssueDate": "تاريخ الفاتورة",
+                "Currency": "العملة",
+                "ExchangeRate": "سعر الصرف (مقابل EGP)",
+                "IncludeTax": "تطبيق ضريبة 14%",
+                "AddItem": "إضافة صنف",
+                "Subtotal": "الإجمالي الفرعي",
+                "Tax": "الضريبة (14%)",
+                "GrandTotal": "الإجمالي الكلي",
+                "Submit": "إصدار الفاتورة",
+                "Table": {
+                    "Item": "المنتج / الخدمة",
+                    "Description": "الوصف",
+                    "Qty": "الكمية",
+                    "Price": "السعر",
+                    "Total": "الإجمالي"
+                },
+                "Errors": {
+                    "CustomerRequired": "اسم العميل مطلوب",
+                    "DateRequired": "تاريخ الفاتورة مطلوب",
+                    "CurrencyRequired": "العملة مطلوبة",
+                    "RatePositive": "يجب أن يكون سعر الصرف أكبر من 0",
+                    "ProductRequired": "المنتج مطلوب",
+                    "QtyMin": "الكمية يجب أن تكون 1 على الأقل",
+                    "PriceMin": "السعر لا يمكن أن يكون سالباً",
+                    "OneItem": "يجب إضافة منتج واحد على الأقل"
+                }
+            },
+            "Print": {
+                "Title": "فاتورة ضريبية",
+                "SimpleTitle": "فاتورة",
+                "BillTo": "فوترة إلى (Bill To)",
+                "TaxId": "الرقم الضريبي",
+                "InvoiceNo": "رقم الفاتورة",
+                "Date": "تاريخ الإصدار",
+                "Item": "وصف الصنف",
+                "Qty": "الكمية",
+                "Price": "سعر الوحدة",
+                "Total": "الإجمالي",
+                "Subtotal": "الإجمالي الفرعي",
+                "Tax": "ضريبة القيمة المضافة (14%)",
+                "GrandTotal": "الإجمالي الكلي",
+                "Footer": "شكراً لتعاملكم معنا."
+            }
+        },
+        "Table": {
+            "InvoiceNumber": "رقم الفاتورة",
+            "Customer": "العميل",
+            "Date": "التاريخ",
+            "Status": "الحالة",
+            "Total": "الإجمالي",
+            "Actions": "الإجراءات",
+            "NoInvoices": "لا توجد فواتير مبيعات حتى الآن.",
+            "Paid": "مدفوعة",
+            "Issued": "مصدرة",
+            "Draft": "مسودة",
+            "Cancelled": "ملغاة",
+            "Print": "طباعة"
+        }
+    },
+    "Confirm": {
+        "Message": "هل أنت متأكد أنك تريد المتابعة؟"
+    },
+    "Reports": {
+        "IncomeStatement": {
+            "Title": "تقارير الأرباح",
+            "Subtitle": "قائمة الدخل - Income Statement",
+            "FromDate": "من تاريخ",
+            "ToDate": "إلى تاريخ",
+            "ShowReport": "عرض التقرير",
+            "SelectPeriodTitle": "حدد الفترة لعرض التقرير",
+            "SelectPeriodDesc": "قم باختيار تاريخ البداية والنهاية ثم اضغط على 'عرض التقرير' لمشاهدة تحليل الأرباح والمصروفات.",
+            "TotalRevenue": "إجمالي الإيرادات",
+            "TotalExpenses": "إجمالي المصروفات",
+            "NetProfit": "صافي الربح / الخسارة",
+            "ExpenseDetails": "تفاصيل المصروفات",
+            "Table": {
+                "Item": "بند المصروف",
+                "Value": "القيمة",
+                "Percentage": "النسبة",
+                "NoExpenses": "لا توجد مصروفات مسجلة في هذه الفترة."
+            }
+        }
+    },
+    "Users": {
+        "Title": "إدارة المستخدمين",
+        "Description": "عرض وإضافة مستخدمين جدد للنظام",
+        "NewUser": "مستخدم جديد",
+        "Table": {
+            "FullName": "الاسم الكامل",
+            "Username": "اسم المستخدم",
+            "Role": "الصلاحية",
+            "DateAdded": "تاريخ الإضافة",
+            "Status": "الحالة",
+            "Roles": {
+                "Admin": "مدير نظام (Admin)",
+                "Cashier": "كاشير (Cashier)"
+            }
+        },
+        "Dialog": {
+            "Title": "إضافة مستخدم جديد",
+            "FullName": "الاسم الكامل",
+            "Username": "اسم المستخدم (للدخول)",
+            "Password": "كلمة المرور",
+            "Role": "الصلاحية",
+            "Roles": {
+                "Admin": "مدير (Admin)",
+                "Cashier": "كاشير (Sales Only)"
+            },
+            "Save": "حفظ",
+            "Cancel": "إلغاء",
+            "Placeholders": {
+                "Name": "مثال: محمد أحمد",
+                "Username": "cashier1"
+            }
+        }
+    },
+    "Settings": {
+        "Title": "إعدادات الشركة",
+        "Description": "تخصيص بيانات المنشأة والشعار والعملة للفواتير.",
+        "Form": {
+            "Logo": "شعار الشركة",
+            "Upload": "اضغط للرفع",
+            "Change": "تغيير الشعار",
+            "PreferredSize": "الأبعاد المفضلة: مربع أو مستطيل صغير.\nأقصى حجم: 1 ميجابايت.",
+            "CompanyDetails": "بيانات المنشأة",
+            "Name": "اسم الشركة / المنشأة",
+            "NameRequired": "اسم الشركة مطلوب",
+            "Phone": "رقم الهاتف",
+            "Address": "العنوان",
+            "TaxId": "الرقم الضريبي",
+            "Currency": "العملة الافتراضية",
+            "CurrencyRequired": "العملة مطلوبة",
+            "SelectCurrency": "اختر العملة",
+            "Save": "حفظ التغييرات",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم تحديث الإعدادات بنجاح",
+            "Error": "حدث خطأ ما",
+            "Placeholders": {
+                "Name": "مثال: شركة التقنية الحديثة",
+                "Phone": "مثال: 01012345678",
+                "Address": "مثال: القاهرة، مدينة نصر...",
+                "TaxId": "15 رقم"
+            },
+            "Currencies": {
+                "EGP": "جنيه مصري (EGP)",
+                "SAR": "ريال سعودي (SAR)",
+                "USD": "دولار أمريكي (USD)",
+                "EUR": "يورو (EUR)"
+            }
+        }
+    }
+}

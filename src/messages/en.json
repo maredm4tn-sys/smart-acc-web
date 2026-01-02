@@ -1,0 +1,373 @@
+{
+    "Logo": "Smart Accountant",
+    "General": {
+        "Overview": "Overview"
+    },
+    "Sidebar": {
+        "MainMenu": "Main Menu",
+        "Dashboard": "Dashboard",
+        "ChartOfAccounts": "Chart of Accounts",
+        "Inventory": "Inventory & Products",
+        "Customers": "Customers",
+        "FinancialOperations": "Financial Operations",
+        "JournalEntries": "Journal Entries",
+        "SalesAndInvoices": "Sales & Invoices",
+        "Reports": "Reports",
+        "IncomeStatement": "Income Statement",
+        "Management": "Management",
+        "Users": "Users",
+        "Settings": "Settings",
+        "POS": "Point of Sale",
+        "NewInvoice": "New Invoice",
+        "InvoicesList": "Invoices List",
+        "Logout": "Logout"
+    },
+    "Dashboard": {
+        "Welcome": "Welcome",
+        "FinancialManager": "Financial Manager",
+        "Cashier": "Cashier",
+        "SummaryText": "Here is your company performance summary for today.",
+        "POSReady": "POS terminal is ready. Have a successful day!",
+        "QuickActions": "Quick Actions",
+        "NewInvoice": "New Invoice",
+        "NewInvoiceDesc": "Issue a new sales invoice",
+        "AddCustomer": "Add Customer",
+        "AddCustomerDesc": "Register new customer details",
+        "MySalesToday": "My Sales Today",
+        "MyPerformance": "Your personal sales performance for today",
+        "InvoicesCount": "Invoices Count",
+        "TotalSales": "Total Sales",
+        "TotalRevenue": "Total Revenue",
+        "SalesInvoices": "Sales Invoices",
+        "ActiveProducts": "Stock Products",
+        "FinancialAccounts": "Financial Accounts",
+        "SystemAlerts": "System Alerts",
+        "LowStock": "Low Stock",
+        "Invoice": " Invoice",
+        "Active": "Active",
+        "Account": "Account",
+        "CompareLastMonth": "vs Last Month",
+        "Item": "Item",
+        "LowStockAlertMock": "Product HP EliteBook reached minimum stock (2 items)."
+    },
+    "Login": {
+        "Title": "Login",
+        "Description": "Enter your credentials to access the dashboard",
+        "Username": "Username",
+        "Password": "Password",
+        "Submit": "Sign In"
+    },
+    "RevenueChart": {
+        "Title": "Revenue Trends",
+        "Description": "Revenue over the last 7 days",
+        "Saturday": "Sat",
+        "Sunday": "Sun",
+        "Monday": "Mon",
+        "Tuesday": "Tue",
+        "Wednesday": "Wed",
+        "Thursday": "Thu",
+        "Friday": "Fri"
+    },
+    "Accounts": {
+        "Title": "Chart of Accounts",
+        "Description": "Manage financial structure and general ledger accounts",
+        "NewAccount": "New Account",
+        "ImportDefault": "Import Default"
+    },
+    "Inventory": {
+        "Title": "Inventory Management",
+        "Description": "List of products, services, and stock balances",
+        "NewItem": "New Item",
+        "SearchPlaceholder": "Search products...",
+        "Search": "Search",
+        "Table": {
+            "SKU": "SKU",
+            "Name": "Item Name",
+            "Type": "Type",
+            "BuyPrice": "Buy Price",
+            "SellPrice": "Sell Price",
+            "Stock": "Stock",
+            "Actions": "Actions",
+            "NoItems": "No products found. Start by adding a new item.",
+            "Goods": "Goods",
+            "Service": "Service"
+        }
+    },
+    "Customers": {
+        "Title": "Customers",
+        "Description": "Manage customers list and contacts",
+        "NewCustomer": "Add Customer",
+        "ListTitle": "Customers List",
+        "Table": {
+            "Name": "Name",
+            "Phone": "Phone",
+            "Email": "Email",
+            "TaxId": "Tax ID",
+            "NoCustomers": "No customers found."
+        }
+    },
+    "Dialogs": {
+        "AddProduct": {
+            "Title": "Add New Product",
+            "Description": "Product or service details (stock and pricing).",
+            "SKU": "SKU",
+            "Type": "Type",
+            "Name": "Item Name",
+            "SellPrice": "Sell Price",
+            "BuyPrice": "Buy Price",
+            "OpeningStock": "Opening Stock",
+            "Save": "Save Product",
+            "Saving": "Saving...",
+            "Success": "Product saved successfully",
+            "Error": "Failed to save product",
+            "Goods": "Goods (Stock)",
+            "Service": "Service",
+            "Errors": {
+                "NameRequired": "Item name is required",
+                "SKURequired": "SKU is required",
+                "PricePositive": "Price cannot be negative",
+                "SKUExists": "SKU already exists"
+            }
+        },
+        "EditProduct": {
+            "Title": "Edit Product",
+            "Description": "Edit details for",
+            "Save": "Save Changes",
+            "Saving": "Saving...",
+            "Success": "Product updated successfully",
+            "Error": "Failed to update product"
+        },
+        "AddAccount": {
+            "Title": "Add New Account",
+            "Description": "Add a new sub-account to the chart of accounts.",
+            "Parent": "Parent Account",
+            "SelectParent": "Select Parent Account (Optional)",
+            "Name": "Account Name",
+            "Code": "Account Code",
+            "Type": "Account Type",
+            "SelectType": "Select Account Type",
+            "Balance": "Opening Balance",
+            "Save": "Save Account",
+            "Saving": "Saving...",
+            "Success": "Account saved successfully",
+            "Error": "Failed to save account",
+            "Types": {
+                "Asset": "Asset",
+                "Liability": "Liability",
+                "Equity": "Equity",
+                "Revenue": "Revenue",
+                "Expense": "Expense"
+            },
+            "Errors": {
+                "CodeExists": "Account code already exists",
+                "NameRequired": "Account name is required",
+                "CodeRequired": "Account code is required"
+            }
+        },
+        "AddCustomer": {
+            "Title": "Add New Customer",
+            "Description": "Enter details for the new customer.",
+            "Name": "Customer Name",
+            "Phone": "Phone Number",
+            "Email": "Email Address",
+            "Address": "Address",
+            "TaxId": "Tax ID",
+            "Save": "Save Customer",
+            "Saving": "Saving...",
+            "Success": "Customer saved successfully",
+            "Error": "Failed to save customer",
+            "Errors": {
+                "NameRequired": "Customer name is required",
+                "InvalidEmail": "Invalid email address"
+            }
+        }
+    },
+    "Journal": {
+        "Title": "Journal Entries",
+        "Description": "General Ledger view.",
+        "NewEntry": "New Entry",
+        "FinancialLog": "Financial Operations Log",
+        "Success": "Entry posted successfully",
+        "Error": "Failed to post entry",
+        "Errors": {
+            "NotBalanced": "Journal entry must be balanced"
+        },
+        "Table": {
+            "EntryNumber": "Entry No",
+            "Date": "Date",
+            "Description": "Description",
+            "Currency": "Currency",
+            "Total": "Total",
+            "Status": "Status",
+            "EntriesCount": "Entries",
+            "NoEntries": "No journal entries found.",
+            "Posted": "Posted",
+            "Draft": "Draft"
+        }
+    },
+    "Sales": {
+        "Title": "Sales Invoices",
+        "Description": "Manage sales and tax invoices.",
+        "NewInvoice": "New Invoice",
+        "Invoice": {
+            "NewTitle": "Create New Invoice",
+            "NewDescription": "Create a sales invoice for a customer.",
+            "BackToList": "Back to List",
+            "Success": "Invoice created successfully",
+            "Error": "Failed to create invoice",
+            "Form": {
+                "Customer": "Customer",
+                "SelectCustomer": "Select Customer...",
+                "SelectProduct": "Select Product...",
+                "IssueDate": "Invoice Date",
+                "Currency": "Currency",
+                "ExchangeRate": "Exchange Rate (vs EGP)",
+                "IncludeTax": "Apply 14% Tax",
+                "AddItem": "Add Item",
+                "Subtotal": "Subtotal",
+                "Tax": "Tax (14%)",
+                "GrandTotal": "Grand Total",
+                "Submit": "Issue Invoice",
+                "Table": {
+                    "Item": "Product / Service",
+                    "Description": "Description",
+                    "Qty": "Qty",
+                    "Price": "Price",
+                    "Total": "Total"
+                },
+                "Errors": {
+                    "CustomerRequired": "Customer is required",
+                    "DateRequired": "Invoice date is required",
+                    "CurrencyRequired": "Currency is required",
+                    "RatePositive": "Exchange rate must be > 0",
+                    "ProductRequired": "Product is required",
+                    "QtyMin": "Qty must be at least 1",
+                    "PriceMin": "Price cannot be negative",
+                    "OneItem": "At least one item is required"
+                }
+            },
+            "Print": {
+                "Title": "Tax Invoice",
+                "SimpleTitle": "Invoice",
+                "BillTo": "Bill To",
+                "TaxId": "Tax ID",
+                "InvoiceNo": "Invoice No",
+                "Date": "Issue Date",
+                "Item": "Item Description",
+                "Qty": "Qty",
+                "Price": "Unit Price",
+                "Total": "Total",
+                "Subtotal": "Subtotal",
+                "Tax": "VAT (14%)",
+                "GrandTotal": "Grand Total",
+                "Footer": "Thank you for your business."
+            }
+        },
+        "Table": {
+            "InvoiceNumber": "Invoice No",
+            "Customer": "Customer",
+            "Date": "Date",
+            "Status": "Status",
+            "Total": "Total",
+            "Actions": "Actions",
+            "NoInvoices": "No sales invoices found.",
+            "Paid": "Paid",
+            "Issued": "Issued",
+            "Draft": "Draft",
+            "Cancelled": "Cancelled",
+            "Print": "Print"
+        }
+    },
+    "Confirm": {
+        "Message": "Are you sure you want to proceed?"
+    },
+    "Reports": {
+        "IncomeStatement": {
+            "Title": "Profit Reports",
+            "Subtitle": "Income Statement",
+            "FromDate": "From Date",
+            "ToDate": "To Date",
+            "ShowReport": "Show Report",
+            "SelectPeriodTitle": "Select Period",
+            "SelectPeriodDesc": "Select start and end dates then click 'Show Report' to view profit and expense analysis.",
+            "TotalRevenue": "Total Revenue",
+            "TotalExpenses": "Total Expenses",
+            "NetProfit": "Net Profit / Loss",
+            "ExpenseDetails": "Expense Details",
+            "Table": {
+                "Item": "Expense Item",
+                "Value": "Value",
+                "Percentage": "Percentage",
+                "NoExpenses": "No expenses recorded in this period."
+            }
+        }
+    },
+    "Users": {
+        "Title": "User Management",
+        "Description": "View and add new users to the system",
+        "NewUser": "New User",
+        "Table": {
+            "FullName": "Full Name",
+            "Username": "Username",
+            "Role": "Role",
+            "DateAdded": "Date Added",
+            "Status": "Status",
+            "Roles": {
+                "Admin": "System Admin",
+                "Cashier": "Cashier"
+            }
+        },
+        "Dialog": {
+            "Title": "Add New User",
+            "FullName": "Full Name",
+            "Username": "Username (Login)",
+            "Password": "Password",
+            "Role": "Role",
+            "Roles": {
+                "Admin": "Admin",
+                "Cashier": "Cashier (Sales Only)"
+            },
+            "Save": "Save",
+            "Cancel": "Cancel",
+            "Placeholders": {
+                "Name": "ex: John Doe",
+                "Username": "cashier1"
+            }
+        }
+    },
+    "Settings": {
+        "Title": "Company Settings",
+        "Description": "Customize entity details, logo, and invoice currency.",
+        "Form": {
+            "Logo": "Company Logo",
+            "Upload": "Click to Upload",
+            "Change": "Change Logo",
+            "PreferredSize": "Preferred size: small square or rectangle.\nMax size: 1MB.",
+            "CompanyDetails": "Company Details",
+            "Name": "Company / Entity Name",
+            "NameRequired": "Company name is required",
+            "Phone": "Phone Number",
+            "Address": "Address",
+            "TaxId": "Tax ID",
+            "Currency": "Default Currency",
+            "CurrencyRequired": "Currency is required",
+            "SelectCurrency": "Select Currency",
+            "Save": "Save Changes",
+            "Saving": "Saving...",
+            "Success": "Settings updated successfully",
+            "Error": "An error occurred",
+            "Placeholders": {
+                "Name": "ex: Modern Tech Corp",
+                "Phone": "ex: 01012345678",
+                "Address": "ex: Cairo, Nasr City...",
+                "TaxId": "15 digits"
+            },
+            "Currencies": {
+                "EGP": "Egyptian Pound (EGP)",
+                "SAR": "Saudi Riyal (SAR)",
+                "USD": "US Dollar (USD)",
+                "EUR": "Euro (EUR)"
+            }
+        }
+    }
+}
