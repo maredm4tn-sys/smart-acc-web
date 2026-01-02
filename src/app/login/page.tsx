@@ -23,13 +23,13 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="flex justify-center mb-8">
-                    <div className="relative h-24 w-24 shadow-2xl rounded-[1.5rem] overflow-hidden bg-white">
+                <div className="flex justify-center mb-10">
+                    <div className="relative h-48 w-48">
                         <Image
-                            src="/logo.jpg"
+                            src="/logo-final.jpg"
                             alt={dict.Logo}
                             fill
-                            className="object-cover"
+                            className="object-contain mix-blend-multiply"
                             priority
                         />
                     </div>
