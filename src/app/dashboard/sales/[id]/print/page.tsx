@@ -43,7 +43,7 @@ export default async function InvoicePrintPage(props: { params: Promise<{ id: st
 
     // Format Date & Time
     const dateObj = new Date(invoice.createdAt || new Date());
-    const timeStr = dateObj.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeStr = dateObj.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Cairo' });
 
     return (
         <div className="bg-white min-h-screen p-8 text-black print:p-0 font-sans">

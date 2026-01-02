@@ -14,8 +14,10 @@ export const metadata: Metadata = {
   title: "المحاسب الذكي - Smart Acc",
   description: "نظام محاسبي سحابي متطور",
   icons: {
-    icon: "/logo.jpg",
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
   },
+  manifest: "/manifest.json",
 };
 
 import { getLocale, getDictionary } from "@/lib/i18n-server";

@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/db";
 import { invoices } from "@/db/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileText, Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, FileText, Download, Calendar, User } from "lucide-react";
 import { desc } from "drizzle-orm";
 import { getDictionary } from "@/lib/i18n-server";
 
@@ -36,7 +37,8 @@ export default async function SalesPage() {
                 </Link>
             </div>
 
-            <div className="bg-white p-4 rounded-lg border shadow-sm">
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white p-4 rounded-lg border shadow-sm container-desktop">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -92,6 +94,57 @@ export default async function SalesPage() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4 container-mobile">
+                {invoicesList.length === 0 ? (
+                    <div className="text-center p-8 text-muted-foreground">{dict.Sales.Table.NoInvoices}</div>
+                ) : (
+                    invoicesList.map((inv) => (
+                        <Card key={inv.id} className="overflow-hidden border-l-4 border-l-blue-500">
+                            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+                                <div className="flex flex-col">
+                                    <Link href={`/dashboard/sales/${inv.id}`} className="font-bold text-lg hover:underline flex items-center gap-2">
+                                        {inv.invoiceNumber}
+                                    </Link>
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Calendar size={12} />
+                                        {inv.issueDate}
+                                    </span>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${inv.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                    inv.status === 'issued' ? 'bg-blue-100 text-blue-700' :
+                                        inv.status === 'draft' ? 'bg-orange-100 text-orange-700' :
+                                            'bg-red-100 text-red-700'
+                                    }`}>
+                                    {inv.status === 'paid' ? dict.Sales.Table.Paid :
+                                        inv.status === 'issued' ? dict.Sales.Table.Issued :
+                                            inv.status === 'draft' ? dict.Sales.Table.Draft : dict.Sales.Table.Cancelled}
+                                </span>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-2">
+                                <div className="flex justify-between items-end">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <User size={14} />
+                                            <span>{inv.customerName}</span>
+                                        </div>
+                                        <div className="font-bold text-xl text-blue-600 dir-ltr text-end">
+                                            {Number(inv.totalAmount).toLocaleString()} <span className="text-xs text-gray-500">EGP</span>
+                                        </div>
+                                    </div>
+                                    <Link href={`/dashboard/sales/${inv.id}/print`} target="_blank">
+                                        <Button variant="outline" size="sm" className="gap-2">
+                                            <Download size={14} />
+                                            {dict.Sales.Table.Print}
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
             </div>
         </div>
     );

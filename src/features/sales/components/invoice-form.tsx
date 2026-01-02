@@ -52,7 +52,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             customerName: "",
-            issueDate: new Date().toISOString().split('T')[0],
+            issueDate: new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
             currency: "EGP",
             exchangeRate: 1,
             includeTax: true,

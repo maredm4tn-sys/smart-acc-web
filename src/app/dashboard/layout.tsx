@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { getSession } from "@/features/auth/actions";
 import { redirect } from "next/navigation";
 import { getDictionary } from "@/lib/i18n-server";
@@ -31,10 +32,11 @@ export default async function DashboardLayout({
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-auto p-8">
+                <main className="flex-1 overflow-auto p-4 md:p-8 pb-20 md:pb-8">
                     {children}
                 </main>
             </div>
+            <MobileNav />
         </div>
     );
 }

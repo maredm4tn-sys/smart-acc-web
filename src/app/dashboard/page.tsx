@@ -108,10 +108,12 @@ export default async function DashboardPage() {
     };
 
     try {
-        const [revenueRes] = await db.select({ value: sum(invoices.totalAmount) }).from(invoices);
-        const [accRes] = await db.select({ value: count() }).from(accounts);
-        const [prodRes] = await db.select({ value: count() }).from(products);
-        const [invRes] = await db.select({ value: count() }).from(invoices);
+        const [revenueRes, accRes, prodRes, invRes] = await Promise.all([
+            db.select({ value: sum(invoices.totalAmount) }).from(invoices).then(res => res[0]),
+            db.select({ value: count() }).from(accounts).then(res => res[0]),
+            db.select({ value: count() }).from(products).then(res => res[0]),
+            db.select({ value: count() }).from(invoices).then(res => res[0])
+        ]);
 
         stats = {
             totalRevenue: revenueRes?.value || "0.00",
@@ -137,10 +139,10 @@ export default async function DashboardPage() {
                 <div className="flex flex-col items-center">
                     <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm text-sm text-slate-600 font-medium">
                         <Calendar className="h-4 w-4 text-blue-600" />
-                        <span>{new Date().toLocaleDateString(localeForDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <span>{new Date().toLocaleDateString(localeForDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Cairo' })}</span>
                     </div>
                     <span className="text-sm text-slate-500 font-bold font-mono mt-2 tracking-wider">
-                        {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Cairo' })}
                     </span>
                 </div>
             </div>

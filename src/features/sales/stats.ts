@@ -5,17 +5,10 @@ import { invoices, invoiceItems } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
 export async function getCashierStats(userId: string) {
-    // TEMPORARY: Return empty stats to prevent crash due to missing 'created_by' column in DB.
-    // The migration to add the column failed in the environment.
-    return {
-        todayTotal: 0,
-        todayCount: 0,
-        recentInvoices: []
-    };
-    /*
     try {
-        const today = new Date().toISOString().split('T')[0];
-        
+        // Fix: Use Egypt Time for 'Today' calculation
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+
         const result = await db.select({
             total: sql<number>`COALESCE(SUM(${invoices.totalAmount}), 0)`,
             count: sql<number>`COUNT(*)`
@@ -23,7 +16,7 @@ export async function getCashierStats(userId: string) {
             .from(invoices)
             .where(and(
                 eq(invoices.createdBy, userId),
-                eq(invoices.issueDate, today) 
+                eq(invoices.issueDate, today)
             ));
 
         const recentInvoices = await db.select().from(invoices)
@@ -38,8 +31,7 @@ export async function getCashierStats(userId: string) {
         };
 
     } catch (e) {
-        console.error("Error fetching cashier stats:", e);
+        console.error("Error fetching cashier stats (DB likely missing created_by):", e);
         return { todayTotal: 0, todayCount: 0, recentInvoices: [] };
     }
-    */
 }
