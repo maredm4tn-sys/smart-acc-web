@@ -51,7 +51,7 @@ export function AppSidebar({ user }: { user?: User }) {
                 <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14">
                         <Image
-                            src="/logo-final.jpg"
+                            src="/app-logo-v2.jpg"
                             alt="Smart Acc Logo"
                             fill
                             className="object-contain mix-blend-multiply"
