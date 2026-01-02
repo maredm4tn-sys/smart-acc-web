@@ -28,10 +28,12 @@ const journalEntrySchema = z.object({
 type JournalEntryInput = z.infer<typeof journalEntrySchema>;
 
 
-export async function createJournalEntry(inputData: JournalEntryInput, tx?: any) {
+export type MyJournalResult = { success: boolean; message: string; };
+
+export async function createJournalEntry(inputData: JournalEntryInput, tx?: any): Promise<MyJournalResult> {
     const validation = journalEntrySchema.safeParse(inputData);
     if (!validation.success) {
-        return { success: false, message: "Invalid Entry Data: " + validation.error.errors[0].message };
+        throw new Error("Invalid Entry Data");
     }
     const data = validation.data;
 

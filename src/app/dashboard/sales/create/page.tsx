@@ -14,8 +14,8 @@ export const dynamic = 'force-dynamic';
 export default async function CreateInvoicePage() {
     const dict = await getDictionary();
 
-    let productsList = [];
-    let customersList = [];
+    let productsList: { id: number; name: string; sku: string; price: number }[] = [];
+    let customersList: { id: number; name: string }[] = [];
 
     try {
         productsList = await db.select({
@@ -23,13 +23,7 @@ export default async function CreateInvoicePage() {
             name: products.name,
             sku: products.sku,
             price: products.sellPrice
-        }).from(products);
-
-        // Convert decimal price string to number for the form
-        productsList = productsList.map(p => ({
-            ...p,
-            price: Number(p.price)
-        }));
+        }).from(products).then(rows => rows.map(p => ({ ...p, price: Number(p.price) })));
 
         customersList = await getCustomers();
 
@@ -42,7 +36,7 @@ export default async function CreateInvoicePage() {
             { id: 3, sku: "SRV-INST-01", name: "تسطيب ويندوز وبرامج", price: 150 },
         ];
         customersList = [
-            { id: 1, name: "عميل نقدي", tenantId: "", createdAt: null, email: null, phone: null, address: null, taxId: null }
+            { id: 1, name: "عميل نقدي" }
         ];
     }
 

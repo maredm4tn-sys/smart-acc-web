@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function InventoryPage() {
     const dict = await getDictionary();
 
-    let productsList = [];
+    let productsList: typeof products.$inferSelect[] = [];
     try {
         productsList = await db.select().from(products);
     } catch (e) {

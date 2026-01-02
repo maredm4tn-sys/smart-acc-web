@@ -53,7 +53,7 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     const validation = extendedSchema.safeParse(inputData);
     if (!validation.success) {
         console.error("Validation Error:", validation.error);
-        return { success: false, message: "Invalid Data" };
+        return { success: false as const, message: "Invalid Data" };
     }
     const data = validation.data;
 
@@ -208,12 +208,12 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 }
             }
 
-            return { success: true, message: dict.Sales.Invoice.Success, id: newInvoice.id, invoice: newInvoice };
+            return { success: true as const, message: dict.Sales.Invoice.Success, id: newInvoice.id, invoice: newInvoice };
         });
 
     } catch (error) {
         console.error("Error creating invoice:", error);
-        return { success: false, message: dict.Sales.Invoice.Error };
+        return { success: false as const, message: dict.Sales.Invoice.Error };
     }
 }
 
@@ -342,9 +342,11 @@ export async function deleteInvoice(id: number) {
             // Restore Stock
             const items = await tx.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
             for (const item of items) {
-                await tx.update(products)
-                    .set({ stockQuantity: sql`${products.stockQuantity} + ${item.quantity}` })
-                    .where(eq(products.id, item.productId));
+                if (item.productId) {
+                    await tx.update(products)
+                        .set({ stockQuantity: sql`${products.stockQuantity} + ${item.quantity}` })
+                        .where(eq(products.id, item.productId));
+                }
             }
 
             // Delete specific Invoice

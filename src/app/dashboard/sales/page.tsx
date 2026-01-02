@@ -4,7 +4,7 @@ import { desc } from "drizzle-orm";
 import { InvoicesTable } from "@/components/sales/invoices-table";
 
 export default async function SalesPage() {
-    let invoicesList = [];
+    let invoicesList: typeof invoices.$inferSelect[] = [];
     try {
         invoicesList = await db.select().from(invoices).orderBy(desc(invoices.issueDate));
     } catch (e) {

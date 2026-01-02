@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { invoices, accounts, products } from "@/db/schema";
-import { count, sum } from "drizzle-orm";
+import { count, sum, sql } from "drizzle-orm";
 import { getCashierStats } from "@/features/sales/stats";
 import { getSession } from "@/features/auth/actions";
 
