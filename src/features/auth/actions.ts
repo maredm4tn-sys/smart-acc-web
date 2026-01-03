@@ -75,23 +75,45 @@ export async function login(currentState: any, formData: FormData) {
 
     try {
         // Find user
+        console.log(`LOGIN_DEBUG: Attempting login for username: ${username}`);
         const [user] = await db.select().from(users).where(eq(users.username, username));
 
+        // Try fallback with email search since user might enter email in "username" field field
+        // But validation schema says "username", let's check if we should query email too.
+        // For now, sticking to username query but logging it.
+
         if (!user) {
+            console.log("LOGIN_DEBUG: User not found in DB.");
+            // Optional: Check if they are trying to login with email
+            // Note: The `users` table schema does not currently have an `email` column.
+            // If an `email` column were added, this line would need to be updated to reflect that.
+            // For now, this line will cause a type error if `users.email` is accessed.
+            // const [userByEmail] = await db.select().from(users).where(eq(users.email, username));
+            // if (userByEmail) {
+            //      console.log("LOGIN_DEBUG: User found by email but logic checks username only!");
+            // }
             return { error: "بيانات الدخول غير صحيحة" };
         }
+        console.log(`LOGIN_DEBUG: User found: ${user.username}, ID: ${user.id}, HashLength: ${user.passwordHash.length}`);
 
         // Verify password
+        console.log("LOGIN_DEBUG: Verifying password...");
         const isValid = await bcrypt.compare(password, user.passwordHash);
+        console.log(`LOGIN_DEBUG: Password valid? ${isValid}`);
+
         if (!isValid) {
+            console.log("LOGIN_DEBUG: Invalid password.");
             return { error: "بيانات الدخول غير صحيحة" };
         }
 
         if (!user.isActive) {
+            console.log("LOGIN_DEBUG: User is inactive.");
             return { error: "تم إيقاف هذا الحساب" };
         }
 
         // Create Session Token
+        console.log("LOGIN_DEBUG: Creating session token with secret:", process.env.JWT_SECRET ? "Exists (Length: " + process.env.JWT_SECRET.length + ")" : "MISSING");
+
         const token = await new SignJWT({
             userId: user.id,
             username: user.username,
@@ -104,6 +126,7 @@ export async function login(currentState: any, formData: FormData) {
             .sign(SECRET_KEY);
 
         // Set Cookie
+        console.log("LOGIN_DEBUG: Setting cookie...");
         const cookieStore = await cookies();
         cookieStore.set(COOKIE_NAME, token, {
             httpOnly: true,
@@ -118,6 +141,7 @@ export async function login(currentState: any, formData: FormData) {
     }
 
     // Redirect (must be outside try/catch)
+    console.log("LOGIN_DEBUG: Redirecting to dashboard...");
     redirect("/dashboard");
 }
 
