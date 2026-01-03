@@ -24,7 +24,9 @@ export const users = pgTable('users', {
     fullName: text('full_name').notNull(),
     email: text('email'), // Make email optional if not strictly needed or keep it
     passwordHash: text('password_hash').notNull(),
-    role: text('role', { enum: ['admin', 'cashier'] }).default('cashier').notNull(),
+    role: text('role', { enum: ['CLIENT', 'SUPER_ADMIN', 'admin', 'cashier'] }).default('CLIENT').notNull(),
+    status: text('status', { enum: ['ACTIVE', 'SUSPENDED'] }).default('ACTIVE').notNull(),
+    subscriptionEndsAt: timestamp('subscription_ends_at'),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => {

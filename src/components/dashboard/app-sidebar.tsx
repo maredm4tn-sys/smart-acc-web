@@ -36,12 +36,12 @@ function SidebarItem({ href, icon, label }: { href: string, icon: React.ReactNod
 interface User {
     userId: string;
     username: string;
-    role: 'admin' | 'cashier';
+    role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT';
     fullName: string;
 }
 
 export function AppSidebar({ user }: { user?: User }) {
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
     const isCashier = user?.role === 'cashier';
     const { dict } = useTranslation();
 

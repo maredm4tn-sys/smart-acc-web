@@ -20,7 +20,7 @@ export async function getUsers() {
     return await db.select().from(users).orderBy(desc(users.createdAt));
 }
 
-export async function createUser(firstName: string, username: string, password: string, role: 'admin' | 'cashier') {
+export async function createUser(firstName: string, username: string, password: string, role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT') {
     if (!firstName || !username || !password || !role) {
         return { error: "جميع الحقول مطلوبة" };
     }
@@ -135,7 +135,7 @@ export async function getSession() {
 
     try {
         const { payload } = await jwtVerify(token, SECRET_KEY);
-        return payload as { userId: string; username: string; role: 'admin' | 'cashier'; fullName: string };
+        return payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string };
     } catch (e) {
         return null;
     }
