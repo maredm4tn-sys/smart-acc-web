@@ -7,13 +7,13 @@ import { useTranslation } from "@/components/providers/i18n-provider";
 
 
 interface User {
-    role: 'admin' | 'cashier';
+    role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT';
 }
 
 export function MobileNav({ user }: { user?: User }) {
     const pathname = usePathname();
     const { dict } = useTranslation();
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
 
     const isActive = (href: string) => pathname === href || pathname?.startsWith(href);
 
