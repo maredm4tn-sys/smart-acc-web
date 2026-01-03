@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 async function main() {
     const targetEmail = "maredm4tn@gmail.com";
-    const newPassword = "q1@W2#Ew%tGd6^t&8(HfV#t";
+    const newPassword = "q1@W2#Et&8(HfV#t";
 
     console.log(`Searching for user with email: ${targetEmail}...`);
 
