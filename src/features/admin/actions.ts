@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { users, invoices, products, customers, journalEntries, accounts, auditLogs } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, invoices, products, customers, journalEntries, accounts, auditLogs, tenants } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { getSession } from "@/features/auth/actions";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
@@ -94,10 +94,97 @@ export async function adminResetPassword(userId: string, newPassword: string) {
     }
 }
 
+// ... existing code ...
+
+export async function createSubscriber(data: {
+    organizationName: string;
+    fullName: string;
+    username: string;
+    email?: string;
+    password: string;
+}) {
+    try {
+        await checkSuperAdmin();
+
+        // 1. Create Tenant
+        const [tenant] = await db.insert(tenants).values({
+            name: data.organizationName,
+            email: data.email,
+            subscriptionPlan: 'standard', // default plan
+        }).returning();
+
+        // 2. Hash Password
+        const passwordHash = await bcrypt.hash(data.password, 10);
+
+        // 3. Create User linked to Tenant
+        await db.insert(users).values({
+            tenantId: tenant.id,
+            fullName: data.fullName,
+            username: data.username,
+            email: data.email,
+            passwordHash,
+            role: 'admin', // Default to admin for the subscriber
+            status: 'ACTIVE',
+            isActive: true
+        });
+
+        revalidatePath("/dashboard/settings");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Create Subscriber Error:", error);
+        if (error.code === '23505') { // Postgres unique violation code
+            return { error: "اسم المستخدم مسجل بالفعل" };
+        }
+        return { error: "فشل إنشاء المشترك" };
+    }
+}
+
+export async function deleteSubscriber(userId: string) {
+    try {
+        await checkSuperAdmin();
+
+        // 1. Find User's Tenant
+        const [user] = await db.select().from(users).where(eq(users.id, userId));
+
+        if (!user) return { error: "المستخدم غير موجود" };
+
+        // 2. Delete Tenant (Cascades to User and all Data)
+        // Check if it's the main system tenant to avoid accidents? 
+        // For now, assuming Super Admin knows what they are doing.
+        // Maybe checking if it is the CURRENT user's tenant to prevent self-lockout?
+        const session = await getSession();
+        if (session?.userId === userId) {
+            return { error: "لا يمكن حذف الحساب الحالي" };
+        }
+
+        await db.delete(tenants).where(eq(tenants.id, user.tenantId));
+
+        revalidatePath("/dashboard/settings");
+        return { success: true };
+    } catch (error) {
+        console.error("Delete Subscriber Error:", error);
+        return { error: "فشل حذف المشترك" };
+    }
+}
+
 export async function getAllUsers() {
     try {
         await checkSuperAdmin();
-        return await db.select().from(users);
+        // Join with tenants to get organization name
+        return await db.select({
+            id: users.id,
+            fullName: users.fullName,
+            username: users.username,
+            email: users.email,
+            role: users.role,
+            status: users.status,
+            isActive: users.isActive,
+            createdAt: users.createdAt,
+            organizationName: tenants.name
+        })
+            .from(users)
+            .leftJoin(tenants, eq(users.tenantId, tenants.id))
+            .orderBy(desc(users.createdAt));
     } catch (error) {
         return [];
     }
