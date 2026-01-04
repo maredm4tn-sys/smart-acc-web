@@ -1,11 +1,11 @@
 "use client";
 
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Trash2, Plus, Save, Printer } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -27,6 +27,8 @@ interface CustomerOption {
     id: number;
     name: string;
 }
+
+import { ProductCombobox } from "./product-combobox";
 
 export function InvoiceForm({ products, customers }: { products: ProductOption[], customers: CustomerOption[] }) {
     const { dict } = useTranslation();
@@ -53,14 +55,14 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
     type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
-    const { control, register, handleSubmit, watch, setValue, setFocus, formState: { errors, isSubmitting } } = useForm<InvoiceFormValues>({
+    const { control, register, handleSubmit, watch, setValue, setFocus, reset, formState: { errors, isSubmitting } } = useForm<InvoiceFormValues>({
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
             customerName: "",
             issueDate: new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
             currency: "EGP",
             exchangeRate: 1,
-            includeTax: true,
+            includeTax: false,
             initialPayment: 0,
             items: [
                 { productId: "", description: "", quantity: 1, unitPrice: 0 }
@@ -73,27 +75,40 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         name: "items"
     });
 
-    const watchedItems = watch("items");
+    const watchedItems = useWatch({ control, name: "items" });
     const selectedCurrency = watch("currency");
     const includeTax = watch("includeTax");
-    const initialPayment = watch("initialPayment") || 0;
+    const initialPayment = useWatch({ control, name: "initialPayment" }) || 0;
 
     // Calculate totals live
     useEffect(() => {
-        const sub = watchedItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+        const items = watchedItems || [];
+        const sub = items.reduce((sum, item) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unitPrice) || 0;
+            return sum + (qty * price);
+        }, 0);
+
         const tax = includeTax ? sub * 0.14 : 0;
+        const total = sub + tax;
+
         setTotals({
             subtotal: sub,
             tax: tax,
-            total: sub + tax
+            total: total
         });
     }, [watchedItems, includeTax]);
+
+    // FORCE Auto-fill Payment to match Total (Separate Effect for Reliability)
+    useEffect(() => {
+        setValue("initialPayment", Number(totals.total.toFixed(2)), { shouldValidate: true });
+    }, [totals.total, setValue]);
 
     const onProductChange = (index: number, productId: string) => {
         const prod = products.find(p => p.id.toString() === productId);
         if (prod) {
-            setValue(`items.${index}.description` as const, prod.name);
-            setValue(`items.${index}.unitPrice` as const, prod.price);
+            setValue(`items.${index}.description` as const, prod.name, { shouldValidate: true, shouldDirty: true });
+            setValue(`items.${index}.unitPrice` as const, prod.price, { shouldValidate: true, shouldDirty: true });
         }
     };
 
@@ -112,10 +127,11 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
                 if (isLastEmpty) {
                     // Reuse last empty row
-                    setValue(`items.${watchedItems.length - 1}.productId`, product.id.toString());
-                    setValue(`items.${watchedItems.length - 1}.description`, product.name);
-                    setValue(`items.${watchedItems.length - 1}.unitPrice`, product.price);
-                    setValue(`items.${watchedItems.length - 1}.quantity`, 1);
+                    const idx = watchedItems.length - 1;
+                    setValue(`items.${idx}.productId`, product.id.toString(), { shouldValidate: true });
+                    setValue(`items.${idx}.description`, product.name, { shouldValidate: true, shouldDirty: true });
+                    setValue(`items.${idx}.unitPrice`, product.price, { shouldValidate: true, shouldDirty: true });
+                    setValue(`items.${idx}.quantity`, 1, { shouldValidate: true, shouldDirty: true });
                 } else {
                     append({
                         productId: product.id.toString(),
@@ -132,11 +148,24 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         }
     };
 
+    const [createdInvoiceId, setCreatedInvoiceId] = useState<number | null>(null);
+
+    // F2 Shortcut
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                handleSubmit(onSubmit)();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSubmit]);
+
     const onSubmit = async (data: InvoiceFormValues) => {
         try {
             const res = await createInvoice({
                 ...data,
-                // fix mismatch types
                 items: data.items.map(i => ({
                     productId: parseInt(i.productId),
                     description: i.description || "",
@@ -150,7 +179,18 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                 toast.success(res.message);
                 mutate('invoices-list');
                 mutate('dashboard-stats');
-                router.push(`/dashboard/sales/${res.id}/print`);
+                setCreatedInvoiceId(res.id);
+
+                // Auto-Clear for next sale
+                reset({
+                    customerName: "",
+                    issueDate: new Date().toISOString().split('T')[0],
+                    currency: "EGP",
+                    exchangeRate: 1,
+                    includeTax: false,
+                    initialPayment: 0,
+                    items: [{ productId: "", description: "", quantity: 1, unitPrice: 0 }]
+                });
             } else {
                 toast.error(res.message || dict.Settings.Form.Error);
             }
@@ -254,19 +294,15 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                                 {fields.map((field, index) => (
                                     <TableRow key={field.id}>
                                         <TableCell className="p-2">
-                                            <select
-                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                {...register(`items.${index}.productId` as const, {
-                                                    onChange: (e) => onProductChange(index, e.target.value)
-                                                })}
-                                            >
-                                                <option value="">{dict.Sales.Invoice.Form.SelectProduct}</option>
-                                                {products.map(p => (
-                                                    <option key={p.id} value={p.id}>
-                                                        {p.sku} - {p.name}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <ProductCombobox
+                                                products={products}
+                                                value={watchedItems[index]?.productId}
+                                                onSelect={(val) => {
+                                                    setValue(`items.${index}.productId`, val, { shouldValidate: true });
+                                                    onProductChange(index, val);
+                                                }}
+                                                placeholder={dict.Sales.Invoice.Form.SelectProduct}
+                                            />
                                             {errors.items?.[index]?.productId && <p className="text-red-500 text-xs">{errors.items[index]?.productId?.message}</p>}
                                         </TableCell>
                                         <TableCell className="p-2">
@@ -314,31 +350,34 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                         <div className="bg-gray-50 p-4 rounded-lg border space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">{dict.Sales.Invoice.Form.Subtotal}:</span>
-                                <span>{totals.subtotal.toFixed(2)}</span>
+                                <span className="font-mono">{totals.subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{dict.Sales.Invoice.Form.Tax}:</span>
-                                <span>{totals.tax.toFixed(2)}</span>
+                                <span className="text-muted-foreground">{dict.Sales.Invoice.Form.Tax} (14%):</span>
+                                <span className="font-mono">{totals.tax.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
                                 <span>{dict.Sales.Invoice.Form.GrandTotal}:</span>
-                                <span className="text-primary">{totals.total.toFixed(2)}</span>
+                                <span className="text-primary font-mono text-xl">{totals.total.toFixed(2)}</span>
                             </div>
                         </div>
 
-                        {/* Payment Field */}
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <label className="text-sm font-semibold mb-1 block">Initial Payment (Advance)</label>
+                        {/* Payment Field - Translated & Auto Filled */}
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
+                            <label className="text-sm font-bold text-blue-900 mb-1 block">المبلغ المدفوع (Paid)</label>
                             <Input
                                 type="number"
                                 min="0"
                                 step="0.01"
                                 {...register("initialPayment", { valueAsNumber: true })}
-                                className="bg-white"
+                                className="bg-white text-lg font-bold text-green-700 h-12"
                             />
-                            <div className="flex justify-between text-sm mt-2 font-medium text-gray-700">
-                                <span>Remaining Balance:</span>
-                                <span className={(totals.total - initialPayment) > 0.01 ? "text-red-600" : "text-green-600"}>
+                            <div className="flex justify-between text-sm mt-2 font-medium bg-white/50 p-2 rounded">
+                                <span>المتبقي (دين):</span>
+                                <span className={cn(
+                                    "font-bold font-mono",
+                                    (totals.total - initialPayment) > 0.1 ? "text-red-600" : "text-green-600"
+                                )}>
                                     {Math.max(0, totals.total - initialPayment).toFixed(2)}
                                 </span>
                             </div>
@@ -346,10 +385,22 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                     </div>
                 </div>
 
-                <div className="flex justify-end">
-                    <Button type="submit" size="lg" className="gap-2 min-w-[150px]" disabled={isSubmitting}>
+                <div className="flex justify-end gap-3">
+                    {createdInvoiceId && (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="lg"
+                            className="gap-2"
+                            onClick={() => window.open(`/dashboard/sales/${createdInvoiceId}/print`, '_blank')}
+                        >
+                            <Printer size={18} />
+                            <span>طباعة (Print)</span>
+                        </Button>
+                    )}
+                    <Button type="submit" size="lg" className="gap-2 min-w-[150px]" disabled={isSubmitting} title="Press F2 to Save">
                         <Save size={18} />
-                        <span>{dict.Sales.Invoice.Form.Submit}</span>
+                        <span>{dict.Sales.Invoice.Form.Submit} (F2)</span>
                     </Button>
                 </div>
             </form>

@@ -135,7 +135,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                 <CardWrapper icon={<DollarSign className="h-5 w-5" />} color="blue" title={dict.Dashboard.TotalRevenue} value={Number(stats.totalRevenue).toLocaleString()} suffix="EGP" trend="+12.5%" trendText={dict.Dashboard.CompareLastMonth} />
 
                 {/* Receivables Card (New) */}
-                <CardWrapper icon={<Wallet className="h-5 w-5" />} color="emerald" title={lang === 'ar' ? "حسابات العملاء" : "Receivables"} value={Number(stats.totalReceivables).toLocaleString()} suffix="EGP" pill="Due" />
+                <CardWrapper icon={<Wallet className="h-5 w-5" />} color="emerald" title={dict.Dashboard.Receivables} value={Number(stats.totalReceivables).toLocaleString()} suffix="EGP" pill={dict.Dashboard.Due} />
 
                 {/* Invoices Card */}
                 <CardWrapper icon={<CreditCard className="h-5 w-5" />} color="purple" title={dict.Dashboard.SalesInvoices} value={stats.invoicesCount} suffix={dict.Dashboard.Invoice} trend="+2" />
@@ -189,12 +189,9 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                         </CardHeader>
                         <CardContent className="p-4 pt-2">
                             <div className="space-y-3">
-                                <div className="flex gap-3 items-start bg-white/60 p-3 rounded-lg border border-amber-100 shadow-sm">
-                                    <div className="h-2 w-2 mt-2 rounded-full bg-red-500 shrink-0"></div>
-                                    <div>
-                                        <h4 className="font-medium text-sm text-gray-900">{dict.Dashboard.LowStock}</h4>
-                                        <p className="text-xs text-gray-500 mt-1">{dict.Dashboard.LowStockAlertMock}</p>
-                                    </div>
+                                <div className="text-sm text-center text-gray-400 py-4">
+                                    {/* Real alerts integration pending */}
+                                    No active alerts
                                 </div>
                             </div>
                         </CardContent>

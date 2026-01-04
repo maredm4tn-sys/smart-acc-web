@@ -46,7 +46,6 @@ async function test() {
     const result = await createJournalEntry({
         date: "2024-01-01",
         description: "Test Entry",
-        tenantId: tenant.id,
         lines: [
             { accountId: acctDb1.id, debit: 100, credit: 0 },
             { accountId: acctDb2.id, debit: 0, credit: 100 }

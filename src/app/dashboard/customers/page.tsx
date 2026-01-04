@@ -1,5 +1,9 @@
 import { AddCustomerDialog } from "@/features/customers/components/add-customer-dialog";
-import { getCustomers } from "@/features/customers/actions";
+import { CustomerActions } from "@/features/customers/components/customer-actions";
+import { CustomerImport } from "@/features/customers/components/customer-import";
+import { getCustomers, getCustomersExport } from "@/features/customers/actions"; // Modified import
+import { getSession } from "@/features/auth/actions";
+import { ExcelExportButton } from "@/components/common/excel-export-button"; // Added import
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users } from "lucide-react";
@@ -8,6 +12,8 @@ import { getDictionary } from "@/lib/i18n-server";
 export default async function CustomersPage() {
     const dict = await getDictionary();
     const customers = await getCustomers();
+    const session = await getSession();
+    const isAdmin = session?.role === 'admin' || session?.role === 'SUPER_ADMIN';
 
     return (
         <div className="space-y-6">
@@ -16,7 +22,17 @@ export default async function CustomersPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-gray-900">{dict.Customers.Title}</h2>
                     <p className="text-muted-foreground">{dict.Customers.Description}</p>
                 </div>
-                <AddCustomerDialog triggerLabel={dict.Customers.NewCustomer} />
+                <div className="flex flex-row-reverse justify-start gap-3">
+                    <AddCustomerDialog triggerLabel={dict.Customers.NewCustomer} />
+                    {isAdmin && <CustomerImport />}
+                    {isAdmin && (
+                        <ExcelExportButton
+                            getData={getCustomersExport}
+                            fileName="Customers_List"
+                            label="تصدير (Excel)"
+                        />
+                    )}
+                </div>
             </div>
 
             <div className="hidden md:block">
@@ -28,32 +44,50 @@ export default async function CustomersPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Table>
+                        <Table className="table-fixed w-full">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{dict.Customers.Table.Name}</TableHead>
-                                    <TableHead>{dict.Customers.Table.Phone}</TableHead>
-                                    <TableHead>{dict.Customers.Table.Email}</TableHead>
-                                    <TableHead>{dict.Customers.Table.TaxId}</TableHead>
-                                    <TableHead className="text-right">{"Total Debt"}</TableHead>
+                                    <TableHead className="w-[18%] text-center align-middle">الاسم</TableHead>
+                                    <TableHead className="w-[12%] text-center align-middle">الشركة</TableHead>
+                                    <TableHead className="w-[15%] text-center align-middle">العنوان</TableHead>
+                                    <TableHead className="w-[15%] text-center align-middle">الهاتف</TableHead>
+                                    <TableHead className="w-[20%] text-center align-middle">البريد</TableHead>
+                                    <TableHead className="w-[12%] text-center align-middle">إجمالي الديون</TableHead>
+                                    <TableHead className="w-[8%] text-center align-middle">إجراءات</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {customers.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                                        <TableCell colSpan={7} className="text-center py-8 text-gray-500 align-middle">
                                             {dict.Customers.Table.NoCustomers}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     customers.map((c) => (
                                         <TableRow key={c.id}>
-                                            <TableCell className="font-medium">{c.name}</TableCell>
-                                            <TableCell>{c.phone || "-"}</TableCell>
-                                            <TableCell>{c.email || "-"}</TableCell>
-                                            <TableCell>{c.taxId || "-"}</TableCell>
-                                            <TableCell className={`text-right font-bold ${c.totalDebt > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                            <TableCell className="text-center align-middle">
+                                                <div className="truncate w-full" title={c.name}>{c.name}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center align-middle">
+                                                <div className="truncate w-full" title={c.companyName || ""}>{c.companyName || "-"}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center align-middle">
+                                                <div className="truncate w-full" title={c.address || ""}>{c.address || "-"}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center align-middle font-mono text-xs">
+                                                <div className="truncate w-full">{c.phone || "-"}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center align-middle text-xs">
+                                                <div className="truncate w-full" title={c.email || ""}>{c.email || "-"}</div>
+                                            </TableCell>
+                                            <TableCell className={`text-center align-middle font-bold ${c.totalDebt > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                 {c.totalDebt?.toFixed(2) || "0.00"}
+                                            </TableCell>
+                                            <TableCell className="text-center align-middle">
+                                                <div className="flex justify-center">
+                                                    <CustomerActions customer={c} currentRole={session?.role} />
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))

@@ -12,6 +12,11 @@ export const tenants = pgTable('tenants', {
     logoUrl: text('logo_url'),
     currency: text('currency').default('EGP').notNull(),
     subscriptionPlan: text('subscription_plan').default('free'),
+    subscriptionStartDate: timestamp('subscription_start_date'),
+    nextRenewalDate: timestamp('next_renewal_date'),
+    customerRating: text('customer_rating', { enum: ['VIP', 'Normal', 'Difficult'] }).default('Normal'),
+    adminNotes: text('admin_notes'),
+    activityType: text('activity_type'), // e.g. 'Grocery', 'Tech', 'Restaurant'
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -169,6 +174,7 @@ export const customers = pgTable('customers', {
     id: serial('id').primaryKey(),
     tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
+    companyName: text('company_name'),
     email: text('email'),
     phone: text('phone'),
     address: text('address'),

@@ -1,25 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { AddProductDialog } from "@/features/inventory/components/add-product-dialog";
 import { EditProductDialog } from "@/features/inventory/components/edit-product-dialog";
+import { BulkUploadDialog } from "@/features/inventory/components/bulk-upload-dialog";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Package, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { getDictionary } from "@/lib/i18n-server";
+import { getSession } from "@/features/auth/actions";
+import { getActiveTenantId } from "@/lib/actions-utils";
+import { eq } from "drizzle-orm";
 
 export const dynamic = 'force-dynamic';
 
+import { ExcelExportButton } from "@/components/common/excel-export-button";
+import { getInventoryExport } from "@/features/inventory/actions";
+import { getProducts } from "@/features/inventory/queries";
+
+// ... existing imports
+
 export default async function InventoryPage() {
     const dict = await getDictionary();
-
-    let productsList: typeof products.$inferSelect[] = [];
-    try {
-        productsList = await db.select().from(products);
-    } catch (e) {
-        // Fallback to empty for now, or error state
-        productsList = [];
-    }
+    const productsList = await getProducts();
+    const session = await getSession();
+    const isAdmin = session?.role === 'admin' || session?.role === 'SUPER_ADMIN';
 
     return (
         <div className="space-y-6">
@@ -28,7 +33,17 @@ export default async function InventoryPage() {
                     <h1 className="text-2xl font-bold tracking-tight">{dict.Inventory.Title}</h1>
                     <p className="text-muted-foreground">{dict.Inventory.Description}</p>
                 </div>
-                <AddProductDialog triggerLabel={dict.Inventory.NewItem} />
+                <div className="flex gap-2">
+                    {isAdmin && (
+                        <ExcelExportButton
+                            getData={getInventoryExport}
+                            fileName="Inventory_Report"
+                            label="تصدير (Excel)"
+                        />
+                    )}
+                    <BulkUploadDialog />
+                    <AddProductDialog triggerLabel={dict.Inventory.NewItem} />
+                </div>
             </div>
 
             <div className="bg-white p-4 rounded-lg border shadow-sm space-y-4">

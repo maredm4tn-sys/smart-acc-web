@@ -5,39 +5,31 @@ import { products } from "@/db/schema";
 import { Toaster } from "@/components/ui/sonner";
 import Link from "next/link";
 import { getDictionary } from "@/lib/i18n-server";
-
+import { eq } from "drizzle-orm"; // Added eq import
+import { getActiveTenantId } from "@/lib/actions-utils"; // Added getActiveTenantId
 
 import { getCustomers } from "@/features/customers/actions";
 
 export const dynamic = 'force-dynamic';
 
+import { getProducts } from "@/features/inventory/queries";
+
 export default async function CreateInvoicePage() {
     const dict = await getDictionary();
 
-    let productsList: { id: number; name: string; sku: string; price: number }[] = [];
+    const rawProducts = await getProducts();
+    const productsList = rawProducts.map(p => ({
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+        price: Number(p.sellPrice)
+    }));
+
     let customersList: { id: number; name: string }[] = [];
-
     try {
-        productsList = await db.select({
-            id: products.id,
-            name: products.name,
-            sku: products.sku,
-            price: products.sellPrice
-        }).from(products).then(rows => rows.map(p => ({ ...p, price: Number(p.price) })));
-
         customersList = await getCustomers();
-
     } catch (e) {
-        console.warn("DB not ready");
-        // Mock data
-        productsList = [
-            { id: 1, sku: "HP-LAP-001", name: "HP EliteBook 840 G5", price: 12500 },
-            { id: 2, sku: "DELL-LAP-002", name: "Dell Latitude 5490", price: 11000 },
-            { id: 3, sku: "SRV-INST-01", name: "تسطيب ويندوز وبرامج", price: 150 },
-        ];
-        customersList = [
-            { id: 1, name: "عميل نقدي" }
-        ];
+        customersList = [{ id: 1, name: "عميل نقدي" }];
     }
 
     return (

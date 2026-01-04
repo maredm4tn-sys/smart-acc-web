@@ -15,7 +15,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="min-h-screen bg-gray-50/50 flex font-sans">
-            <AppSidebar user={session} />
+            <AppSidebar user={session} dict={dict} />
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">

@@ -1,22 +1,16 @@
 "use client";
 
+import useSWR from "swr";
 import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
 import { useTranslation } from "@/components/providers/i18n-provider";
+import { getRevenueChartData } from "@/features/dashboard/actions";
 
 export function RevenueChart() {
     const { dict } = useTranslation();
+    const { data: chartData } = useSWR('revenue-chart', getRevenueChartData);
 
-    const data = [
-        { name: dict.RevenueChart.Saturday, value: 4000 },
-        { name: dict.RevenueChart.Sunday, value: 3000 },
-        { name: dict.RevenueChart.Monday, value: 2000 },
-        { name: dict.RevenueChart.Tuesday, value: 2780 },
-        { name: dict.RevenueChart.Wednesday, value: 1890 },
-        { name: dict.RevenueChart.Thursday, value: 2390 },
-        { name: dict.RevenueChart.Friday, value: 3490 },
-    ];
+    const data = chartData && chartData.length > 0 ? chartData : [];
 
     return (
         <Card className="col-span-4 lg:col-span-4 border-none shadow-md bg-white">

@@ -44,7 +44,8 @@ export async function createProduct(inputData: CreateProductInput) {
 
     try {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(data.tenantId);
+        // FIX: Prefer session tenantId, fallback to provided or active utils
+        const tenantId = session.tenantId || await getActiveTenantId(data.tenantId);
 
         // 1. Check SKU uniqueness
         const existingList = await db.select().from(products)
@@ -124,7 +125,7 @@ export async function updateProduct(data: UpdateProductInput) {
 
 }
 
-export async function bulkImportProducts(productsList: { name: string; sku: string; sellPrice: number; buyPrice: number; stockQuantity: number; tenantId?: string }[]) {
+export async function bulkImportProducts(productsList: { name: string; sku?: string; sellPrice: number; buyPrice: number; stockQuantity: number; tenantId?: string }[]) {
     try {
         const { getSession } = await import("@/features/auth/actions");
         const session = await getSession();
@@ -132,42 +133,39 @@ export async function bulkImportProducts(productsList: { name: string; sku: stri
             return { success: false, message: "Unauthorized: Admins only" };
         }
 
-        const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(); // Default tenant
+        // STRICT SECURITY: Use session tenant only. Do not fallback to default.
+        const tenantId = session.tenantId;
+        if (!tenantId) {
+            return { success: false, message: "Security Error: No active tenant found for user." };
+        }
 
         if (!productsList || productsList.length === 0) return { success: false, message: "Empty list" };
 
         let successCount = 0;
         let errors = [];
 
-        // Optimize: Batch insert or loop? 
-        // For 2000 products, loop with try/catch per item is safer to allow partial success (skip duplicates), 
-        // but batch is faster. 
-        // "Transaction Safety" requirement suggests we might want all-or-nothing, OR robust report.
-        // Usually, users prefer "Skip duplicates" for bulk import.
+        for (let i = 0; i < productsList.length; i++) {
+            const p = productsList[i];
+            // Auto-generate SKU if missing or empty
+            const skuToUse = p.sku && p.sku.trim() !== ""
+                ? p.sku
+                : `PROD-${Date.now()}-${Math.floor(Math.random() * 10000)}-${i}`;
 
-        // We will do a robust loop for now to provide detailed feedback.
-        // Can be optimized to batch filtered list later.
-
-        for (const p of productsList) {
             try {
                 // Check if SKU exists
                 const existing = await db.query.products.findFirst({
-                    where: (prod, { and, eq }) => and(eq(prod.sku, p.sku), eq(prod.tenantId, tenantId))
+                    where: (prod, { and, eq }) => and(eq(prod.sku, skuToUse), eq(prod.tenantId, tenantId))
                 });
 
                 if (existing) {
-                    // Option: Update stock? Or Skip?
-                    // User request: "Upload CSV to ADD products". 
-                    // Let's Skip duplicates to avoid overwriting data accidentally.
-                    errors.push(`Skipped ${p.sku} (Exists)`);
+                    errors.push(`Skipped ${skuToUse} (Exists)`);
                     continue;
                 }
 
                 await db.insert(products).values({
                     tenantId: tenantId,
                     name: p.name,
-                    sku: p.sku,
+                    sku: skuToUse,
                     type: "goods",
                     sellPrice: p.sellPrice.toString(),
                     buyPrice: p.buyPrice.toString(),
@@ -175,8 +173,8 @@ export async function bulkImportProducts(productsList: { name: string; sku: stri
                 });
                 successCount++;
             } catch (err) {
-                console.error(`Error importing ${p.sku}:`, err);
-                errors.push(`Error ${p.sku}`);
+                console.error(`Error importing ${skuToUse}:`, err);
+                errors.push(`Error ${skuToUse}`);
             }
         }
 
@@ -190,5 +188,35 @@ export async function bulkImportProducts(productsList: { name: string; sku: stri
     } catch (e) {
         console.error("Bulk Import Error:", e);
         return { success: false, message: "Server Error during import" };
+    }
+}
+
+export async function getInventoryExport() {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
+        return [];
+    }
+
+    try {
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = session.tenantId || await getActiveTenantId();
+
+        const data = await db.query.products.findMany({
+            where: (products, { eq }) => eq(products.tenantId, tenantId),
+            orderBy: (products, { asc }) => [asc(products.sku)],
+        });
+
+        return data.map(p => ({
+            "كود الصنف (SKU)": p.sku,
+            "اسم الصنف": p.name,
+            "النوع": p.type === 'goods' ? 'مخزني' : 'خدمة',
+            "سعر الشراء": Number(p.buyPrice),
+            "سعر البيع": Number(p.sellPrice),
+            "الرصيد الحالي": Number(p.stockQuantity),
+        }));
+    } catch (e) {
+        console.error("Export Error", e);
+        return [];
     }
 }

@@ -28,8 +28,9 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
 
     const customerSchema = z.object({
         name: z.string().min(2, dict.Dialogs.AddCustomer.Errors.NameRequired),
+        companyName: z.string().optional(),
         phone: z.string().optional(),
-        email: z.string().email(dict.Dialogs.AddCustomer.Errors.InvalidEmail).optional().or(z.literal("")),
+        email: z.string().optional(),
         address: z.string().optional(),
         taxId: z.string().optional(),
     });
@@ -54,7 +55,7 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="flex items-center justify-center gap-2 h-10">
                     <Plus size={16} />
                     {triggerLabel || dict.Dialogs.AddCustomer.Title}
                 </Button>
@@ -66,11 +67,15 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
                         {dict.Dialogs.AddCustomer.Description}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <form onSubmit={handleSubmit(onSubmit, (e) => toast.error("Please fill required fields"))} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label>{dict.Dialogs.AddCustomer.Name}</Label>
                         <Input {...register("name")} placeholder={dict.Dialogs.AddCustomer.Name} />
                         {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <Label>اسم الشركة (Company)</Label>
+                        <Input {...register("companyName")} placeholder="اسم الشركة" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

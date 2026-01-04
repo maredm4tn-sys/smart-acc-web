@@ -7,6 +7,9 @@ import { DefaultAccountsSeed } from "@/features/accounting/components/default-ac
 import { db } from "@/db";
 import { accounts } from "@/db/schema";
 import { Toaster } from "@/components/ui/sonner";
+import { getSession } from "@/features/auth/actions";
+import { getActiveTenantId } from "@/lib/actions-utils";
+import { eq } from "drizzle-orm";
 
 import { getDictionary } from "@/lib/i18n-server";
 
@@ -14,6 +17,8 @@ import { getDictionary } from "@/lib/i18n-server";
 export default async function AccountsPage() {
     const dict = await getDictionary();
     const rootAccounts = await getChartOfAccounts();
+    const session = await getSession();
+    const tenantId = session?.tenantId || await getActiveTenantId();
 
     let allAccountsList: any[] = [];
     try {
@@ -22,7 +27,7 @@ export default async function AccountsPage() {
             id: accounts.id,
             name: accounts.name,
             code: accounts.code
-        }).from(accounts);
+        }).from(accounts).where(eq(accounts.tenantId, tenantId));
     } catch (e) {
         console.warn("DB Connection failed, using fallback empty list for dropdown");
         // Fallback if DB fails

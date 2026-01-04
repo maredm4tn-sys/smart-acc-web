@@ -17,7 +17,12 @@ const SECRET_KEY = new TextEncoder().encode(secret || "default-secret-key-change
 const COOKIE_NAME = "session_token";
 
 export async function getUsers() {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    const session = await getSession();
+    if (!session?.tenantId) return [];
+
+    return await db.select().from(users)
+        .where(eq(users.tenantId, session.tenantId))
+        .orderBy(desc(users.createdAt));
 }
 
 export async function createUser(firstName: string, username: string, password: string, role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT') {
@@ -30,13 +35,13 @@ export async function createUser(firstName: string, username: string, password: 
         const existing = await db.select().from(users).where(eq(users.username, username));
         if (existing.length > 0) return { error: "اسم المستخدم مسجل مسبقاً" };
 
-        const [tenant] = await db.select().from(tenants).limit(1);
-        if (!tenant) return { error: "System Error: No Tenant" };
+        const session = await getSession();
+        if (!session?.tenantId) return { error: "Unauthorized" };
 
         const passwordHash = await bcrypt.hash(password, 10);
 
         await db.insert(users).values({
-            tenantId: tenant.id,
+            tenantId: session.tenantId,
             username,
             fullName: firstName, // prompt asked for full_name
             passwordHash,
@@ -102,7 +107,8 @@ export async function login(currentState: any, formData: FormData) {
             userId: user.id,
             username: user.username,
             role: user.role,
-            fullName: user.fullName
+            fullName: user.fullName,
+            tenantId: user.tenantId // Add tenantId to session
         })
             .setProtectedHeader({ alg: "HS256" })
             .setIssuedAt()
@@ -117,6 +123,8 @@ export async function login(currentState: any, formData: FormData) {
             maxAge: 60 * 60 * 24, // 1 day
             path: "/",
         });
+
+        revalidatePath('/', 'layout');
 
     } catch (e) {
         console.error("Login error:", e);
@@ -141,7 +149,18 @@ export async function getSession() {
 
     try {
         const { payload } = await jwtVerify(token, SECRET_KEY);
-        return payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string };
+
+        // Strict Security Check: Verify User exists and is Active in DB
+        const userId = payload.userId as string;
+        // Verify against DB to ensure immediate suspension
+        const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+        if (!user || !user.isActive || user.status === 'SUSPENDED') {
+            console.warn(`Blocked suspended/inactive user session: ${userId}`);
+            return null; // Treated as logged out
+        }
+
+        return payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string; tenantId: string };
     } catch (e) {
         return null;
     }

@@ -5,6 +5,7 @@ import { accounts, journalEntries, journalLines, fiscalYears, tenants } from "@/
 import { revalidatePath } from "next/cache";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { requireTenant } from "@/lib/tenant-security";
 
 const journalEntrySchema = z.object({
     date: z.string().min(1),
@@ -19,7 +20,7 @@ const journalEntrySchema = z.object({
         const totalCredit = lines.reduce((sum, line) => sum + line.credit, 0);
         return Math.abs(totalDebit - totalCredit) < 0.01;
     }, "Entry must be balanced (Debit = Credit)"),
-    tenantId: z.string().optional(),
+    // tenantId: z.string().optional(), // Removed from effective schema logic (input ignored)
     reference: z.string().optional(),
     currency: z.string().optional(),
     exchangeRate: z.number().optional(),
@@ -41,8 +42,7 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
     const queryDb = tx || db;
 
     try {
-        const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(data.tenantId);
+        const tenantId = await requireTenant();
 
         // Find open fiscal year
         let fy = await queryDb.query.fiscalYears.findFirst({
@@ -130,8 +130,7 @@ export async function createAccount(inputData: CreateAccountInput) {
     const data = validation.data;
 
     try {
-        const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(data.tenantId);
+        const tenantId = await requireTenant();
 
         const existing = await db.query.accounts.findFirst({
             where: (accounts, { eq, and }) => and(eq(accounts.code, data.code), eq(accounts.tenantId, tenantId))
@@ -162,7 +161,9 @@ export async function createAccount(inputData: CreateAccountInput) {
 
 export async function getJournalEntries(limit = 50) {
     try {
+        const tenantId = await requireTenant();
         const entries = await db.query.journalEntries.findMany({
+            where: (journalEntries, { eq }) => eq(journalEntries.tenantId, tenantId),
             orderBy: (journalEntries, { desc }) => [desc(journalEntries.transactionDate), desc(journalEntries.createdAt)],
             limit: limit,
             with: {
@@ -173,7 +174,33 @@ export async function getJournalEntries(limit = 50) {
                 }
             }
         });
-        return entries;
+
+        // Enrich Data without changing the schema
+        return entries.map(entry => {
+            const debitTotal = entry.lines.reduce((sum, line) => sum + Number(line.debit), 0);
+            const creditTotal = entry.lines.reduce((sum, line) => sum + Number(line.credit), 0);
+
+            // Accounts Summary: Get unique account names
+            const accountNames = Array.from(new Set(entry.lines.map(l => l.account.name)));
+            // Format: "Cash / Sales ..."
+            const accountsSummary = accountNames.slice(0, 2).join(" / ") + (accountNames.length > 2 ? " ..." : "");
+
+            // Infer Type from description/reference until we have a dedicated column
+            let type = "Manual";
+            const ref = entry.reference?.toUpperCase() || "";
+            const desc = entry.description?.toUpperCase() || "";
+
+            if (ref.startsWith("INV") || desc.includes("INVOICE") || desc.includes("فاتورة")) type = "Invoice";
+            else if (ref.startsWith("PAY") || desc.includes("PAYMENT") || desc.includes("دفع")) type = "Payment";
+
+            return {
+                ...entry,
+                debitTotal,
+                creditTotal,
+                accountsSummary,
+                type
+            };
+        });
     } catch (error) {
         console.error("Error fetching journal entries:", error);
         return [];
@@ -225,5 +252,50 @@ export async function seedDefaultAccounts(tenantId: string) {
         return { success: true, message: "تم استيراد الدليل الافتراضي" };
     } catch (e) {
         return { success: false, message: "حدث خطأ أثناء الاستيراد" };
+    }
+}
+
+export async function getJournalExport() {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
+        return [];
+    }
+
+    try {
+        const tenantId = await requireTenant();
+        const entries = await db.query.journalEntries.findMany({
+            where: (journalEntries, { eq }) => eq(journalEntries.tenantId, tenantId),
+            orderBy: (journalEntries, { desc }) => [desc(journalEntries.transactionDate)],
+            with: { lines: { with: { account: true } } }
+        });
+
+        return entries.map(entry => {
+            const debitTotal = entry.lines.reduce((sum, line) => sum + Number(line.debit), 0);
+            const creditTotal = entry.lines.reduce((sum, line) => sum + Number(line.credit), 0);
+            const accountNames = Array.from(new Set(entry.lines.map(l => l.account.name)));
+            const accountsSummary = accountNames.join(" / ");
+
+            let type = "يدوي";
+            const ref = entry.reference?.toUpperCase() || "";
+            const desc = entry.description?.toUpperCase() || "";
+            if (ref.startsWith("INV") || desc.includes("INVOICE") || desc.includes("فاتورة")) type = "فاتورة";
+            else if (ref.startsWith("PAY") || desc.includes("PAYMENT") || desc.includes("دفع")) type = "دفعة";
+
+            return {
+                "رقم القيد": entry.entryNumber,
+                "التاريخ": new Date(entry.transactionDate).toLocaleDateString('en-GB'),
+                "النوع": type,
+                "البيان": entry.description,
+                "الحسابات": accountsSummary,
+                "إجمالي مدين": debitTotal,
+                "إجمالي دائن": creditTotal,
+                "العملة": entry.currency,
+                "الحالة": entry.status === 'posted' ? 'مرحل' : 'مسودة'
+            };
+        });
+    } catch (e) {
+        console.error("Export Error", e);
+        return [];
     }
 }

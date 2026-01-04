@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { deleteAccount } from "../actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 interface AccountTreeItemProps {
     account: AccountWithChildren;
@@ -15,6 +16,7 @@ interface AccountTreeItemProps {
 }
 
 function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
+    const { dict } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const hasChildren = account.children && account.children.length > 0;
     const router = useRouter();
@@ -72,7 +74,7 @@ function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
                     <span className="font-mono text-xs text-gray-500 bg-gray-50 px-1 rounded border">{account.code}</span>
                     <span className="flex-1">{account.name}</span>
                     <span className={cn("text-xs px-2 py-0.5 rounded-full bg-opacity-10 capitalize", typeColors[account.type], `bg-${account.type === 'asset' ? 'blue' : 'gray'}-100`)}>
-                        {account.type}
+                        {dict.Accounts?.Types?.[account.type as keyof typeof dict.Accounts.Types] || account.type}
                     </span>
                     <span className="font-mono text-sm font-semibold">{Number(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>

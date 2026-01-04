@@ -4,8 +4,13 @@ import { JournalEntryForm } from "@/features/accounting/components/journal-form"
 import { db } from "@/db";
 import { accounts } from "@/db/schema";
 import { Toaster } from "@/components/ui/sonner";
+import { getSession } from "@/features/auth/actions";
+import { getActiveTenantId } from "@/lib/actions-utils";
+import { eq } from "drizzle-orm";
 
 export default async function NewJournalPage() {
+    const session = await getSession();
+    const tenantId = session?.tenantId || await getActiveTenantId();
 
     let accountsList = [];
     try {
@@ -15,7 +20,7 @@ export default async function NewJournalPage() {
             id: accounts.id,
             code: accounts.code,
             name: accounts.name
-        }).from(accounts);
+        }).from(accounts).where(eq(accounts.tenantId, tenantId));
     } catch (e) {
         console.warn("DB not ready");
         accountsList = [

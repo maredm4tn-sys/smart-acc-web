@@ -3,7 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Plus, Trash2, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toggleUserStatus, adminResetPassword, createSubscriber, deleteSubscriber } from "@/features/admin/actions";
 import { toast } from "sonner";
@@ -12,12 +12,17 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/components/providers/i18n-provider";
+import Link from "next/link";
 
 interface UserListProps {
     users: any[];
 }
 
 export function UserList({ users }: UserListProps) {
+    const { dict, dir } = useTranslation();
+    const t = dict.SubscriberManagement;
+
     const [selectedUser, setSelectedUser] = useState<any>(null);
 
     // Password Reset State
@@ -117,7 +122,8 @@ export function UserList({ users }: UserListProps) {
         <div className="space-y-4">
             <div className="flex justify-end">
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Create Subscriber
+                    <Plus className={dir === 'rtl' ? "ml-2 h-4 w-4" : "mr-2 h-4 w-4"} />
+                    {t.CreateButton}
                 </Button>
             </div>
 
@@ -125,57 +131,44 @@ export function UserList({ users }: UserListProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Organization</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Active</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-start">{t.Table.Organization}</TableHead>
+                            <TableHead className="text-start">{t.Table.User}</TableHead>
+                            <TableHead className="text-start">{t.Table.Role}</TableHead>
+                            <TableHead className="text-start">{t.Table.Status}</TableHead>
+                            <TableHead className="text-start">{t.Table.Active}</TableHead>
+                            <TableHead className="text-center">{t.Table.Actions}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {users.map((user) => (
                             <TableRow key={user.id}>
-                                <TableCell className="font-medium">
+                                <TableCell className="font-medium text-start">
                                     {user.organizationName || "N/A"}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-start">
                                     <div className="font-medium">{user.fullName}</div>
                                     <div className="text-sm text-muted-foreground">{user.username}</div>
                                     <div className="text-xs text-muted-foreground">{user.email}</div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-start">
                                     <Badge variant="outline">{user.role}</Badge>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-start">
                                     <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                                        {user.status}
+                                        {user.status === 'ACTIVE' ? t.Table.Active : user.status}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>
-                                    {user.isActive ? "Yes" : "No"}
+                                <TableCell className="text-start">
+                                    {user.isActive ? <Badge variant="default" className="bg-green-600">Yes</Badge> : <Badge variant="secondary">No</Badge>}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                                <span className="sr-only">Open menu</span>
-                                                <MoreHorizontal className="h-4 w-4" />
+                                <TableCell className="text-center">
+                                    <div className="flex justify-center">
+                                        <Link href={`/dashboard/settings/subscribers/${user.id}`}>
+                                            <Button variant="outline" size="sm">
+                                                {t.ControlPanel.Title}
                                             </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
-                                                {user.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => openPasswordReset(user)}>
-                                                Reset Password
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => openDeleteDialog(user)} className="text-red-600 focus:text-red-600">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                        </Link>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -186,14 +179,14 @@ export function UserList({ users }: UserListProps) {
                 <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Reset Password</DialogTitle>
+                            <DialogTitle>{t.Actions.ResetPassword}</DialogTitle>
                             <DialogDescription>
                                 Enter a new password for {selectedUser?.fullName}.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="new-password">New Password</Label>
+                                <Label htmlFor="new-password">{t.Dialogs.Form.Password}</Label>
                                 <Input
                                     id="new-password"
                                     type="password"
@@ -203,8 +196,8 @@ export function UserList({ users }: UserListProps) {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
-                            <Button onClick={handleResetPassword}>Save changes</Button>
+                            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>{t.Dialogs.Cancel}</Button>
+                            <Button onClick={handleResetPassword}>{t.Dialogs.Form.Password}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -213,14 +206,14 @@ export function UserList({ users }: UserListProps) {
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Create New Subscriber</DialogTitle>
+                            <DialogTitle>{t.Dialogs.CreateTitle}</DialogTitle>
                             <DialogDescription>
-                                This will create a new Tenant and an Admin user for it.
+                                {t.Dialogs.CreateDesc}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label>Organization Name</Label>
+                                <Label>{t.Dialogs.Form.Organization}</Label>
                                 <Input
                                     value={newSubscriber.organizationName}
                                     onChange={(e) => setNewSubscriber({ ...newSubscriber, organizationName: e.target.value })}
@@ -228,7 +221,7 @@ export function UserList({ users }: UserListProps) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Full Name</Label>
+                                <Label>{t.Dialogs.Form.FullName}</Label>
                                 <Input
                                     value={newSubscriber.fullName}
                                     onChange={(e) => setNewSubscriber({ ...newSubscriber, fullName: e.target.value })}
@@ -236,7 +229,7 @@ export function UserList({ users }: UserListProps) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Username</Label>
+                                <Label>{t.Dialogs.Form.Username}</Label>
                                 <Input
                                     value={newSubscriber.username}
                                     onChange={(e) => setNewSubscriber({ ...newSubscriber, username: e.target.value })}
@@ -244,7 +237,7 @@ export function UserList({ users }: UserListProps) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Email (Optional)</Label>
+                                <Label>{t.Dialogs.Form.Email}</Label>
                                 <Input
                                     value={newSubscriber.email}
                                     onChange={(e) => setNewSubscriber({ ...newSubscriber, email: e.target.value })}
@@ -252,7 +245,7 @@ export function UserList({ users }: UserListProps) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Password</Label>
+                                <Label>{t.Dialogs.Form.Password}</Label>
                                 <Input
                                     type="password"
                                     value={newSubscriber.password}
@@ -261,8 +254,8 @@ export function UserList({ users }: UserListProps) {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                            <Button onClick={handleCreateSubscriber}>Create Subscriber</Button>
+                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t.Dialogs.Cancel}</Button>
+                            <Button onClick={handleCreateSubscriber}>{t.CreateButton}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -271,17 +264,16 @@ export function UserList({ users }: UserListProps) {
                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t.Dialogs.DeleteTitle}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the subscriber
-                                <strong> {selectedUser?.fullName} </strong>
-                                and their entire organization <strong> {selectedUser?.organizationName} </strong>
-                                including ALL data (Invoices, Products, etc.).
+                                {t.Dialogs.DeleteMessage}
+                                <br />
+                                <strong> {selectedUser?.organizationName} </strong>
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteSubscriber} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                            <AlertDialogCancel>{t.Dialogs.Cancel}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteSubscriber} className="bg-red-600 hover:bg-red-700">{t.Dialogs.ConfirmDelete}</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>

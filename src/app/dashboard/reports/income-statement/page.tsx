@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getIncomeStatementData } from "@/features/reports/actions";
+import { getIncomeStatementData, getProfitExport } from "@/features/reports/actions";
+import { getSession } from "@/features/auth/actions";
+import { ExcelExportButton } from "@/components/common/excel-export-button";
 import { Loader2, TrendingDown, TrendingUp, DollarSign, Calendar as CalendarIcon, Filter, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export default function IncomeStatementPage() {
     const { dict, lang } = useTranslation();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        getSession().then(s => {
+            if (s?.role === 'admin' || s?.role === 'SUPER_ADMIN') setIsAdmin(true);
+        });
+    }, []);
 
     // Format currency helper
     const formatCurrency = (amount: number) => {
@@ -58,6 +67,13 @@ export default function IncomeStatementPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-gray-900">{dict.Reports.IncomeStatement.Title}</h2>
                     <p className="text-slate-500 mt-1">{dict.Reports.IncomeStatement.Subtitle}</p>
                 </div>
+                {isAdmin && (
+                    <ExcelExportButton
+                        getData={getProfitExport}
+                        fileName="Profit_Report"
+                        label="تصدير الشامل (Excel)"
+                    />
+                )}
             </div>
 
             {/* Filter Section */}

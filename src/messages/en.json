@@ -45,10 +45,11 @@
         "LowStock": "Low Stock",
         "Invoice": " Invoice",
         "Active": "Active",
+        "Due": "Due",
+        "Receivables": "Receivables",
         "Account": "Account",
         "CompareLastMonth": "vs Last Month",
-        "Item": "Item",
-        "LowStockAlertMock": "Product HP EliteBook reached minimum stock (2 items)."
+        "Item": "Item"
     },
     "Login": {
         "Title": "Login",
@@ -72,7 +73,14 @@
         "Title": "Chart of Accounts",
         "Description": "Manage financial structure and general ledger accounts",
         "NewAccount": "New Account",
-        "ImportDefault": "Import Default"
+        "ImportDefault": "Import Default",
+        "Types": {
+            "asset": "Assets",
+            "liability": "Liabilities",
+            "equity": "Equity",
+            "revenue": "Revenue",
+            "expense": "Expenses"
+        }
     },
     "Inventory": {
         "Title": "Inventory Management",
@@ -202,7 +210,14 @@
             "EntriesCount": "Entries",
             "NoEntries": "No journal entries found.",
             "Posted": "Posted",
-            "Draft": "Draft"
+            "Draft": "Draft",
+            "Type": "Type",
+            "Account": "Account",
+            "Debit": "Debit",
+            "Credit": "Credit",
+            "TotalDebit": "Total Debit",
+            "TotalCredit": "Total Credit",
+            "Difference": "Difference"
         }
     },
     "Sales": {
@@ -367,6 +382,82 @@
                 "SAR": "Saudi Riyal (SAR)",
                 "USD": "US Dollar (USD)",
                 "EUR": "Euro (EUR)"
+            }
+        }
+    },
+    "SubscriberManagement": {
+        "Title": "Subscriber Management",
+        "CreateButton": "Create Subscriber",
+        "Table": {
+            "Organization": "Organization",
+            "User": "User",
+            "Role": "Role",
+            "Status": "Status",
+            "Active": "Active",
+            "Suspended": "Suspended",
+            "Actions": "Actions"
+        },
+        "Actions": {
+            "Suspend": "Suspend",
+            "Activate": "Activate",
+            "ResetPassword": "Reset Password",
+            "Delete": "Delete",
+            "ViewDetails": "View Details"
+        },
+        "Dialogs": {
+            "CreateTitle": "Create New Subscriber",
+            "CreateDesc": "This will create a new Tenant and an Admin user for it.",
+            "DeleteTitle": "Are you absolutely sure?",
+            "DeleteMessage": "This action cannot be undone. This will permanently delete the subscriber and their entire organization including ALL data.",
+            "Form": {
+                "Organization": "Organization Name",
+                "FullName": "Full Name",
+                "Username": "Username",
+                "Email": "Email (Optional)",
+                "Password": "Password"
+            },
+            "Cancel": "Cancel",
+            "ConfirmDelete": "Delete"
+        },
+        "ControlPanel": {
+            "Title": "Subscriber Control Panel",
+            "OrganizationProfile": "Organization Profile",
+            "ContactInfo": "Contact Information",
+            "Stats": "Organization Stats",
+            "DangerZone": "Danger Zone",
+            "UpdateProfile": "Update Profile",
+            "ActivityType": "Activity Type",
+            "Phone": "Phone Number",
+            "Email": "Email Address",
+            "Address": "Address",
+            "Save": "Save Changes",
+            "Cancel": "Cancel",
+            "Edit": "Edit Details",
+            "Status": {
+                "Title": "Account Status",
+                "Freeze": "Freeze Account",
+                "Activate": "Activate Account",
+                "FreezeDesc": "Prevent system access for all users.",
+                "ActivateDesc": "Restore system access.",
+                "Active": "Active",
+                "Suspended": "Suspended"
+            },
+            "CRM": {
+                "Title": "CRM & Subscription",
+                "SubscriptionStart": "Subscription Start Date",
+                "NextRenewal": "Next Renewal Date",
+                "CustomerRating": "Customer Rating",
+                "AdminNotes": "Admin Notes",
+                "Ratings": {
+                    "VIP": "VIP",
+                    "Normal": "Normal",
+                    "Difficult": "Difficult"
+                }
+            },
+            "Delete": {
+                "Title": "Delete Organization",
+                "Button": "Delete Organization",
+                "Desc": "Permanently remove this organization and all its data."
             }
         }
     }

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import type { Dictionary } from "@/lib/i18n-server";
 import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut } from "lucide-react";
 import { logout } from "@/features/auth/actions";
-import { useTranslation } from "@/components/providers/i18n-provider";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 // Helper for conditional classes
@@ -40,10 +40,9 @@ interface User {
     fullName: string;
 }
 
-export function AppSidebar({ user }: { user?: User }) {
+export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
     const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
     const isCashier = user?.role === 'cashier';
-    const { dict } = useTranslation();
 
     return (
         <aside className="w-72 bg-white text-slate-800 border-l border-gray-200 shadow-sm hidden md:flex flex-col z-20 transition-all duration-300">

@@ -25,8 +25,11 @@
     "Dashboard": {
         "Welcome": "مرحباً",
         "FinancialManager": "المدير المالي",
+        "Active": "نشط",
+        "Due": "المستحقات",
+        "Receivables": "حسابات العملاء",
         "Cashier": "الكاشير",
-        "SummaryText": "إليك ملخص أداء شركتك اليوم.",
+        "SummaryText": "إليك ملخص لما يحدث في متجرك اليوم.",
         "POSReady": "نقطة البيع جاهزة. نتمنى لك يوماً موفقاً!",
         "QuickActions": "إجراءات سريعة",
         "NewInvoice": "فاتورة جديدة",
@@ -44,11 +47,9 @@
         "SystemAlerts": "تنبيهات النظام",
         "LowStock": "مخزون منخفض",
         "Invoice": "فاتورة",
-        "Active": "نشط",
         "Account": "حساب",
         "CompareLastMonth": "مقارنة بـ الشهر الماضي",
-        "Item": "صنف",
-        "LowStockAlertMock": "المنتج HP EliteBook وصل للحد الأدنى (2 قطع)."
+        "Item": "صنف"
     },
     "Login": {
         "Title": "تسجيل الدخول",
@@ -72,7 +73,14 @@
         "Title": "شجرة الحسابات",
         "Description": "إدارة الهيكل المالي وحسابات الأستاذ العام",
         "NewAccount": "حساب جديد",
-        "ImportDefault": "استيراد افتراضي"
+        "ImportDefault": "استيراد افتراضي",
+        "Types": {
+            "asset": "الأصول",
+            "liability": "الخصوم",
+            "equity": "حقوق الملكية",
+            "revenue": "الإيرادات",
+            "expense": "المصروفات"
+        }
     },
     "Inventory": {
         "Title": "إدارة المخزون",
@@ -202,7 +210,14 @@
             "EntriesCount": "أطراف للقيد",
             "NoEntries": "لا توجد قيود مسجلة حتى الآن.",
             "Posted": "مرحل",
-            "Draft": "مسودة"
+            "Draft": "مسودة",
+            "Account": "الحساب",
+            "Debit": "مدين",
+            "Credit": "دائن",
+            "Type": "النوع",
+            "TotalDebit": "إجمالي المدين",
+            "TotalCredit": "إجمالي الدائن",
+            "Difference": "الفرق"
         }
     },
     "Sales": {
@@ -367,6 +382,82 @@
                 "SAR": "ريال سعودي (SAR)",
                 "USD": "دولار أمريكي (USD)",
                 "EUR": "يورو (EUR)"
+            }
+        }
+    },
+    "SubscriberManagement": {
+        "Title": "إدارة المشتركين",
+        "CreateButton": "إنشاء مشترك جديد",
+        "Table": {
+            "Organization": "المؤسسة",
+            "User": "المستخدم",
+            "Role": "الصلاحية",
+            "Status": "الحالة",
+            "Active": "نشط",
+            "Suspended": "معلق",
+            "Actions": "الإجراءات"
+        },
+        "Actions": {
+            "Suspend": "تجميد الحساب",
+            "Activate": "تنشيط الحساب",
+            "ResetPassword": "إعادة تعيين كلمة المرور",
+            "Delete": "حذف المشترك",
+            "ViewDetails": "عرض التفاصيل"
+        },
+        "Dialogs": {
+            "CreateTitle": "إنشاء مشترك جديد",
+            "CreateDesc": "سيتم إنشاء مؤسسة جديدة ومستخدم مسؤول لها.",
+            "DeleteTitle": "هل أنت متأكد تماماً؟",
+            "DeleteMessage": "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المشترك وكامل بيانات المؤسسة (الفواتير، المنتجات، إلخ) نهائياً.",
+            "Form": {
+                "Organization": "اسم المؤسسة",
+                "FullName": "الاسم الكامل",
+                "Username": "اسم المستخدم",
+                "Email": "البريد الإلكتروني (اختياري)",
+                "Password": "كلمة المرور"
+            },
+            "Cancel": "إلغاء",
+            "ConfirmDelete": "حذف"
+        },
+        "ControlPanel": {
+            "Title": "لوحة تحكم المشترك",
+            "OrganizationProfile": "ملف المؤسسة",
+            "ContactInfo": "معلومات الاتصال",
+            "Stats": "إحصائيات المؤسسة",
+            "DangerZone": "منطقة الخطر",
+            "UpdateProfile": "تحديث البيانات",
+            "ActivityType": "نوع النشاط",
+            "Phone": "رقم الهاتف",
+            "Email": "البريد الإلكتروني",
+            "Address": "العنوان",
+            "Save": "حفظ التغييرات",
+            "Cancel": "إلغاء",
+            "Edit": "تعديل البيانات",
+            "Status": {
+                "Title": "حالة الحساب",
+                "Freeze": "تجميد الحساب",
+                "Activate": "تنشيط الحساب",
+                "FreezeDesc": "منع الوصول للنظام لجميع المستخدمين.",
+                "ActivateDesc": "استعادة الوصول للنظام.",
+                "Active": "نشط",
+                "Suspended": "معلق"
+            },
+            "CRM": {
+                "Title": "إدارة العلاقات (CRM)",
+                "SubscriptionStart": "تاريخ بدء الاشتراك",
+                "NextRenewal": "تاريخ التجديد القادم",
+                "CustomerRating": "تقييم العميل",
+                "AdminNotes": "ملاحظات إدارية",
+                "Ratings": {
+                    "VIP": "VIP",
+                    "Normal": "عادي",
+                    "Difficult": "عميل صعب"
+                }
+            },
+            "Delete": {
+                "Title": "حذف المؤسسة",
+                "Button": "حذف المؤسسة نهائياً",
+                "Desc": "حذف المؤسسة وكامل بياناتها بشكل نهائي لا رجعة فيه."
             }
         }
     }

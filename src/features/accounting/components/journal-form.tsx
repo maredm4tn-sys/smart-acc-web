@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/components/providers/i18n-provider";
 import { cn } from "@/lib/utils";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,7 @@ interface AccountOption {
 }
 
 export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
+    const { dict } = useTranslation();
     const [totals, setTotals] = useState({ debit: 0, credit: 0, diff: 0 });
 
     const { control, register, handleSubmit, watch, formState: { errors } } = useForm<JournalFormValues>({
@@ -76,7 +78,6 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
             const response = await createJournalEntry({
                 date: data.date,
                 description: data.description,
-                tenantId: "", // Let server resolve it
                 lines: data.lines.map(l => ({
                     accountId: parseInt(l.accountId),
                     description: l.description,
@@ -117,10 +118,10 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[30%]">الحساب</TableHead>
-                                <TableHead className="w-[30%]">البيان</TableHead>
-                                <TableHead className="w-[15%]">مدين</TableHead>
-                                <TableHead className="w-[15%]">دائن</TableHead>
+                                <TableHead className="w-[30%]">{dict.Journal.Table.Account}</TableHead>
+                                <TableHead className="w-[30%]">{dict.Journal.Table.Description}</TableHead>
+                                <TableHead className="w-[15%]">{dict.Journal.Table.Debit}</TableHead>
+                                <TableHead className="w-[15%]">{dict.Journal.Table.Credit}</TableHead>
                                 <TableHead className="w-[5%]"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -185,15 +186,15 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
 
                 <div className="flex gap-8 text-sm font-medium">
                     <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground mb-1">إجمالي المدين</span>
+                        <span className="text-muted-foreground mb-1">{dict.Journal.Table.TotalDebit}</span>
                         <span className="text-lg text-blue-600">{totals.debit.toFixed(2)}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground mb-1">إجمالي الدائن</span>
+                        <span className="text-muted-foreground mb-1">{dict.Journal.Table.TotalCredit}</span>
                         <span className="text-lg text-red-600">{totals.credit.toFixed(2)}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground mb-1">الفرق</span>
+                        <span className="text-muted-foreground mb-1">{dict.Journal.Table.Difference}</span>
                         <span className={cn("text-lg", Math.abs(totals.diff) > 0.001 ? "text-red-600 font-bold" : "text-green-600")}>
                             {totals.diff.toFixed(2)}
                         </span>
