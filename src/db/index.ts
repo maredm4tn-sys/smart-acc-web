@@ -56,8 +56,11 @@ if (mode === 'desktop') {
         console.error("❌ [DB] Migration failed:", err);
     }
 
+
 } else if (process.env.POSTGRES_URL) {
     console.log("[DB] Initializing CLOUD (See Vercel) Mode with Postgres...");
+    console.log("🚀 Triggering Vercel Deployment with Database Connection...");
+
     const pool = new pg.Pool({
         connectionString: process.env.POSTGRES_URL,
     });
