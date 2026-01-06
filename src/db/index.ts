@@ -34,14 +34,14 @@ if (mode === 'desktop') {
 
     try {
         // Resolve migrations folder.
-        let migrationFolder = path.join(process.cwd(), 'drizzle');
+        let migrationFolder = path.join(process.cwd(), 'drizzle', 'sqlite');
 
         // Development fallback
         if (!fs.existsSync(migrationFolder)) {
-            migrationFolder = path.join(process.cwd(), '.next', 'server', 'drizzle');
+            migrationFolder = path.join(process.cwd(), '.next', 'server', 'drizzle', 'sqlite');
         }
         if (!fs.existsSync(migrationFolder)) {
-            migrationFolder = path.resolve('drizzle');
+            migrationFolder = path.resolve('drizzle', 'sqlite');
         }
 
         console.log(`[DB] Migrations Path: ${migrationFolder}`);
@@ -75,7 +75,7 @@ if (mode === 'desktop') {
         try {
             console.log("Running PG Migrations...");
             // Vercel puts files in var/task/... so relative path 'drizzle' usually works if included in 'files' or 'assets'
-            await migratePg(dbInstance, { migrationsFolder: 'drizzle' });
+            await migratePg(dbInstance, { migrationsFolder: path.join(process.cwd(), 'drizzle', 'pg') });
             console.log("✅ [DB] PG Migrations applied!");
         } catch (e) {
             console.error("❌ [DB] PG Migration failed/skipped:", e);

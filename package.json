@@ -12,7 +12,9 @@
     "lint": "eslint",
     "electron-dev": "concurrently \"cross-env BROWSER=none NEXT_PUBLIC_APP_MODE=desktop npm run dev\" \"wait-on http://localhost:3002 && electron .\"",
     "electron-build": "cross-env NEXT_PUBLIC_APP_MODE=desktop next build && node scripts/fix-nested-build.js",
-    "dist": "node scripts/build-dist.js"
+    "dist": "node scripts/build-dist.js",
+    "db:generate:sqlite": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:generate:pg": "drizzle-kit generate --config=drizzle.config.pg.ts"
   },
   "build": {
     "appId": "com.smartacc.offline",
