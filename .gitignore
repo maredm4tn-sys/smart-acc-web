@@ -17,12 +17,22 @@
 /.next/
 /out/
 
-# production
-/build
+# Build Output
+dist/
+dist-electron/
+release/
+out/
 
-# misc
-.DS_Store
-*.pem
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Electron Builder Cache
+winCodeSign/
+electron-builder-cache/
 
 # debug
 npm-debug.log*
