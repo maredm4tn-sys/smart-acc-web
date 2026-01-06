@@ -8,6 +8,9 @@ import fs from 'fs';
 
 dotenv.config();
 
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
+
 // Determine App Mode
 const mode = process.env.NEXT_PUBLIC_APP_MODE || 'web';
 
@@ -53,8 +56,18 @@ if (mode === 'desktop') {
         console.error("❌ [DB] Migration failed:", err);
     }
 
+} else if (process.env.POSTGRES_URL) {
+    console.log("[DB] Initializing CLOUD (See Vercel) Mode with Postgres...");
+    // Use connection pool for Vercel
+    const pool = new pg.Pool({
+        connectionString: process.env.POSTGRES_URL,
+    });
+    dbInstance = drizzlePg(pool, { schema });
 } else {
+    // Local Web Dev or fallback
     console.log("[DB] Initializing Dev Mode with local SQLite...");
+    // Only verify file exists if we are strictly LOCAL dev, on Vercel this might fail if not careful.
+    // For now we assume local dev.
     const sqlite = new Database('smart-acc-dev.db');
     dbInstance = drizzle(sqlite, { schema });
 }
