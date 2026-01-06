@@ -13,7 +13,9 @@ import { eq } from "drizzle-orm";
 
 import { getDictionary } from "@/lib/i18n-server";
 
-// ...
+// Force dynamic to prevent SSG DB connection error
+export const dynamic = 'force-dynamic';
+
 export default async function AccountsPage() {
     const dict = await getDictionary();
     const rootAccounts = await getChartOfAccounts();

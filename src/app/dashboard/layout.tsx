@@ -4,6 +4,8 @@ import { getSession } from "@/features/auth/actions";
 import { redirect } from "next/navigation";
 import { getDictionary } from "@/lib/i18n-server";
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({
     children,
 }: {

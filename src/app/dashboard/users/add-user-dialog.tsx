@@ -24,7 +24,9 @@ export function AddUserDialog() {
                 formData.get("fullName") as string,
                 formData.get("username") as string,
                 formData.get("password") as string,
-                formData.get("role") as 'admin' | 'cashier'
+                formData.get("role") as 'admin' | 'cashier',
+                formData.get("phone") as string,   // Phone
+                formData.get("address") as string  // Address
             );
 
             if (res?.error) {
@@ -71,6 +73,17 @@ export function AddUserDialog() {
                             <option value="cashier">{dict.Users.Dialog.Roles.Cashier}</option>
                             <option value="admin">{dict.Users.Dialog.Roles.Admin}</option>
                         </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>رقم الهاتف</Label>
+                            <Input name="phone" placeholder="01xxxxxxxxx" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>العنوان</Label>
+                            <Input name="address" placeholder="العنوان..." />
+                        </div>
                     </div>
                     <div className="pt-4 flex justify-end gap-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>{dict.Users.Dialog.Cancel}</Button>

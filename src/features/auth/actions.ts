@@ -8,6 +8,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const secret = process.env.JWT_SECRET;
 if (!secret && process.env.NODE_ENV === 'production') {
@@ -25,7 +26,14 @@ export async function getUsers() {
         .orderBy(desc(users.createdAt));
 }
 
-export async function createUser(firstName: string, username: string, password: string, role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT') {
+export async function createUser(
+    firstName: string,
+    username: string,
+    password: string,
+    role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT',
+    phone?: string,
+    address?: string
+) {
     if (!firstName || !username || !password || !role) {
         return { error: "جميع الحقول مطلوبة" };
     }
@@ -43,9 +51,11 @@ export async function createUser(firstName: string, username: string, password: 
         await db.insert(users).values({
             tenantId: session.tenantId,
             username,
-            fullName: firstName, // prompt asked for full_name
+            fullName: firstName,
             passwordHash,
             role,
+            phone,   // Added
+            address, // Added
             isActive: true
         });
 
@@ -57,8 +67,55 @@ export async function createUser(firstName: string, username: string, password: 
     }
 }
 
+const updateUserSchema = z.object({
+    id: z.string(),
+    fullName: z.string().min(1),
+    username: z.string().min(1),
+    password: z.string().optional(),
+    role: z.enum(['admin', 'cashier']),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+});
 
-import { z } from "zod";
+export async function updateUser(rawData: z.infer<typeof updateUserSchema>) {
+    try {
+        const session = await getSession();
+        if (session?.role !== 'admin') return { error: "Unauthorized" };
+
+        const updateData: any = {
+            fullName: rawData.fullName,
+            username: rawData.username,
+            role: rawData.role,
+            phone: rawData.phone,
+            address: rawData.address
+        };
+
+        if (rawData.password && rawData.password.trim().length > 0) {
+            updateData.passwordHash = await bcrypt.hash(rawData.password, 10);
+        }
+
+        await db.update(users).set(updateData).where(eq(users.id, rawData.id));
+        revalidatePath("/dashboard/users");
+        return { success: true };
+    } catch (e) {
+        return { error: "Failed to update user" };
+    }
+}
+
+export async function deleteUser(userId: string) {
+    try {
+        const session = await getSession();
+        if (session?.role !== 'admin') return { error: "Unauthorized" };
+
+        if (session.userId === userId) return { error: "لا يمكنك حذف نفسك" };
+
+        await db.delete(users).where(eq(users.id, userId));
+        revalidatePath("/dashboard/users");
+        return { success: true };
+    } catch (e) {
+        return { error: "Failed to delete user" };
+    }
+}
 
 const loginSchema = z.object({
     username: z.string().min(3),
@@ -142,6 +199,52 @@ export async function logout() {
 }
 
 export async function getSession() {
+    // ---------------------------------------------------------
+    // DESKTOP OFFLINE MODE: SEEDING (First Run Only)
+    // ---------------------------------------------------------
+    if (process.env.NEXT_PUBLIC_APP_MODE === 'desktop') {
+        try {
+            // Check if ANY user exists (Optimization: only select id)
+            const usersCount = await db.select({ id: users.id }).from(users).limit(1);
+
+            if (usersCount.length === 0) {
+                // 2. First Run: Seed Database
+                console.log("🌱 [Offline] First run detected. Seeding database...");
+
+                const [newTenant] = await db.insert(tenants).values({
+                    name: "الفرع الرئيسي (Offline)",
+                    type: "RETAIL", // Default type
+                    subscriptionStatus: "ACTIVE",
+                    subscriptionEndsAt: new Date("2099-12-31") // Lifetime
+                }).returning();
+
+                const [newUser] = await db.insert(users).values({
+                    tenantId: newTenant.id,
+                    username: "admin",
+                    fullName: "مدير النظام",
+                    passwordHash: await bcrypt.hash("admin", 10), // Default password, just in case
+                    role: "admin",
+                    isActive: true
+                }).returning();
+
+                // Auto-login JUST FOR THE FIRST SEEDING
+                return {
+                    userId: newUser.id,
+                    username: newUser.username,
+                    role: newUser.role,
+                    fullName: newUser.fullName,
+                    tenantId: newUser.tenantId
+                };
+            }
+            // If users exist, DO NOTHING. Let it fall through to Cookie Auth below.
+
+        } catch (e) {
+            console.error("Offline Session Seeding Error:", e);
+            // Don't return null here, maybe cookie auth works?
+        }
+    }
+    // ---------------------------------------------------------
+
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -162,6 +265,6 @@ export async function getSession() {
 
         return payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string; tenantId: string };
     } catch (e) {
-        return null;
+        return null; // Invalid token
     }
 }

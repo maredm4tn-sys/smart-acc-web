@@ -175,13 +175,20 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                 tenantId: "uuid"
             });
 
-            if (res.success && res.id) {
-                toast.success(res.message);
+            // Improved Success Check: Check for success flag explicitly
+            if (res && res.success) {
+                toast.success(res.message || "Invoice Created Successfully");
+
+                // CRITICAL: Set ID immediately for print button
+                if (res.id) {
+                    setCreatedInvoiceId(res.id);
+                }
+
+                // Refresh Data
                 mutate('invoices-list');
                 mutate('dashboard-stats');
-                setCreatedInvoiceId(res.id);
 
-                // Auto-Clear for next sale
+                // Auto-Clear Form
                 reset({
                     customerName: "",
                     issueDate: new Date().toISOString().split('T')[0],
@@ -192,10 +199,13 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                     items: [{ productId: "", description: "", quantity: 1, unitPrice: 0 }]
                 });
             } else {
-                toast.error(res.message || dict.Settings.Form.Error);
+                // Only show error if success is explicitly false or missing
+                toast.error(res?.message || dict.Settings.Form.Error);
             }
-        } catch (e) {
-            toast.error(dict.Settings.Form.Error);
+        } catch (e: any) {
+            console.error("Submit Error:", e);
+            // DEBUG: Show FULL Error details to user
+            toast.error(`Error: ${e.message || JSON.stringify(e)}`, { duration: 10000 });
         }
     };
 
@@ -223,15 +233,18 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-4 rounded-md bg-gray-50/50">
                     <div className="md:col-span-2">
                         <label className="text-sm font-medium mb-1 block">{dict.Sales.Invoice.Form.Customer}</label>
-                        <select
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        <Input
+                            list="customers-list"
+                            placeholder={dict.Sales.Invoice.Form.SelectCustomer}
+                            className="bg-white"
+                            autoComplete="off"
                             {...register("customerName")}
-                        >
-                            <option value="">{dict.Sales.Invoice.Form.SelectCustomer}</option>
+                        />
+                        <datalist id="customers-list">
                             {customers && customers.map(c => (
-                                <option key={c.id} value={c.name}>{c.name}</option>
+                                <option key={c.id} value={c.name} />
                             ))}
-                        </select>
+                        </datalist>
                         {errors.customerName && <p className="text-red-500 text-xs mt-1">{errors.customerName.message}</p>}
                     </div>
                     <div>

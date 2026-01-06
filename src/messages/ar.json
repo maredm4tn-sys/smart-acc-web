@@ -297,6 +297,16 @@
         "Message": "هل أنت متأكد أنك تريد المتابعة؟"
     },
     "Reports": {
+        "Title": "التقارير والإحصائيات",
+        "Description": "احصل على رؤى مفصلة حول أداء عملك ومبيعاتك",
+        "InventoryReport": {
+            "Title": "تقرير المخزون",
+            "TotalItems": "إجمالي الأصناف",
+            "TotalCost": "قيمة التكلفة",
+            "TotalSales": "قيمة البيع المتوقعة",
+            "Profit": "الربح المتوقع",
+            "LowStock": "تنبيهات النواقص"
+        },
         "IncomeStatement": {
             "Title": "تقارير الأرباح",
             "Subtitle": "قائمة الدخل - Income Statement",

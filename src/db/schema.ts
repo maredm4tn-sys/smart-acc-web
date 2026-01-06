@@ -1,9 +1,13 @@
-import { pgTable, serial, text, decimal, boolean, timestamp, integer, uuid, date, uniqueIndex, index } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { relations, sql } from 'drizzle-orm';
+import * as crypto from 'crypto';
+
+// Helper for default UUID
+const generateUuid = () => crypto.randomUUID();
 
 // --- Tenants (Multi-tenancy Support) ---
-export const tenants = pgTable('tenants', {
-    id: uuid('id').defaultRandom().primaryKey(),
+export const tenants = sqliteTable('tenants', {
+    id: text('id').primaryKey().$defaultFn(generateUuid),
     name: text('name').notNull(),
     email: text('email'),
     phone: text('phone'),
@@ -12,32 +16,30 @@ export const tenants = pgTable('tenants', {
     logoUrl: text('logo_url'),
     currency: text('currency').default('EGP').notNull(),
     subscriptionPlan: text('subscription_plan').default('free'),
-    subscriptionStartDate: timestamp('subscription_start_date'),
-    nextRenewalDate: timestamp('next_renewal_date'),
-    customerRating: text('customer_rating', { enum: ['VIP', 'Normal', 'Difficult'] }).default('Normal'),
+    subscriptionStartDate: integer('subscription_start_date', { mode: 'timestamp' }),
+    nextRenewalDate: integer('next_renewal_date', { mode: 'timestamp' }),
+    customerRating: text('customer_rating').default('Normal'), // Enum simulated
     adminNotes: text('admin_notes'),
-    activityType: text('activity_type'), // e.g. 'Grocery', 'Tech', 'Restaurant'
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    activityType: text('activity_type'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
 // --- Users ---
-export const users = pgTable('users', {
-    id: uuid('id').defaultRandom().primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
-    username: text('username').notNull().unique(), // Add username
+export const users = sqliteTable('users', {
+    id: text('id').primaryKey().$defaultFn(generateUuid),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    username: text('username').notNull().unique(),
     fullName: text('full_name').notNull(),
-    email: text('email'), // Make email optional if not strictly needed or keep it
+    email: text('email'),
+    phone: text('phone'),    // Added
+    address: text('address'), // Added
     passwordHash: text('password_hash').notNull(),
-    role: text('role', { enum: ['CLIENT', 'SUPER_ADMIN', 'admin', 'cashier'] }).default('CLIENT').notNull(),
-    status: text('status', { enum: ['ACTIVE', 'SUSPENDED'] }).default('ACTIVE').notNull(),
-    subscriptionEndsAt: timestamp('subscription_ends_at'),
-    isActive: boolean('is_active').default(true).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => {
-    return {
-        emailIdx: uniqueIndex('email_idx').on(table.email),
-    };
+    role: text('role').default('CLIENT').notNull(), // Enum simulated
+    status: text('status').default('ACTIVE').notNull(), // Enum simulated
+    subscriptionEndsAt: integer('subscription_ends_at', { mode: 'timestamp' }),
+    isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -48,14 +50,14 @@ export const usersRelations = relations(users, ({ one }) => ({
 }));
 
 // --- Fiscal Years ---
-export const fiscalYears = pgTable('fiscal_years', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const fiscalYears = sqliteTable('fiscal_years', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
-    startDate: date('start_date').notNull(),
-    endDate: date('end_date').notNull(),
-    isClosed: boolean('is_closed').default(false).notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
+    startDate: text('start_date').notNull(), // ISO Date string
+    endDate: text('end_date').notNull(),   // ISO Date string
+    isClosed: integer('is_closed', { mode: 'boolean' }).default(false).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
 export const fiscalYearsRelations = relations(fiscalYears, ({ one }) => ({
@@ -66,20 +68,16 @@ export const fiscalYearsRelations = relations(fiscalYears, ({ one }) => ({
 }));
 
 // --- Chart of Accounts (Tree Structure) ---
-export const accounts = pgTable('accounts', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const accounts = sqliteTable('accounts', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     code: text('code').notNull(),
     name: text('name').notNull(),
-    type: text('type', { enum: ['asset', 'liability', 'equity', 'revenue', 'expense'] }).notNull(),
+    type: text('type').notNull(), // Enum simulated
     parentId: integer('parent_id'),
-    isActive: boolean('is_active').default(true).notNull(),
-    balance: decimal('balance', { precision: 20, scale: 2 }).default('0.00'),
-    createdAt: timestamp('created_at').defaultNow(),
-}, (table) => {
-    return {
-        codeIdx: uniqueIndex('account_code_idx').on(table.code, table.tenantId),
-    };
+    isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+    balance: text('balance').default('0.00'), // Text for precision
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
@@ -99,20 +97,20 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
 }));
 
 // --- Journal Entries (Double Entry) ---
-export const journalEntries = pgTable('journal_entries', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const journalEntries = sqliteTable('journal_entries', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     fiscalYearId: integer('fiscal_year_id').references(() => fiscalYears.id).notNull(),
     entryNumber: text('entry_number').notNull(),
-    transactionDate: date('transaction_date').notNull(),
+    transactionDate: text('transaction_date').notNull(), // ISO Date
     description: text('description'),
     reference: text('reference'),
     currency: text('currency').default('EGP').notNull(),
-    exchangeRate: decimal('exchange_rate', { precision: 10, scale: 6 }).default('1.000000').notNull(),
-    status: text('status', { enum: ['draft', 'posted', 'void'] }).default('draft').notNull(),
-    createdBy: uuid('created_by'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    exchangeRate: text('exchange_rate').default('1.000000').notNull(),
+    status: text('status').default('draft').notNull(), // Enum simulated
+    createdBy: text('created_by'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
 export const journalEntriesRelations = relations(journalEntries, ({ one, many }) => ({
@@ -132,13 +130,13 @@ export const journalEntriesRelations = relations(journalEntries, ({ one, many })
 }));
 
 // --- Journal Lines ---
-export const journalLines = pgTable('journal_lines', {
-    id: serial('id').primaryKey(),
+export const journalLines = sqliteTable('journal_lines', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     journalEntryId: integer('journal_entry_id').references(() => journalEntries.id, { onDelete: 'cascade' }).notNull(),
     accountId: integer('account_id').references(() => accounts.id).notNull(),
     description: text('description'),
-    debit: decimal('debit', { precision: 20, scale: 2 }).default('0.00').notNull(),
-    credit: decimal('credit', { precision: 20, scale: 2 }).default('0.00').notNull(),
+    debit: text('debit').default('0.00').notNull(),
+    credit: text('credit').default('0.00').notNull(),
 });
 
 export const journalLinesRelations = relations(journalLines, ({ one }) => ({
@@ -153,33 +151,29 @@ export const journalLinesRelations = relations(journalLines, ({ one }) => ({
 }));
 
 // --- Products / Inventory ---
-export const products = pgTable('products', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const products = sqliteTable('products', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     sku: text('sku').notNull(),
-    type: text('type', { enum: ['service', 'goods'] }).default('goods').notNull(),
-    sellPrice: decimal('sell_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
-    buyPrice: decimal('buy_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
-    stockQuantity: decimal('stock_quantity', { precision: 15, scale: 2 }).default('0.00').notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
-}, (table) => {
-    return {
-        skuIdx: uniqueIndex('sku_idx').on(table.sku, table.tenantId),
-    };
+    type: text('type').default('goods').notNull(), // Enum simulated
+    sellPrice: text('sell_price').default('0.00').notNull(),
+    buyPrice: text('buy_price').default('0.00').notNull(),
+    stockQuantity: text('stock_quantity').default('0.00').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
 // --- Customers ---
-export const customers = pgTable('customers', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const customers = sqliteTable('customers', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     companyName: text('company_name'),
     email: text('email'),
     phone: text('phone'),
     address: text('address'),
     taxId: text('tax_id'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
@@ -191,39 +185,39 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
 }));
 
 // --- Invoices ---
-export const invoices = pgTable('invoices', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+export const invoices = sqliteTable('invoices', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     invoiceNumber: text('invoice_number').notNull(),
     customerId: integer('customer_id').references(() => customers.id),
-    customerName: text('customer_name').notNull(), // Keep as fallback/snapshot
+    customerName: text('customer_name').notNull(),
     customerTaxId: text('customer_tax_id'),
-    issueDate: date('issue_date').notNull(),
-    dueDate: date('due_date'),
+    issueDate: text('issue_date').notNull(), // ISO Date
+    dueDate: text('due_date'), // ISO Date
     currency: text('currency').default('EGP').notNull(),
-    exchangeRate: decimal('exchange_rate', { precision: 10, scale: 6 }).default('1.000000').notNull(),
-    subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
-    taxTotal: decimal('tax_total', { precision: 15, scale: 2 }).default('0.00').notNull(),
-    totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+    exchangeRate: text('exchange_rate').default('1.000000').notNull(),
+    subtotal: text('subtotal').notNull(),
+    taxTotal: text('tax_total').default('0.00').notNull(),
+    totalAmount: text('total_amount').notNull(),
 
     // --- AR Fields ---
-    paymentStatus: text('payment_status', { enum: ['paid', 'unpaid', 'partial'] }).default('paid').notNull(), // Default 'paid' for legacy
-    amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    paymentStatus: text('payment_status').default('paid').notNull(), // Enum simulated
+    amountPaid: text('amount_paid').default('0.00').notNull(),
 
-    status: text('status', { enum: ['draft', 'issued', 'paid', 'cancelled'] }).default('draft').notNull(),
+    status: text('status').default('draft').notNull(), // Enum simulated
     qrCodeData: text('qr_code_data'),
-    createdBy: uuid('created_by').references(() => users.id), // Add user tracking
-    createdAt: timestamp('created_at').defaultNow(),
+    createdBy: text('created_by').references(() => users.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
-export const invoiceItems = pgTable('invoice_items', {
-    id: serial('id').primaryKey(),
+export const invoiceItems = sqliteTable('invoice_items', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
     invoiceId: integer('invoice_id').references(() => invoices.id, { onDelete: 'cascade' }).notNull(),
     productId: integer('product_id').references(() => products.id),
     description: text('description').notNull(),
-    quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
-    unitPrice: decimal('unit_price', { precision: 15, scale: 2 }).notNull(),
-    total: decimal('total', { precision: 15, scale: 2 }).notNull(),
+    quantity: text('quantity').notNull(),
+    unitPrice: text('unit_price').notNull(),
+    total: text('total').notNull(),
 });
 
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
@@ -250,16 +244,16 @@ export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
 }));
 
 // --- Audit Logs ---
-export const auditLogs = pgTable('audit_logs', {
-    id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
-    userId: uuid('user_id').references(() => users.id),
+export const auditLogs = sqliteTable('audit_logs', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    userId: text('user_id').references(() => users.id),
     action: text('action').notNull(),
     entity: text('entity').notNull(),
     entityId: text('entity_id').notNull(),
     details: text('details'),
     ipAddress: text('ip_address'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 });
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({

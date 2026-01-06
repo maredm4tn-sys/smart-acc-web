@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { Dictionary } from "@/lib/i18n-server";
-import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet } from "lucide-react";
 import { logout } from "@/features/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -78,12 +78,13 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
 
                         <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.FinancialOperations}</p>
                         <SidebarItem href="/dashboard/journal" icon={<FileText size={20} />} label={dict.Sidebar.JournalEntries} />
+                        <SidebarItem href="/dashboard/expenses" icon={<Wallet size={20} />} label="المصروفات" />
                         <SidebarItem href="/dashboard/sales" icon={<ShoppingCart size={20} />} label={dict.Sidebar.SalesAndInvoices} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 
                         <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.Reports}</p>
-                        <SidebarItem href="/dashboard/reports/income-statement" icon={<FileText size={20} />} label={dict.Sidebar.IncomeStatement} />
+                        <SidebarItem href="/dashboard/reports" icon={<FileText size={20} />} label={dict.Sidebar.Reports} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 

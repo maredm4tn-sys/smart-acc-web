@@ -24,6 +24,7 @@ type CreateInvoiceInput = {
 
 import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
+import { createJournalEntry } from "@/features/accounting/actions"; // Static Import
 
 const createInvoiceSchema = z.object({
     customerName: z.string().min(1),
@@ -61,159 +62,213 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     try {
         const tenantId = await requireTenant(); // Strict Tenant
 
-        // Transaction for Safety
-        return await db.transaction(async (tx) => {
-            // Calculate totals
-            let subtotal = 0;
-            data.items.forEach(item => {
-                subtotal += item.quantity * item.unitPrice;
+        // ---------------------------------------------------------
+        // REMOVED db.transaction wrapper causing "return promise" error
+        // Executing sequentially instead. 
+        // ---------------------------------------------------------
+
+        // Calculate totals
+        let subtotal = 0;
+        data.items.forEach(item => {
+            subtotal += item.quantity * item.unitPrice;
+        });
+        const taxRate = data.includeTax ? 0.14 : 0; // Egypt VAT 14%
+        const taxTotal = subtotal * taxRate;
+        const totalAmount = subtotal + taxTotal;
+
+        // Determine Payment Status
+        let paymentStatus: 'paid' | 'unpaid' | 'partial' = 'unpaid';
+        const paidAmount = data.initialPayment || 0;
+        if (paidAmount >= totalAmount) paymentStatus = 'paid';
+        else if (paidAmount > 0) paymentStatus = 'partial';
+
+        // 1. Create Invoice
+        const [newInvoice] = await db.insert(invoices).values({
+            tenantId: tenantId,
+            invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+            customerName: data.customerName,
+            issueDate: data.issueDate,
+            dueDate: data.dueDate,
+            currency: data.currency,
+            exchangeRate: data.exchangeRate.toString(),
+            subtotal: subtotal.toString(),
+            taxTotal: taxTotal.toString(),
+            totalAmount: totalAmount.toString(),
+            amountPaid: paidAmount.toString(),
+            paymentStatus: paymentStatus,
+            status: "issued",
+        }).returning();
+
+        // 2. Create Invoice Items & Update Stock
+        for (const item of data.items) {
+            await db.insert(invoiceItems).values({
+                invoiceId: newInvoice.id,
+                productId: item.productId,
+                description: item.description,
+                quantity: item.quantity.toString(),
+                unitPrice: item.unitPrice.toString(),
+                total: (item.quantity * item.unitPrice).toString(),
             });
-            const taxRate = data.includeTax ? 0.14 : 0; // Egypt VAT 14%
-            const taxTotal = subtotal * taxRate;
-            const totalAmount = subtotal + taxTotal;
 
-            // Determine Payment Status
-            let paymentStatus: 'paid' | 'unpaid' | 'partial' = 'unpaid';
-            const paidAmount = data.initialPayment || 0;
-            if (paidAmount >= totalAmount) paymentStatus = 'paid';
-            else if (paidAmount > 0) paymentStatus = 'partial';
+            // Decrement Stock
+            await db.update(products)
+                .set({ stockQuantity: sql`${products.stockQuantity} - ${item.quantity}` })
+                .where(eq(products.id, item.productId));
+        }
 
-            // 1. Create Invoice
-            const [newInvoice] = await tx.insert(invoices).values({
-                tenantId: tenantId,
-                invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-                customerName: data.customerName,
-                issueDate: data.issueDate,
-                dueDate: data.dueDate,
-                currency: data.currency,
-                exchangeRate: data.exchangeRate.toString(),
-                subtotal: subtotal.toString(),
-                taxTotal: taxTotal.toString(),
-                totalAmount: totalAmount.toString(),
-                amountPaid: paidAmount.toString(),
-                paymentStatus: paymentStatus,
-                status: "issued",
+        // 3. Auto-Create Journal Entry
+        // Find OR Create Accounts
+        let cashAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq, or }) => and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%نقدية%'), like(accounts.name, '%Cash%'), like(accounts.name, '%Treasury%'))
+            )
+        });
+        if (!cashAccount) {
+            // Create Cash Account
+            const [newCash] = await db.insert(accounts).values({
+                tenantId,
+                name: "النقدية (تلقائي)",
+                code: `101-${Date.now().toString().slice(-4)}`,
+                type: 'asset',
+                currency: 'EGP',
+                balance: '0'
             }).returning();
+            cashAccount = newCash;
+        }
 
-            // 2. Create Invoice Items & Update Stock (Atomic)
-            for (const item of data.items) {
-                await tx.insert(invoiceItems).values({
-                    invoiceId: newInvoice.id,
-                    productId: item.productId,
-                    description: item.description,
-                    quantity: item.quantity.toString(),
-                    unitPrice: item.unitPrice.toString(),
-                    total: (item.quantity * item.unitPrice).toString(),
-                });
+        let salesAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq, or }) => and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%مبيعات%'), like(accounts.name, '%Sales%'), like(accounts.name, '%Revenue%'))
+            )
+        });
+        if (!salesAccount) {
+            // Create Sales Account
+            const [newSales] = await db.insert(accounts).values({
+                tenantId,
+                name: "إيرادات المبيعات (تلقائي)",
+                code: `401-${Date.now().toString().slice(-4)}`,
+                type: 'revenue',
+                currency: 'EGP',
+                balance: '0'
+            }).returning();
+            salesAccount = newSales;
+        }
 
-                // Decrement Stock
-                await tx.update(products)
-                    .set({ stockQuantity: sql`${products.stockQuantity} - ${item.quantity}` })
-                    .where(eq(products.id, item.productId));
-            }
+        let arAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq, or }) => and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%عملاء%'), like(accounts.name, '%Receivable%'), like(accounts.name, '%Customer%'))
+            )
+        });
+        if (!arAccount) {
+            // Create AR Account
+            const [newAR] = await db.insert(accounts).values({
+                tenantId,
+                name: "العملاء (تلقائي)",
+                code: `102-${Date.now().toString().slice(-4)}`,
+                type: 'asset',
+                currency: 'EGP',
+                balance: '0'
+            }).returning();
+            arAccount = newAR;
+        }
 
-            // 3. Auto-Create Journal Entry (Sales vs AR vs Cash)
-            // Find Accounts
-            // Note: In real production, these should be settings-based or fixed IDs.
-            // Using fuzzy search for reliability in this specific codebase context.
-            const cashAccount = await tx.query.accounts.findFirst({
-                where: (accounts, { like, and, eq }) => and(eq(accounts.tenantId, tenantId), like(accounts.name, '%نقدية%'))
+        if (salesAccount) {
+            // Using static import logic
+            const rate = data.exchangeRate || 1;
+            const baseTotalAmount = totalAmount * rate;
+            const baseSubtotal = subtotal * rate;
+            const baseTaxTotal = taxTotal * rate;
+            const basePaid = paidAmount * rate;
+            const baseRemaining = baseTotalAmount - basePaid;
+
+            const lines = [];
+
+            // Credit Sales
+            lines.push({
+                accountId: salesAccount.id,
+                debit: 0,
+                credit: baseSubtotal,
+                description: `إيراد مبيعات فاتورة ${newInvoice.invoiceNumber}`
             });
-            const salesAccount = await tx.query.accounts.findFirst({
-                where: (accounts, { like, and, eq }) => and(eq(accounts.tenantId, tenantId), like(accounts.name, '%مبيعات%'))
-            });
-            const arAccount = await tx.query.accounts.findFirst({
-                where: (accounts, { like, and, eq }) => and(eq(accounts.tenantId, tenantId), like(accounts.name, '%عملاء%')) // Accounts Receivable
-            });
 
-
-            if (salesAccount) {
-                const { createJournalEntry } = await import("@/features/accounting/actions");
-
-                // Convert to Base Currency (EGP) for GL
-                const rate = data.exchangeRate || 1;
-                const baseTotalAmount = totalAmount * rate;
-                const baseSubtotal = subtotal * rate;
-                const baseTaxTotal = taxTotal * rate;
-                const basePaid = paidAmount * rate;
-                const baseRemaining = baseTotalAmount - basePaid;
-
-                const lines = [];
-
-                // Credit Sales (Revenue)
+            // Credit Tax
+            if (baseTaxTotal > 0) {
                 lines.push({
                     accountId: salesAccount.id,
                     debit: 0,
-                    credit: baseSubtotal,
-                    description: `إيراد مبيعات فاتورة ${newInvoice.invoiceNumber}`
+                    credit: baseTaxTotal,
+                    description: "ضريبة القيمة المضافة"
                 });
+            }
 
-                // Credit Tax (Liability)
-                if (baseTaxTotal > 0) {
-                    // Assuming tax account exists or map to sales for now if not found separately
-                    // Ideally query a separate 'Tax Payable' account
-                    lines.push({
-                        accountId: salesAccount.id, // Fallback tax to sales account if separate tax acc missing
-                        debit: 0,
-                        credit: baseTaxTotal,
-                        description: "ضريبة القيمة المضافة"
-                    });
-                }
+            // Debit Cash
+            if (basePaid > 0 && cashAccount) {
+                lines.push({
+                    accountId: cashAccount.id,
+                    debit: basePaid,
+                    credit: 0,
+                    description: `تحصيل من فاتورة ${newInvoice.invoiceNumber}`
+                });
+            }
 
-                // Debit Cash (Asset) - For the amount paid
-                if (basePaid > 0 && cashAccount) {
+            // Debit AR
+            if (baseRemaining > 0.01) {
+                if (arAccount) {
                     lines.push({
-                        accountId: cashAccount.id,
-                        debit: basePaid,
+                        accountId: arAccount.id,
+                        debit: baseRemaining,
                         credit: 0,
-                        description: `تحصيل من فاتورة ${newInvoice.invoiceNumber}`
+                        description: `مديونية عملاء - فاتورة ${newInvoice.invoiceNumber}`
                     });
-                }
-
-                // Debit AR (Asset) - For the amount UNPAID
-                if (baseRemaining > 0.01) {
-                    // Start AR Logic
-                    // Use AR account if exists, else fallback loop or create one?
-                    // For now, if no AR account, we might log error or just put it in a temporary "Suspense" account.
-                    // Assuming AR exists for 'v2.0 requirement'.
-                    if (arAccount) {
-                        lines.push({
-                            accountId: arAccount.id,
-                            debit: baseRemaining,
-                            credit: 0,
-                            description: `مديونية عملاء - فاتورة ${newInvoice.invoiceNumber}`
-                        });
-                    } else {
-                        // Fallback logic could go here.
-                        console.warn("No AR Account found for credit sale!");
-                    }
-                }
-
-                // Only create JE if we have balanced lines
-                const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
-                const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
-
-                // Simple floating point fix
-                if (Math.abs(totalDebit - totalCredit) < 0.1) {
-                    // Executing Atomic Journal Entry
-                    await createJournalEntry({
-                        date: data.issueDate,
-                        reference: newInvoice.invoiceNumber,
-                        description: `فاتورة مبيعات رقم ${newInvoice.invoiceNumber} - ${data.customerName}`,
-                        currency: data.currency,
-                        exchangeRate: data.exchangeRate,
-                        lines: lines
-                    }, tx);
+                } else {
+                    console.warn("No AR Account found for credit sale!");
                 }
             }
 
-            revalidatePath("/dashboard/sales");
-            return { success: true as const, message: dict.Sales.Invoice.Success, id: newInvoice.id, invoice: newInvoice };
-        });
+            const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
+            const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
 
-    } catch (error) {
+            if (Math.abs(totalDebit - totalCredit) < 0.1) {
+                const jeResult = await createJournalEntry({
+                    date: data.issueDate,
+                    reference: newInvoice.invoiceNumber,
+                    description: `فاتورة مبيعات رقم ${newInvoice.invoiceNumber} - ${data.customerName}`,
+                    currency: data.currency,
+                    exchangeRate: data.exchangeRate,
+                    lines: lines
+                }); // Removed tx argument, passing undefined to use global db
+
+                if (!jeResult.success) {
+                    console.error("Auto-Journal Entry Failed:", jeResult.message);
+                    return {
+                        success: true as const,
+                        message: `${dict.Sales.Invoice.Success} (تنبيه: فشل إنشاء القيد المحاسبي: ${jeResult.message})`,
+                        id: Number(newInvoice.id)
+                    };
+                }
+            } else {
+                console.warn("Unbalanced Journal Entry ignored");
+            }
+        }
+
+        // Removed revalidatePath to prevent Electron connection reset issues.
+
+        // FIX: Only return primitives
+        return {
+            success: true as const,
+            message: dict.Sales.Invoice.Success,
+            id: Number(newInvoice.id)
+        };
+
+    } catch (error: any) {
         console.error("Error creating invoice:", error);
-        return { success: false as const, message: dict.Sales.Invoice.Error };
+        return {
+            success: false as const,
+            message: `Server Error: ${error.message || String(error)}`
+        };
     }
 }
 
@@ -360,7 +415,7 @@ export async function getInvoices() {
 
         return await db.select().from(invoices)
             .where(eq(invoices.tenantId, tenantId))
-            .orderBy(desc(invoices.issueDate));
+            .orderBy(desc(invoices.issueDate), desc(invoices.id));
     } catch (e) {
         console.warn("Error fetching invoices or unauthorized");
         return [];

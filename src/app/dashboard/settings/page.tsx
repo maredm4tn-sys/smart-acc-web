@@ -7,6 +7,7 @@ import { getAllUsers } from "@/features/admin/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserList } from "@/features/admin/components/user-list";
 import { DangerZone } from "@/features/admin/components/danger-zone";
+import { BackupManager } from "@/features/settings/components/backup-manager";
 
 export default async function SettingsPage() {
     const settings = await getSettings();
@@ -26,6 +27,7 @@ export default async function SettingsPage() {
             <Tabs defaultValue="facility" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="facility">إعدادات المنشأة</TabsTrigger>
+                    <TabsTrigger value="backup">النسخ الاحتياطي</TabsTrigger>
                     {isSuperAdmin && (
                         <>
                             <TabsTrigger value="subscribers">إدارة المشتركين</TabsTrigger>
@@ -33,9 +35,15 @@ export default async function SettingsPage() {
                         </>
                     )}
                 </TabsList>
+
                 <TabsContent value="facility" className="space-y-4">
                     <SettingsForm initialData={settings} />
                 </TabsContent>
+
+                <TabsContent value="backup" className="space-y-4">
+                    <BackupManager />
+                </TabsContent>
+
                 {isSuperAdmin && (
                     <>
                         <TabsContent value="subscribers" className="space-y-4">

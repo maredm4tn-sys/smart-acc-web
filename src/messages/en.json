@@ -297,6 +297,16 @@
         "Message": "Are you sure you want to proceed?"
     },
     "Reports": {
+        "Title": "Reports & Analytics",
+        "Description": "Get clear insights into your business performance and sales.",
+        "InventoryReport": {
+            "Title": "Inventory Report",
+            "TotalItems": "Total Items",
+            "TotalCost": "Total Cost Value",
+            "TotalSales": "Sales Value",
+            "Profit": "Potential Profit",
+            "LowStock": "Low Stock Alerts"
+        },
         "IncomeStatement": {
             "Title": "Profit Reports",
             "Subtitle": "Income Statement",

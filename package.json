@@ -2,11 +2,60 @@
   "name": "smart-acc-web",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
+  "author": "Mared",
+  "description": "Smart Accountant Offline Version",
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "electron-dev": "concurrently \"cross-env BROWSER=none NEXT_PUBLIC_APP_MODE=desktop npm run dev\" \"wait-on http://localhost:3002 && electron .\"",
+    "electron-build": "cross-env NEXT_PUBLIC_APP_MODE=desktop next build && node scripts/fix-nested-build.js",
+    "dist": "node scripts/build-dist.js"
+  },
+  "build": {
+    "appId": "com.smartacc.offline",
+    "productName": "Smart Accountant",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "files": [
+      "electron/**/*",
+      "drizzle/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "app-server",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": ".next/static",
+        "to": "app-server/.next/static"
+      },
+      {
+        "from": "public",
+        "to": "app-server/public"
+      },
+      {
+        "from": "drizzle",
+        "to": "app-server/drizzle"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "dir",
+      "icon": "build/icon.png",
+      "forceCodeSigning": false,
+      "verifyUpdateCodeSignature": false
+    }
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",
@@ -20,6 +69,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
@@ -43,17 +93,23 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.8",
+    "electron": "30.1.0",
+    "electron-builder": "24.13.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "nodemailer": "^7.0.12",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.3"
   }
 }

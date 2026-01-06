@@ -4,15 +4,15 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 async function main() {
-    const targetEmail = "maredm4tn@gmail.com";
-    const newPassword = "MaredAdmin2026!";
+    const targetUsername = "admin";
+    const newPassword = "admin123";
 
-    console.log(`Searching for user with email: ${targetEmail}...`);
+    console.log(`Searching for user: ${targetUsername}...`);
 
-    const userList = await db.select().from(users).where(eq(users.email, targetEmail));
+    const userList = await db.select().from(users).where(eq(users.username, targetUsername));
 
     if (userList.length === 0) {
-        console.error("User not found by email.");
+        console.error("User not found.");
         return;
     }
 

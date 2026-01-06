@@ -11,9 +11,8 @@ export default async function SalesPage() {
 
     let invoicesList: typeof invoices.$inferSelect[] = [];
     try {
-        invoicesList = await db.select().from(invoices)
-            .where(eq(invoices.tenantId, tenantId))
-            .orderBy(desc(invoices.issueDate));
+        const { getInvoices } = await import("@/features/sales/actions");
+        invoicesList = await getInvoices();
     } catch (e) {
         console.warn("DB not ready");
         invoicesList = [];

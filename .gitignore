@@ -47,3 +47,5 @@ postgres-data*/
 # deployment scripts (secrets)
 *.bat
 
+
+.vercel

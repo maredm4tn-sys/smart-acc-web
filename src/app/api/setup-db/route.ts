@@ -4,6 +4,9 @@ import { sql, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
+export const dynamic = 'force-dynamic';
+
+
 export async function GET() {
     try {
         console.log("Starting DB Setup via API...");

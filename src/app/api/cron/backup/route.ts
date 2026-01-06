@@ -36,7 +36,7 @@ export async function GET(request: Request) {
                 // 2. Find Admin User for this Tenant to get email
                 // Priority: Admin role associated with this tenant
                 const adminUser = await db.query.users.findFirst({
-                    where: (u, { and, eq, inArray }) => and(
+                    where: (u: any, { and, eq, inArray }: any) => and(
                         eq(u.tenantId, tenant.id),
                         eq(u.status, 'ACTIVE'),
                         // Check for admin roles. Note: roles are plain strings 'admin', 'cashier'

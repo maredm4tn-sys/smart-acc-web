@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { accounts, journalEntries, journalLines, fiscalYears, tenants } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { sql } from "drizzle-orm";
+import { sql, eq, gte, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireTenant } from "@/lib/tenant-security";
 
@@ -90,11 +90,11 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
                 credit: line.credit.toString(),
             });
 
-            await queryDb.execute(sql`
-                UPDATE ${accounts} 
-                SET balance = balance + ${line.debit} - ${line.credit}
-                WHERE id = ${line.accountId}
-            `);
+            await queryDb.update(accounts)
+                .set({
+                    balance: sql`${accounts.balance} + ${line.debit} - ${line.credit}`
+                })
+                .where(eq(accounts.id, line.accountId));
         }
 
         try {
@@ -108,7 +108,7 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
         return { success: true, message: "تم ترحيل القيد بنجاح" };
     } catch (error) {
         console.error("Error creating journal:", error);
-        return { success: false, message: "حدث خطأ أثناء حفظ القيد" };
+        return { success: false, message: `حدث خطأ: ${(error as Error).message}` };
     }
 }
 
@@ -298,4 +298,122 @@ export async function getJournalExport() {
         console.error("Export Error", e);
         return [];
     }
+
 }
+
+export async function getExpenseAccounts() {
+    const tenantId = await requireTenant();
+    return db.query.accounts.findMany({
+        where: (accounts, { eq, and }) => and(
+            eq(accounts.tenantId, tenantId),
+            eq(accounts.type, 'expense'),
+            eq(accounts.isActive, true)
+        )
+    });
+}
+
+const expenseSchema = z.object({
+    accountId: z.number(),
+    amount: z.number().positive(),
+    date: z.string(),
+    description: z.string().optional()
+});
+
+export async function createExpense(input: z.infer<typeof expenseSchema>) {
+    const tenantId = await requireTenant();
+
+    // 1. Find Cash/Treasury Account (Credit side)
+    // Try to find an account with 'cash' or 'treasury' or 'خزينة' in name, or just pick first Asset
+    const cashAccount = await db.query.accounts.findFirst({
+        where: (accounts, { eq, and, or, like }) => and(
+            eq(accounts.tenantId, tenantId),
+            eq(accounts.type, 'asset'),
+            or(
+                like(accounts.name, '%cash%'),
+                like(accounts.name, '%khazna%'),
+                like(accounts.name, '%خزينة%'),
+                like(accounts.name, '%نقدية%')
+            )
+        )
+    });
+
+    if (!cashAccount) {
+        return { success: false, message: "لم يتم العثور على حساب خزينة (نقدية) للصرف منه." };
+    }
+
+    // 2. Create Journal Entry
+    // Debit: Expense Account
+    // Credit: Cash Account
+    return createJournalEntry({
+        date: input.date,
+        description: input.description || "تسجيل مصروف",
+        reference: `EXP-${Date.now()}`,
+        currency: "EGP",
+        lines: [
+            {
+                accountId: input.accountId, // Expense
+                debit: input.amount,
+                credit: 0,
+                description: input.description
+            },
+            {
+                accountId: cashAccount.id, // Cash
+                debit: 0,
+                credit: input.amount,
+                description: "صرف نقدية"
+            }
+        ]
+    });
+
+}
+
+export async function getExpensesList(limit = 20) {
+    const tenantId = await requireTenant();
+
+
+    // Better Approach: Use db.select with joins
+    const results = await db.select({
+        id: journalLines.id,
+        date: journalEntries.transactionDate,
+        accountName: accounts.name,
+        amount: journalLines.debit,
+        description: journalLines.description,
+        entryNumber: journalEntries.entryNumber,
+        reference: journalEntries.reference
+    })
+        .from(journalLines)
+        .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+        .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+        .where(and(
+            eq(accounts.tenantId, tenantId),
+            eq(accounts.type, 'expense')
+        ))
+        .orderBy(sql`${journalEntries.transactionDate} DESC`, sql`${journalEntries.createdAt} DESC`)
+        .limit(limit);
+
+    // Calculate Monthly Total
+    const now = new Date();
+    // Start of current month in YYYY-MM-DD
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString().split('T')[0];
+
+    const monthlySum = await db.select({
+        total: sql<number>`sum(${journalLines.debit})`
+    })
+        .from(journalLines)
+        .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+        .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+        .where(and(
+            eq(accounts.tenantId, tenantId),
+            eq(accounts.type, 'expense'),
+            gte(journalEntries.transactionDate, startOfMonth)
+        ));
+
+    return {
+        expenses: results.map(r => ({
+            ...r,
+            amount: Number(r.amount)
+        })),
+        monthlyTotal: Number(monthlySum[0]?.total || 0)
+    };
+}
+
