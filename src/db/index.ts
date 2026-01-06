@@ -5,11 +5,11 @@ import * as schema from './schema';
 import * as dotenv from "dotenv";
 import path from 'path';
 import fs from 'fs';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
+import pg from 'pg';
 
 dotenv.config();
-
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
 
 // Determine App Mode
 const mode = process.env.NEXT_PUBLIC_APP_MODE || 'web';
@@ -58,11 +58,24 @@ if (mode === 'desktop') {
 
 } else if (process.env.POSTGRES_URL) {
     console.log("[DB] Initializing CLOUD (See Vercel) Mode with Postgres...");
-    // Use connection pool for Vercel
     const pool = new pg.Pool({
         connectionString: process.env.POSTGRES_URL,
     });
     dbInstance = drizzlePg(pool, { schema });
+
+    // Auto-Migrate for Vercel
+    // Using a self-executing async function to safely run await
+    (async () => {
+        try {
+            console.log("Running PG Migrations...");
+            // Vercel puts files in var/task/... so relative path 'drizzle' usually works if included in 'files' or 'assets'
+            await migratePg(dbInstance, { migrationsFolder: 'drizzle' });
+            console.log("✅ [DB] PG Migrations applied!");
+        } catch (e) {
+            console.error("❌ [DB] PG Migration failed/skipped:", e);
+        }
+    })();
+
 } else {
     // Local Web Dev or fallback
     console.log("[DB] Initializing Dev Mode with local SQLite...");
