@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { Dictionary } from "@/lib/i18n-server";
-import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet, Truck } from "lucide-react";
 import { logout } from "@/features/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -72,6 +72,7 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                         <SidebarItem href="/dashboard" icon={<LayoutDashboard size={20} />} label={dict.Sidebar.Dashboard} />
                         <SidebarItem href="/dashboard/accounts" icon={<FolderTree size={20} />} label={dict.Sidebar.ChartOfAccounts} />
                         <SidebarItem href="/dashboard/inventory" icon={<Package size={20} />} label={dict.Sidebar.Inventory} />
+                        <SidebarItem href="/dashboard/suppliers" icon={<Truck size={20} />} label="الموردين" />
                         <SidebarItem href="/dashboard/customers" icon={<Users size={20} />} label={dict.Sidebar.Customers} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>

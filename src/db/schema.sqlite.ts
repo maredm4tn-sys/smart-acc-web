@@ -163,6 +163,27 @@ export const products = sqliteTable('products', {
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 
+// --- Suppliers ---
+export const suppliers = sqliteTable('suppliers', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    companyName: text('company_name'),
+    email: text('email'),
+    phone: text('phone'),
+    address: text('address'),
+    taxId: text('tax_id'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+});
+
+export const suppliersRelations = relations(suppliers, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [suppliers.tenantId],
+        references: [tenants.id],
+    }),
+}));
+
+
 // --- Customers ---
 export const customers = sqliteTable('customers', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),

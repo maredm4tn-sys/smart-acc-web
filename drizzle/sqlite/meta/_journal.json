@@ -15,6 +15,13 @@
       "when": 1767653939242,
       "tag": "0001_needy_ultron",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767716050049,
+      "tag": "0002_reflective_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

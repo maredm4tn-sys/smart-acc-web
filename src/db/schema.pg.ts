@@ -169,6 +169,26 @@ export const products = pgTable('products', {
     };
 });
 
+// --- Suppliers ---
+export const suppliers = pgTable('suppliers', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    companyName: text('company_name'),
+    email: text('email'),
+    phone: text('phone'),
+    address: text('address'),
+    taxId: text('tax_id'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const suppliersRelations = relations(suppliers, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [suppliers.tenantId],
+        references: [tenants.id],
+    }),
+}));
+
 // --- Customers ---
 export const customers = pgTable('customers', {
     id: serial('id').primaryKey(),
