@@ -57,12 +57,15 @@ if (mode === 'desktop') {
     }
 
 
-} else if (process.env.POSTGRES_URL) {
+} else if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
     console.log("[DB] Initializing CLOUD (See Vercel) Mode with Postgres...");
     console.log("🚀 Triggering Vercel Deployment with Database Connection...");
 
+    // Choose the available connection string
+    const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+
     const pool = new pg.Pool({
-        connectionString: process.env.POSTGRES_URL,
+        connectionString: connectionString,
     });
     dbInstance = drizzlePg(pool, { schema });
 
