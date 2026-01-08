@@ -8,9 +8,10 @@ import { getProducts } from "@/features/inventory/queries";
 
 export const dynamic = 'force-dynamic';
 
-export default async function CreatePurchasePage({ searchParams }: { searchParams: { productId?: string } }) {
+export default async function CreatePurchasePage({ searchParams }: { searchParams: Promise<{ productId?: string }> }) {
     const dict = await getDictionary();
-    const productId = searchParams?.productId;
+    const resolvedParams = await searchParams;
+    const productId = resolvedParams?.productId;
 
     const rawProducts = await getProducts();
     const productsList = rawProducts.map(p => ({
