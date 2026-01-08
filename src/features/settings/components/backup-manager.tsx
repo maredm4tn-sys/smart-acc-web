@@ -180,15 +180,15 @@ export function BackupManager() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>{dict.Settings.FactoryReset?.DialogTitle || "Are you sure?"}</AlertDialogTitle>
+                                <AlertDialogTitle>{dict.Settings.FactoryReset?.SecurityCheck || "Are you sure?"}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    {dict.Settings.FactoryReset?.DialogDesc || "This will wipe all data."}
+                                    {dict.Settings.FactoryReset?.SecurityCheckDesc || "This will wipe all data."}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>{dict.Settings.FactoryReset?.Cancel || "Cancel"}</AlertDialogCancel>
+                                <AlertDialogCancel>{dict.Common.Cancel || "Cancel"}</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleFactoryReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    {dict.Settings.FactoryReset?.Confirm || "Yes, Delete Everything"}
+                                    {dict.Settings.FactoryReset?.ConfirmButton || "Yes, Delete Everything"}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
