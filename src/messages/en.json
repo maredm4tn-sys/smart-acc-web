@@ -329,25 +329,6 @@
                 "MinLines": "Entry must have at least 2 lines"
             }
         },
-        "Form": {
-            "Date": "Entry Date",
-            "Description": "Entry Description",
-            "Account": "Account",
-            "SelectAccount": "Select Account...",
-            "Debit": "Debit",
-            "Credit": "Credit",
-            "AddLine": "Add Line",
-            "TotalDebit": "Total Debit",
-            "TotalCredit": "Total Credit",
-            "Difference": "Difference",
-            "Save": "Post Entry",
-            "Errors": {
-                "DateRequired": "Date is required",
-                "DescOptional": "Brief description...",
-                "Unbalanced": "Entry is unbalanced (Debit != Credit)",
-                "MinLines": "Entry must have at least 2 lines"
-            }
-        },
         "Errors": {
             "NotBalanced": "Journal entry must be balanced"
         },
@@ -394,9 +375,6 @@
                 "Tax": "Tax (14%)",
                 "GrandTotal": "Grand Total",
                 "Submit": "Issue Invoice",
-                "PaidAmount": "Paid Amount",
-                "RemainingDue": "Remaining Due",
-                "PrintButton": "Print",
                 "PaidAmount": "Paid Amount",
                 "RemainingDue": "Remaining Due",
                 "Print": "Print",
@@ -470,7 +448,11 @@
             "Today": "Today's Sales",
             "Month": "Monthly Sales",
             "Year": "Yearly Sales",
-            "InvoiceCount": "Invoices"
+            "InvoiceCount": "Invoices",
+            "CustomerDebts": "Customer Debts (Receivables)",
+            "SupplierDebts": "Supplier Debts (Payables)",
+            "CustomerDebtsDesc": "Total uncollected amounts from credit sales",
+            "SupplierDebtsDesc": "Total unpaid amounts for credit purchases"
         },
         "InventoryReport": {
             "Title": "Inventory Report",
