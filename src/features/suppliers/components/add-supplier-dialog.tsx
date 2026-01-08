@@ -56,7 +56,7 @@ export function AddSupplierDialog() {
                 setOpen(false);
                 form.reset();
             } else {
-                toast.error(result.error || dict.Suppliers.AddDialog.Error);
+                toast.error(result.message || dict.Suppliers.AddDialog.Error);
             }
         });
     }

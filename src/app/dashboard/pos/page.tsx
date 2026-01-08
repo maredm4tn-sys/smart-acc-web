@@ -221,7 +221,7 @@ export default function POSPage() {
 
                 clearCart();
             } else {
-                toast.error("فشل في حفظ الفاتورة: " + (result.message || result.error || "خطأ غير معروف"));
+                toast.error("فشل في حفظ الفاتورة: " + (result.message || "خطأ غير معروف"));
             }
         } catch (e) {
             console.error(e);

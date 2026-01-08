@@ -50,7 +50,7 @@ export async function createSupplier(data: z.infer<typeof supplierSchema>) {
 
     const validation = supplierSchema.safeParse(data);
     if (!validation.success) {
-        return { error: validation.error.flatten().fieldErrors };
+        return { success: false, message: "خطأ في البيانات" };
     }
 
     try {
@@ -59,13 +59,15 @@ export async function createSupplier(data: z.infer<typeof supplierSchema>) {
             ...data
         });
         revalidatePath("/dashboard/suppliers");
-        return { success: true };
+        return { success: true, message: "تمت الإضافة بنجاح" };
     } catch (e: any) {
         console.error("DEBUG: createSupplier Failed", e);
-        // Return more detailed error for debugging online
         const detail = e.detail ? ` - ${e.detail}` : "";
         const code = e.code ? ` (Code: ${e.code})` : "";
-        return { error: `فشل الحفظ: ${e.message || "خطأ في قاعدة البيانات"}${detail}${code}` };
+        return {
+            success: false,
+            message: `فشل الحفظ: ${e.message || "خطأ في قاعدة البيانات"}${detail}${code}`
+        };
     }
 }
 
@@ -75,7 +77,7 @@ export async function updateSupplier(id: any, data: z.infer<typeof supplierSchem
 
     const validation = supplierSchema.safeParse(data);
     if (!validation.success) {
-        return { error: validation.error.flatten().fieldErrors };
+        return { success: false, message: "خطأ في البيانات" };
     }
 
     try {
@@ -84,10 +86,15 @@ export async function updateSupplier(id: any, data: z.infer<typeof supplierSchem
             .where(and(eq(suppliers.id, Number(id)), eq(suppliers.tenantId, session.tenantId)));
 
         revalidatePath("/dashboard/suppliers");
-        return { success: true };
+        return { success: true, message: "تم التعديل بنجاح" };
     } catch (e: any) {
         console.error("DEBUG: updateSupplier Failed", e);
-        return { error: `فشل التعديل: ${e.message || "خطأ غير معروف"}` };
+        const detail = e.detail ? ` - ${e.detail}` : "";
+        const code = e.code ? ` (Code: ${e.code})` : "";
+        return {
+            success: false,
+            message: `فشل التعديل: ${e.message || "خطأ غير معروف"}${detail}${code}`
+        };
     }
 }
 
@@ -99,8 +106,8 @@ export async function deleteSupplier(id: number) {
         await db.delete(suppliers)
             .where(and(eq(suppliers.id, id), eq(suppliers.tenantId, session.tenantId)));
         revalidatePath("/dashboard/suppliers");
-        return { success: true };
-    } catch (e) {
-        return { error: "Failed to delete supplier" };
+        return { success: true, message: "تم الحذف بنجاح" };
+    } catch (e: any) {
+        return { success: false, message: "فشل حذف المورد: " + (e.message || "خطأ غير معروف") };
     }
 }
