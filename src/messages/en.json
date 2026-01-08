@@ -711,10 +711,23 @@
             "InvoiceNo": "Invoice No",
             "Supplier": "Supplier",
             "Date": "Date",
-            "Amount": "Amount",
+            "Total": "Total",
+            "PaidAmount": "Paid",
+            "Balance": "Balance",
             "Status": "Status",
             "Actions": "Actions",
-            "NoInvoices": "No invoices found"
+            "NoInvoices": "No invoices found",
+            "StatusLabels": {
+                "Paid": "Paid",
+                "Unpaid": "Unpaid",
+                "Partial": "Partial"
+            },
+            "Edit": "Edit",
+            "Return": "Return"
+        },
+        "Messages": {
+            "Success": "Purchase invoice saved successfully",
+            "UpdateSuccess": "Invoice updated successfully"
         }
     },
     "Vouchers": {
