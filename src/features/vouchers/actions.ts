@@ -155,13 +155,22 @@ async function getOrCreateSpecificAccount(tenantId: string, name: string, codePr
 }
 
 export async function getVouchers() {
-    const tenantId = await requireTenant();
-    return db.query.vouchers.findMany({
-        where: eq(vouchers.tenantId, tenantId),
-        orderBy: [desc(vouchers.createdAt)],
-        with: {
-            createdByUser: true,
-            account: true
-        }
-    });
+    try {
+        const tenantId = await requireTenant();
+        console.log("Fetching vouchers for tenant:", tenantId);
+
+        const data = await db.query.vouchers.findMany({
+            where: eq(vouchers.tenantId, tenantId),
+            orderBy: [desc(vouchers.createdAt)],
+            with: {
+                createdByUser: true,
+                account: true
+            }
+        });
+        return data || [];
+    } catch (e: any) {
+        console.error("DEBUG: getVouchers Failed", e);
+        // Return empty instead of crashing the Page
+        return [];
+    }
 }

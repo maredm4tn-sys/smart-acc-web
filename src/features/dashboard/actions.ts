@@ -34,7 +34,7 @@ export async function getDashboardStats() {
             overdueInvoices,
             duePurchases
         ] = await Promise.all([
-            db.select({ value: sum(invoices.totalAmount) }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
+            db.select({ value: sql`SUM(${castNum(invoices.totalAmount)})` }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(accounts).where(eq(accounts.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),

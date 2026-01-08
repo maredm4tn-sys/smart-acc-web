@@ -18,25 +18,30 @@ const supplierSchema = z.object({
 });
 
 export async function getSuppliers(search?: string) {
-    const session = await getSession();
-    if (!session?.tenantId) return [];
+    try {
+        const session = await getSession();
+        if (!session?.tenantId) return [];
 
-    let whereClause = eq(suppliers.tenantId, session.tenantId);
+        let whereClause = eq(suppliers.tenantId, session.tenantId);
 
-    if (search) {
-        whereClause = and(
-            whereClause,
-            or(
-                like(suppliers.name, `%${search}%`),
-                like(suppliers.phone, `%${search}%`),
-                like(suppliers.companyName, `%${search}%`)
-            )
-        ) as any;
+        if (search) {
+            whereClause = and(
+                whereClause,
+                or(
+                    like(suppliers.name, `%${search}%`),
+                    like(suppliers.phone, `%${search}%`),
+                    like(suppliers.companyName, `%${search}%`)
+                )
+            ) as any;
+        }
+
+        return await db.select().from(suppliers)
+            .where(whereClause)
+            .orderBy(desc(suppliers.createdAt));
+    } catch (e) {
+        console.error("DEBUG: getSuppliers Failed", e);
+        return [];
     }
-
-    return await db.select().from(suppliers)
-        .where(whereClause)
-        .orderBy(desc(suppliers.createdAt));
 }
 
 export async function createSupplier(data: z.infer<typeof supplierSchema>) {

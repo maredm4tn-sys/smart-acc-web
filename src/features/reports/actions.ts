@@ -12,12 +12,15 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
     const tenantId = session?.tenantId || await getActiveTenantId();
     if (!tenantId) throw new Error("No tenant found");
 
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
     // 2. Fetch Revenue
     // Revenue = Sum(Credit) - Sum(Debit) WHERE Account.Type = 'revenue' AND Date in Range
     const revenueResult = await db
         .select({
-            totalCredit: sql<number>`sum(${journalLines.credit})`,
-            totalDebit: sql<number>`sum(${journalLines.debit})`,
+            totalCredit: sql<number>`sum(${castNum(journalLines.credit)})`,
+            totalDebit: sql<number>`sum(${castNum(journalLines.debit)})`,
         })
         .from(journalLines)
         .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
@@ -44,8 +47,8 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
     // Expenses = Sum(Debit) - Sum(Credit) WHERE Account.Type = 'expense' AND Date in Range
     const expenseResult = await db
         .select({
-            totalCredit: sql<number>`sum(${journalLines.credit})`,
-            totalDebit: sql<number>`sum(${journalLines.debit})`,
+            totalCredit: sql<number>`sum(${castNum(journalLines.credit)})`,
+            totalDebit: sql<number>`sum(${castNum(journalLines.debit)})`,
         })
         .from(journalLines)
         .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
@@ -138,13 +141,14 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
         value: (Number(item.totalCredit) || 0) - (Number(item.totalDebit) || 0)
     })).filter(item => item.value > 0);
 
-    try {
-        const fs = await import('fs');
-        fs.writeFileSync('debug_report_data.json', JSON.stringify({
-            expenses: formattedExpenses.slice(0, 5),
-            revenue: formattedRevenue.slice(0, 5)
-        }, null, 2));
-    } catch (e) { console.error("Debug Write Failed", e); }
+    // Debug logging removed for production safety
+    // try {
+    //     const fs = await import('fs');
+    //     fs.writeFileSync('debug_report_data.json', JSON.stringify({
+    //         expenses: formattedExpenses.slice(0, 5),
+    //         revenue: formattedRevenue.slice(0, 5)
+    //     }, null, 2));
+    // } catch (e) { console.error("Debug Write Failed", e); }
 
     return {
         totalRevenue,
@@ -247,69 +251,74 @@ export async function getSalesSummary() {
         return result[0] || { total: 0, count: 0 };
     };
 
-    // Parallel Fetching for all dashboard metrics
-    const [
-        daily,
-        monthly,
-        yearly,
-        customerDebtsRes,
-        supplierDebtsRes,
-        productsCount,
-        customersCount,
-        suppliersCount,
-        cashBalanceRes,
-        vatCollectedRes,
-        vatPaidRes,
-        inventoryItems
-    ] = await Promise.all([
-        getSum(gte(invoices.issueDate, startOfDay)),
-        getSum(gte(invoices.issueDate, startOfMonth)),
-        getSum(gte(invoices.issueDate, startOfYear)),
-        db.select({
-            total: sql<number>`sum(${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)})`
-        }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
-        db.select({
-            total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)})`
-        }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
-        db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.tenantId, tenantId)),
-        db.select({ count: sql<number>`count(*)` }).from(customers).where(eq(customers.tenantId, tenantId)),
-        db.select({ count: sql<number>`count(*)` }).from(suppliers).where(eq(suppliers.tenantId, tenantId)),
-        db.select({
-            balance: sql<number>`sum(${journalLines.debit}) - sum(${journalLines.credit})`
-        }).from(journalLines).innerJoin(accounts, eq(journalLines.accountId, accounts.id)).where(
-            and(
-                eq(accounts.tenantId, tenantId),
-                or(like(accounts.name, '%نقدية%'), like(accounts.name, '%خزينة%'), like(accounts.name, '%Cash%'))
-            )
-        ),
-        db.select({
-            total: sql<number>`sum(${castNum(invoices.totalAmount)} * 0.14 / 1.14)`
-        }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
-        db.select({
-            total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} * 0.14 / 1.14)`
-        }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
-        db.select({
-            stock: products.stockQuantity,
-            price: products.buyPrice
-        }).from(products).where(and(eq(products.tenantId, tenantId), eq(products.type, 'goods')))
-    ]);
+    try {
+        // Parallel Fetching for all dashboard metrics
+        const [
+            daily,
+            monthly,
+            yearly,
+            customerDebtsRes,
+            supplierDebtsRes,
+            productsCount,
+            customersCount,
+            suppliersCount,
+            cashBalanceRes,
+            vatCollectedRes,
+            vatPaidRes,
+            inventoryItems
+        ] = await Promise.all([
+            getSum(gte(invoices.issueDate, startOfDay)),
+            getSum(gte(invoices.issueDate, startOfMonth)),
+            getSum(gte(invoices.issueDate, startOfYear)),
+            db.select({
+                total: sql<number>`sum(${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)})`
+            }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
+            db.select({
+                total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)})`
+            }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
+            db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.tenantId, tenantId)),
+            db.select({ count: sql<number>`count(*)` }).from(customers).where(eq(customers.tenantId, tenantId)),
+            db.select({ count: sql<number>`count(*)` }).from(suppliers).where(eq(suppliers.tenantId, tenantId)),
+            db.select({
+                balance: sql<number>`sum(${castNum(journalLines.debit)}) - sum(${castNum(journalLines.credit)})`
+            }).from(journalLines).innerJoin(accounts, eq(journalLines.accountId, accounts.id)).where(
+                and(
+                    eq(accounts.tenantId, tenantId),
+                    or(like(accounts.name, '%نقدية%'), like(accounts.name, '%خزينة%'), like(accounts.name, '%Cash%'))
+                )
+            ),
+            db.select({
+                total: sql<number>`sum(${castNum(invoices.totalAmount)} * 0.14 / 1.14)`
+            }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
+            db.select({
+                total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} * 0.14 / 1.14)`
+            }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
+            db.select({
+                stock: products.stockQuantity,
+                price: products.buyPrice
+            }).from(products).where(and(eq(products.tenantId, tenantId), eq(products.type, 'goods')))
+        ]);
 
-    const totalInventoryValue = inventoryItems.reduce((acc, item) => acc + (Number(item.stock || 0) * Number(item.price || 0)), 0);
+        const totalInventoryValue = inventoryItems.reduce((acc, item) => acc + (Number(item.stock || 0) * Number(item.price || 0)), 0);
 
-    return {
-        daily: { total: Number(daily.total || 0), count: daily.count },
-        monthly: { total: Number(monthly.total || 0), count: monthly.count },
-        yearly: { total: Number(yearly.total || 0), count: yearly.count },
-        customerDebts: Number(customerDebtsRes[0]?.total || 0),
-        supplierDebts: Number(supplierDebtsRes[0]?.total || 0),
-        productsCount: productsCount[0]?.count || 0,
-        customersCount: customersCount[0]?.count || 0,
-        suppliersCount: suppliersCount[0]?.count || 0,
-        cashBalance: Number(cashBalanceRes[0]?.balance || 0),
-        vatCollected: Number(vatCollectedRes[0]?.total || 0),
-        vatPaid: Number(vatPaidRes[0]?.total || 0),
-        inventoryValue: totalInventoryValue,
-    };
+        return {
+            daily: { total: Number(daily.total || 0), count: daily.count },
+            monthly: { total: Number(monthly.total || 0), count: monthly.count },
+            yearly: { total: Number(yearly.total || 0), count: yearly.count },
+            customerDebts: Number(customerDebtsRes[0]?.total || 0),
+            supplierDebts: Number(supplierDebtsRes[0]?.total || 0),
+            productsCount: productsCount[0]?.count || 0,
+            customersCount: customersCount[0]?.count || 0,
+            suppliersCount: suppliersCount[0]?.count || 0,
+            cashBalance: Number(cashBalanceRes[0]?.balance || 0),
+            vatCollected: Number(vatCollectedRes[0]?.total || 0),
+            vatPaid: Number(vatPaidRes[0]?.total || 0),
+            inventoryValue: totalInventoryValue,
+        };
+    } catch (e) {
+        console.error("DEBUG: getSalesSummary Failed", e);
+        return null;
+    }
 }
 
 export async function getInventoryReport() {
