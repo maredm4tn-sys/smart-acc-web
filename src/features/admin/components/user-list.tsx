@@ -48,10 +48,10 @@ export function UserList({ users }: UserListProps) {
             if (result.error) {
                 toast.error(result.error);
             } else {
-                toast.success(`User status updated to ${result.newStatus}`);
+                toast.success(dict.Common.StatusUpdated.replace("{status}", result.newStatus));
             }
         } catch (e) {
-            toast.error("Failed to toggle status");
+            toast.error(dict.Common.Error || "Failed to toggle status");
         }
     };
 
@@ -62,13 +62,13 @@ export function UserList({ users }: UserListProps) {
             if (result.error) {
                 toast.error(result.error);
             } else {
-                toast.success("Password reset successfully");
+                toast.success(dict.Common.Success || "Password reset successfully");
                 setIsPasswordDialogOpen(false);
                 setPassword("");
                 setSelectedUser(null);
             }
         } catch (e) {
-            toast.error("Failed to reset password");
+            toast.error(dict.Common.Error || "Failed to reset password");
         }
     };
 
@@ -83,12 +83,12 @@ export function UserList({ users }: UserListProps) {
             if (result.error) {
                 toast.error(result.error);
             } else {
-                toast.success("Subscriber created successfully");
+                toast.success(dict.Common.Success || "Subscriber created successfully");
                 setIsCreateDialogOpen(false);
                 setNewSubscriber({ organizationName: "", fullName: "", username: "", email: "", password: "" });
             }
         } catch (e) {
-            toast.error("Failed to create subscriber");
+            toast.error(dict.Common.Error || "Failed to create subscriber");
         }
     };
 
@@ -99,12 +99,12 @@ export function UserList({ users }: UserListProps) {
             if (result.error) {
                 toast.error(result.error);
             } else {
-                toast.success("Subscriber deleted successfully");
+                toast.success(dict.Common.Success || "Subscriber deleted successfully");
                 setIsDeleteDialogOpen(false);
                 setSelectedUser(null);
             }
         } catch (e) {
-            toast.error("Failed to delete subscriber");
+            toast.error(dict.Common.Error || "Failed to delete subscriber");
         }
     };
 
@@ -143,7 +143,7 @@ export function UserList({ users }: UserListProps) {
                         {users.map((user) => (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium text-start">
-                                    {user.organizationName || "N/A"}
+                                    {user.organizationName || dict.Common.NA}
                                 </TableCell>
                                 <TableCell className="text-start">
                                     <div className="font-medium">{user.fullName}</div>
@@ -159,7 +159,7 @@ export function UserList({ users }: UserListProps) {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-start">
-                                    {user.isActive ? <Badge variant="default" className="bg-green-600">Yes</Badge> : <Badge variant="secondary">No</Badge>}
+                                    {user.isActive ? <Badge variant="default" className="bg-green-600">{dict.Common.Yes}</Badge> : <Badge variant="secondary">{dict.Common.No}</Badge>}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <div className="flex justify-center">

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { invoices, invoiceItems, products, journalEntries, journalLines, accounts } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
 import { getSession } from "@/features/auth/actions";
@@ -122,7 +122,7 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             await db.update(products)
                 .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
-                .where(eq(products.id, item.productId));
+                .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
         }
 
         // 3. Auto-Create Journal Entry
@@ -406,7 +406,7 @@ export async function deleteInvoice(id: number) {
                 if (item.productId) {
                     await tx.update(products)
                         .set({ stockQuantity: sql`${castNum(products.stockQuantity)} + ${item.quantity}` })
-                        .where(eq(products.id, item.productId)); // Product logic should ideally also filter by tenant but existing code relies on ID uniqueness. Good for now.
+                        .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
                 }
             }
 
@@ -508,7 +508,7 @@ export async function createReturnInvoice(inputData: z.infer<typeof createReturn
             const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             await db.update(products)
                 .set({ stockQuantity: sql`${castNum(products.stockQuantity)} + ${item.quantity}` })
-                .where(eq(products.id, item.productId));
+                .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
         }
 
         // 4. Accounting Entry (Reverse of Sale)

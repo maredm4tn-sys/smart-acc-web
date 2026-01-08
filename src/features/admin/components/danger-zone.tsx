@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Trash2 } from "lucide-react";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 export function DangerZone() {
+    const { dict } = useTranslation() as any;
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState("");
@@ -21,7 +23,7 @@ export function DangerZone() {
 
     const handleFactoryReset = async () => {
         if (password !== SPECIAL_PASSWORD) {
-            setError("كلمة المرور غير صحيحة");
+            setError(dict.Settings.FactoryReset.InvalidPassword);
             return;
         }
 
@@ -31,13 +33,13 @@ export function DangerZone() {
             if (result.error) {
                 toast.error(result.error);
             } else {
-                toast.success("تمت إعادة ضبط المصنع بنجاح");
+                toast.success(dict.Settings.FactoryReset.Success);
                 setIsOpen(false);
                 // Reload to reflect empty state
                 window.location.reload();
             }
         } catch (e) {
-            toast.error("حدث خطأ أثناء إعادة الضبط");
+            toast.error(dict.Settings.FactoryReset.Error);
         } finally {
             setLoading(false);
         }
@@ -48,21 +50,20 @@ export function DangerZone() {
             <CardHeader>
                 <CardTitle className="text-destructive flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5" />
-                    إعادة ضبط المصنع ومسح البيانات
+                    {dict.Settings.FactoryReset.Title}
                 </CardTitle>
                 <CardDescription>
-                    تتيح لك هذه المنطقة إجراء عمليات تدميرية مثل إعادة تعيين التطبيق إلى حالته الأولية.
+                    {dict.Settings.FactoryReset.Description}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg bg-destructive/5 border-destructive/20 gap-4">
                     <div className="space-y-1">
                         <h4 className="font-semibold text-destructive flex items-center gap-2">
-                            إعادة ضبط المصنع بالكامل
+                            {dict.Settings.FactoryReset.FullReset}
                         </h4>
                         <p className="text-sm text-muted-foreground max-w-xl">
-                            حذف جميع بيانات العمل بشكل دائم بما في ذلك الفواتير، العملاء، المنتجات، والعمليات المالية.
-                            <strong> حسابات المستخدمين والإعدادات ستبقى كما هي.</strong>
+                            {dict.Settings.FactoryReset.FullResetDesc}
                         </p>
                     </div>
                     <Dialog open={isOpen} onOpenChange={(val) => {
@@ -74,29 +75,29 @@ export function DangerZone() {
                     }}>
                         <DialogTrigger asChild>
                             <Button variant="destructive" className="shrink-0 w-full sm:w-auto">
-                                <Trash2 className="h-4 w-4 ml-2" />
-                                مسح كافة البيانات
+                                <Trash2 className="h-4 w-4 mx-2" />
+                                {dict.Settings.FactoryReset.Button}
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle className="text-destructive flex items-center gap-2 text-right">
+                                <DialogTitle className="text-destructive flex items-center gap-2">
                                     <AlertTriangle className="h-5 w-5" />
-                                    مطلوب فحص أمني
+                                    {dict.Settings.FactoryReset.SecurityCheck}
                                 </DialogTitle>
-                                <DialogDescription className="text-right">
-                                    هذا الإجراء <strong>غير قابل للتراجع</strong>. يرجى إدخال كلمة مرور الأمان لتأكيد حذف جميع البيانات.
+                                <DialogDescription>
+                                    {dict.Settings.FactoryReset.SecurityCheckDesc}
                                 </DialogDescription>
                             </DialogHeader>
 
-                            <div className="space-y-4 py-4 text-right" dir="rtl">
+                            <div className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">كلمة مرور الأمان</Label>
+                                    <Label htmlFor="password">{dict.Settings.FactoryReset.PasswordLabel}</Label>
                                     <div className="relative">
                                         <Input
                                             id="password"
                                             type="password"
-                                            placeholder="أدخل كلمة المرور للتأكيد"
+                                            placeholder={dict.Settings.FactoryReset.PasswordPlaceholder}
                                             value={password}
                                             onChange={(e) => {
                                                 setPassword(e.target.value);
@@ -106,18 +107,18 @@ export function DangerZone() {
                                         />
                                     </div>
                                     {error && <p className="text-sm text-destructive">{error}</p>}
-                                    <p className="text-xs text-muted-foreground">كلمة المرور الافتراضية هي 0000</p>
+                                    <p className="text-xs text-muted-foreground">{dict.Settings.FactoryReset.DefaultPasswordHint}</p>
                                 </div>
                             </div>
 
                             <DialogFooter className="flex gap-2 sm:justify-start">
-                                <Button variant="outline" onClick={() => setIsOpen(false)}>إلغاء</Button>
+                                <Button variant="outline" onClick={() => setIsOpen(false)}>{dict.Common.Cancel || "Cancel"}</Button>
                                 <Button
                                     variant="destructive"
                                     onClick={handleFactoryReset}
                                     disabled={loading || !password}
                                 >
-                                    {loading ? "جاري مسح البيانات..." : "تأكيد المسح"}
+                                    {loading ? dict.Settings.FactoryReset.Canceling : dict.Settings.FactoryReset.ConfirmButton}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

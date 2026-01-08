@@ -90,14 +90,18 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
             targetAccountId = data.accountId;
             targetDescription = "حساب عام";
         } else if (data.partyType === 'customer' && data.partyId) {
-            const customer = await db.query.customers.findFirst({ where: eq(customers.id, data.partyId) });
+            const customer = await db.query.customers.findFirst({
+                where: (cust, { eq, and }) => and(eq(cust.id, data.partyId!), eq(cust.tenantId, tenantId))
+            });
             if (customer) {
                 const arAccount = await getOrCreateSpecificAccount(tenantId, customer.name, '102', 'asset');
                 targetAccountId = arAccount.id;
                 targetDescription = `العميل: ${customer.name}`;
             }
         } else if (data.partyType === 'supplier' && data.partyId) {
-            const supplier = await db.query.suppliers.findFirst({ where: eq(suppliers.id, data.partyId) });
+            const supplier = await db.query.suppliers.findFirst({
+                where: (supp, { eq, and }) => and(eq(supp.id, data.partyId!), eq(supp.tenantId, tenantId))
+            });
             if (supplier) {
                 const apAccount = await getOrCreateSpecificAccount(tenantId, supplier.name, '201', 'liability');
                 targetAccountId = apAccount.id;

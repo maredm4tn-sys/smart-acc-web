@@ -8,10 +8,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TrendingUp, Package, Loader2 } from "lucide-react";
 import { getAnalyticsData } from "@/features/dashboard/actions";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export function AnalyticsCharts() {
+    const { dict } = useTranslation() as any;
     const { data: analytics, error, isLoading } = useSWR('analytics-data', getAnalyticsData, {
         refreshInterval: 60000 // Refresh every minute
     });
@@ -34,7 +36,7 @@ export function AnalyticsCharts() {
                     <CardHeader className="border-b bg-slate-50/50">
                         <CardTitle className="flex items-center gap-2 text-slate-900 font-black">
                             <Package className="text-blue-600" />
-                            أكثر 5 أصناف مبيعاً (بالكمية)
+                            {dict.Dashboard.TopSelling}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -70,7 +72,7 @@ export function AnalyticsCharts() {
                     <CardHeader className="border-b bg-slate-50/50">
                         <CardTitle className="flex items-center gap-2 text-slate-900 font-black">
                             <TrendingUp className="text-emerald-600" />
-                            مقارنة الأرباح بالمصروفات
+                            {dict.Dashboard.ProfitVsExpense}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -95,7 +97,7 @@ export function AnalyticsCharts() {
                                     />
                                     <Legend verticalAlign="top" height={36} />
                                     <Area
-                                        name="الأرباح"
+                                        name={dict.Dashboard.Profit}
                                         type="monotone"
                                         dataKey="ربح"
                                         stroke="#10b981"
@@ -104,7 +106,7 @@ export function AnalyticsCharts() {
                                         fill="url(#colorProfit)"
                                     />
                                     <Area
-                                        name="المصروفات"
+                                        name={dict.Dashboard.Expenses}
                                         type="monotone"
                                         dataKey="مصروف"
                                         stroke="#ef4444"

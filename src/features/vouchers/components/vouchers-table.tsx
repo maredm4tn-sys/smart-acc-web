@@ -48,7 +48,9 @@ export function VouchersTable({ vouchers }: { vouchers: any[] }) {
                                     </TableCell>
                                     <TableCell>{Number(v.amount).toLocaleString()} EGP</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline">{v.status}</Badge>
+                                        <Badge variant="outline">
+                                            {v.status === 'posted' ? 'مُرحّل' : v.status}
+                                        </Badge>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -67,7 +69,7 @@ export function VouchersTable({ vouchers }: { vouchers: any[] }) {
                                 <p className="text-xs text-gray-500">{v.date}</p>
                             </div>
                             <Badge variant={v.type === 'receipt' ? 'default' : 'secondary'}>
-                                {v.type === 'receipt' ? 'Receipt' : 'Payment'}
+                                {v.type === 'receipt' ? dict.Vouchers.Receipt : dict.Vouchers.Payment}
                             </Badge>
                         </div>
                         <div className="flex justify-between items-center mt-2">
@@ -75,7 +77,9 @@ export function VouchersTable({ vouchers }: { vouchers: any[] }) {
                                 {Number(v.amount).toLocaleString()} EGP
                             </div>
                             <div className="text-xs text-slate-500">
-                                {v.partyType}
+                                {v.partyType === 'customer' && dict.Vouchers.Form.Types.Customer}
+                                {v.partyType === 'supplier' && dict.Vouchers.Form.Types.Supplier}
+                                {v.partyType === 'other' && dict.Vouchers.Form.Types.Other}
                             </div>
                         </div>
                     </div>

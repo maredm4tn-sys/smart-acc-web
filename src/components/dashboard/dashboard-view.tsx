@@ -191,7 +191,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                             {/* Low Stock Alerts */}
                             <div className="space-y-3">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                    <Package size={14} /> متطلبات المخزن
+                                    <Package size={14} /> {dict.Dashboard.InventoryRequirements}
                                 </h4>
                                 {stats.lowStockItems && stats.lowStockItems.length > 0 ? (
                                     stats.lowStockItems.map((item: any) => (
@@ -199,7 +199,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-900">{item.name}</span>
                                                 <span className="text-[10px] text-amber-700 font-bold uppercase tracking-tighter">
-                                                    نقص في المخزون
+                                                    {dict.Dashboard.LowStockAlert}
                                                 </span>
                                             </div>
                                             <div className="text-right">
@@ -209,7 +209,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                     ))
                                 ) : (
                                     <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
-                                        لا توجد نواقص حالياً
+                                        {dict.Dashboard.NoLowStock}
                                     </div>
                                 )}
                             </div>
@@ -217,7 +217,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                             {/* Overdue Customer Invoices */}
                             <div className="space-y-3">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                    <Users size={14} /> مديونيات العملاء
+                                    <Users size={14} /> {dict.Dashboard.CustomerReceivables}
                                 </h4>
                                 {stats.overdueInvoices && stats.overdueInvoices.length > 0 ? (
                                     stats.overdueInvoices.map((inv: any) => (
@@ -225,7 +225,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-900">{inv.customer}</span>
                                                 <span className="text-[10px] text-rose-700 font-bold uppercase tracking-tighter">
-                                                    فاتورة متأخرة
+                                                    {dict.Dashboard.OverdueAlert}
                                                 </span>
                                             </div>
                                             <div className="text-right">
@@ -235,7 +235,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                     ))
                                 ) : (
                                     <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
-                                        جميع المبيعات محصلة بالكامل
+                                        {dict.Dashboard.NoOverdueSales}
                                     </div>
                                 )}
                             </div>
@@ -243,7 +243,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                             {/* Due Supplier Payments */}
                             <div className="space-y-3">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                    <Truck size={14} /> مستحقات الموردين
+                                    <Truck size={14} /> {dict.Dashboard.SupplierPayables}
                                 </h4>
                                 {stats.duePurchases && stats.duePurchases.length > 0 ? (
                                     stats.duePurchases.map((inv: any) => (
@@ -251,7 +251,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-900">{inv.supplier}</span>
                                                 <span className="text-[10px] text-blue-700 font-bold uppercase tracking-tighter">
-                                                    موعد سداد قادم
+                                                    {dict.Dashboard.SupplierDueAlert}
                                                 </span>
                                             </div>
                                             <div className="text-right">
@@ -261,7 +261,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                     ))
                                 ) : (
                                     <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
-                                        لا توجد دفعات مستحقة للموردين
+                                        {dict.Dashboard.NoDuePurchases}
                                     </div>
                                 )}
                             </div>

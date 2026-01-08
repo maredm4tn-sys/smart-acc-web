@@ -12,6 +12,7 @@ import { createInvoice } from "@/features/sales/actions";
 import { getCustomers } from "@/features/customers/actions";
 import { useReactToPrint } from "react-to-print";
 import { PosReceipt, type ReceiptData } from "@/features/sales/components/pos-receipt";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 // --- Types ---
 type Product = {
@@ -32,6 +33,7 @@ type CartItem = Product & {
 // -----------------------------------------------------
 
 export default function POSPage() {
+    const { dict } = useTranslation() as any;
     // --- State ---
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -62,7 +64,7 @@ export default function POSPage() {
                 const custs = await getCustomers();
 
                 // Add "Walk-in Customer" as the first option manually
-                const walkInCustomer = { id: 0, name: "عميل نقدي (Walk-in)" };
+                const walkInCustomer = { id: 0, name: dict.POS.WalkInCustomer };
                 const fullList = [walkInCustomer, ...custs];
 
                 setCustomers(fullList);
@@ -99,7 +101,7 @@ export default function POSPage() {
 
             } catch (e) {
                 console.error("Failed to load POS data", e);
-                toast.error("فشل تحميل البيانات");
+                toast.error(dict.POS.FailedToLoad || "Error loading data");
             } finally {
                 setLoading(false);
             }
@@ -160,7 +162,7 @@ export default function POSPage() {
         if (cart.length === 0) return;
 
         // Find selected customer OR use default Walk-in
-        let customerName = "عميل نقدي";
+        let customerName = dict.POS.WalkInCustomer;
         if (selectedCustomerId !== 0 && selectedCustomerId !== null) {
             const selected = customers.find(c => c.id === selectedCustomerId);
             if (selected) customerName = selected.name;
@@ -191,7 +193,7 @@ export default function POSPage() {
             });
 
             if (result.success) {
-                toast.success(`تم الدفع بنجاح! فاتورة #${result.id}`);
+                toast.success(`${dict.POS.PaymentSuccess} #${result.id}`);
 
                 // Prepare Receipt Data
                 const newReceipt: ReceiptData = {
@@ -221,11 +223,11 @@ export default function POSPage() {
 
                 clearCart();
             } else {
-                toast.error("فشل في حفظ الفاتورة: " + (result.message || "خطأ غير معروف"));
+                toast.error(`${dict.Sales.Invoice.Error}: ` + (result.message || "Unknown error"));
             }
         } catch (e) {
             console.error(e);
-            toast.error("حدث خطأ غير متوقع");
+            toast.error(dict.Common.Error);
         } finally {
             setPaymentLoading(false);
         }
@@ -234,7 +236,7 @@ export default function POSPage() {
     return (
         <div className="flex h-[calc(100vh-80px)] gap-4 p-4 text-slate-800 relative">
             {/* Hidden Receipt Component */}
-            <div style={{ display: "none" }}>
+            <div className="hidden">
                 {/* Only render when data exists to avoid empty prints */}
                 <PosReceipt ref={componentRef} data={receiptData} />
             </div>
@@ -247,7 +249,7 @@ export default function POSPage() {
                         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-xl border-2 border-white"
                         size="lg"
                     >
-                        🖨️ طباعة الفاتورة مرة أخرى
+                        🖨️ {dict.POS.PrintAgain}
                     </Button>
                 </div>
             )}
@@ -258,7 +260,7 @@ export default function POSPage() {
                 <Card className="p-4 flex gap-4 items-center">
                     <Search className="text-gray-400" />
                     <Input
-                        placeholder="بحث عن منتج (الاسم أو الباركود)..."
+                        placeholder={dict.POS.SearchPlaceholder}
                         className="text-lg h-12"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -275,7 +277,7 @@ export default function POSPage() {
                     ) : filteredProducts.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400">
                             <ShoppingBag className="w-12 h-12 mb-2 opacity-20" />
-                            <p>لا توجد منتجات مطابقة</p>
+                            <p>{dict.POS.NoProducts}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -306,22 +308,22 @@ export default function POSPage() {
                 <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
                     <div className="flex items-center gap-2 font-bold text-lg">
                         <ShoppingCart className="w-5 h-5" />
-                        سلة البيع
+                        {dict.POS.Cart}
                     </div>
                     {cart.length > 0 && (
                         <button onClick={clearCart} className="text-red-500 text-xs hover:underline flex items-center gap-1">
                             <Trash2 className="w-3 h-3" />
-                            إفراغ
+                            {dict.POS.Clear}
                         </button>
                     )}
                 </div>
 
                 {/* Customer Select */}
                 <div className="px-4 py-2 border-b bg-white">
-                    <Label htmlFor="customer-select" className="text-xs text-gray-500 mb-1 block">العميل</Label>
+                    <Label htmlFor="customer-select" className="text-xs text-gray-500 mb-1 block">{dict.POS.Customer}</Label>
                     <select
                         id="customer-select"
-                        title="اختر العميل"
+                        title={dict.POS.SelectCustomer}
                         className="w-full text-sm border-gray-200 rounded-md p-2 border focus:ring-1 focus:ring-blue-500 outline-none"
                         value={selectedCustomerId || ''}
                         onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
@@ -337,7 +339,7 @@ export default function POSPage() {
                     {cart.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400">
                             <ShoppingBag className="w-12 h-12 mb-4 opacity-20" />
-                            <p className="text-sm">السلة فارغة</p>
+                            <p className="text-sm">{dict.POS.EmptyCart}</p>
                         </div>
                     ) : (
                         cart.map(item => (
@@ -369,22 +371,22 @@ export default function POSPage() {
                 {/* Footer Totals */}
                 <div className="p-4 bg-gray-50 border-t space-y-2">
                     <div className="flex justify-between text-sm text-gray-500">
-                        <span>المجموع الفرعي</span>
+                        <span>{dict.POS.Subtotal}</span>
                         <span>{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
-                        <span>الضريبة (14%)</span>
+                        <span>{dict.POS.Tax}</span>
                         <span>{tax.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-xl font-bold text-slate-900 pt-2 border-t mt-2">
-                        <span>الإجمالي</span>
+                        <span>{dict.POS.Total}</span>
                         <span>{total.toFixed(2)}</span>
                     </div>
 
                     {/* Auto Print Toggle */}
                     <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg border border-blue-100 mt-2">
                         <label htmlFor="auto-print" className="text-sm font-medium text-blue-900 cursor-pointer select-none">
-                            طباعة الفاتورة تلقائياً
+                            {dict.POS.AutoPrint}
                         </label>
                         <input
                             id="auto-print"
@@ -398,11 +400,17 @@ export default function POSPage() {
                     <Button
                         size="lg"
                         className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white gap-2 font-bold text-lg h-14"
-                        disabled={cart.length === 0 || paymentLoading}
                         onClick={handleCheckout}
+                        disabled={cart.length === 0 || paymentLoading}
                     >
-                        {paymentLoading ? <Loader2 className="animate-spin" /> : <Banknote className="w-6 h-6" />}
-                        {paymentLoading ? "جاري المعالجة..." : "دفع نقدي (Cash)"}
+                        {paymentLoading ? (
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                <CreditCard className="w-6 h-6" />
+                                {dict.POS.PayCash}
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>

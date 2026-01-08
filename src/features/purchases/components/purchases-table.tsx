@@ -45,7 +45,7 @@ export function PurchasesTable({ initialInvoices }: { initialInvoices: any[] }) 
                             <TableHead className="text-right">{dict.Purchases.Table.Total}</TableHead>
                             <TableHead className="text-right">{dict.Purchases.Table.PaidAmount}</TableHead>
                             <TableHead className="text-right">{dict.Purchases.Table.Balance}</TableHead>
-                            <TableHead className="text-right">الإجراءات</TableHead>
+                            <TableHead className="text-right">{dict.Purchases.Table.Actions}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -61,8 +61,8 @@ export function PurchasesTable({ initialInvoices }: { initialInvoices: any[] }) 
                                     <TableCell className="font-medium text-right">
                                         <div className="flex items-center gap-2">
                                             <FileText className="h-4 w-4 text-gray-400" />
-                                            {inv.invoiceNumber === 'DRAFT' ? 'مسودة' : inv.invoiceNumber}
-                                            {inv.type === 'return' && <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none">مرتجع</Badge>}
+                                            {inv.invoiceNumber === 'DRAFT' ? dict.Purchases.Table.Draft : inv.invoiceNumber}
+                                            {inv.type === 'return' && <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none">{dict.Purchases.Table.Returned}</Badge>}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">{inv.supplier ? inv.supplier.name : inv.supplierName}</TableCell>
@@ -132,8 +132,8 @@ export function PurchasesTable({ initialInvoices }: { initialInvoices: any[] }) 
                         <CardHeader className="p-4">
                             <div className="flex justify-between">
                                 <span className="font-bold flex items-center gap-2">
-                                    {inv.invoiceNumber === 'DRAFT' ? 'مسودة' : inv.invoiceNumber}
-                                    {inv.type === 'return' && <Badge className="bg-red-100 text-red-700 scale-75">مرتجع</Badge>}
+                                    {inv.invoiceNumber === 'DRAFT' ? dict.Purchases.Table.Draft : inv.invoiceNumber}
+                                    {inv.type === 'return' && <Badge className="bg-red-100 text-red-700 scale-75">{dict.Purchases.Table.Returned}</Badge>}
                                 </span>
                                 <span className="text-sm">{inv.issueDate}</span>
                             </div>

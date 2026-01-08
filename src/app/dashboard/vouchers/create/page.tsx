@@ -23,7 +23,7 @@ export default async function CreateVoucherPage() {
                 </div>
                 <Link href="/dashboard/vouchers">
                     <Button variant="outline">
-                        {dict.Vouchers?.Form?.Save ? "Back" : "عودة"}
+                        {dict.Common.Back}
                     </Button>
                 </Link>
             </div>

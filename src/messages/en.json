@@ -7,7 +7,15 @@
         "Previous": "Previous",
         "Next": "Next",
         "Page": "Page",
-        "Error": "Error"
+        "Error": "Error",
+        "Success": "Process completed successfully",
+        "Back": "Back",
+        "Cancel": "Cancel",
+        "Confirm": "Confirm",
+        "Yes": "Yes",
+        "No": "No",
+        "NA": "N/A",
+        "StatusUpdated": "Status updated to {status}"
     },
     "Sidebar": {
         "MainMenu": "Main Menu",
@@ -59,7 +67,20 @@
         "Receivables": "Receivables",
         "Account": "Account",
         "CompareLastMonth": "vs Last Month",
-        "Item": "Item"
+        "Item": "Item",
+        "InventoryRequirements": "Inventory Requirements",
+        "LowStockAlert": "Low Stock",
+        "NoLowStock": "No low stock items currently",
+        "CustomerReceivables": "Customer Receivables",
+        "OverdueAlert": "Overdue Invoice",
+        "NoOverdueSales": "All sales fully collected",
+        "SupplierPayables": "Supplier Payables",
+        "SupplierDueAlert": "Upcoming Payment",
+        "NoDuePurchases": "No pending payments to suppliers",
+        "TopSelling": "Top 5 Best Selling Items (by Qty)",
+        "ProfitVsExpense": "Profit vs Expenses Comparison",
+        "Profit": "Profits",
+        "Expenses": "Expenses"
     },
     "Login": {
         "Title": "Login",
@@ -160,7 +181,9 @@
             "Phone": "Phone",
             "TaxId": "Tax ID",
             "Actions": "Actions",
-            "NoSuppliers": "No suppliers found."
+            "NoSuppliers": "No suppliers found.",
+            "Draft": "Draft",
+            "Returned": "Returned"
         },
         "AddDialog": {
             "Button": "Add Supplier",
@@ -448,11 +471,37 @@
             "Today": "Today's Sales",
             "Month": "Monthly Sales",
             "Year": "Yearly Sales",
+            "Invoice": "Invoice",
+            "Deals": "Deals",
             "InvoiceCount": "Invoices",
             "CustomerDebts": "Customer Debts (Receivables)",
             "SupplierDebts": "Supplier Debts (Payables)",
             "CustomerDebtsDesc": "Total uncollected amounts from credit sales",
             "SupplierDebtsDesc": "Total unpaid amounts for credit purchases"
+        },
+        "SubTitle": "Comprehensive Overview of Financial & Tax Performance",
+        "WorkingCapital": "Working Capital",
+        "WorkingCapitalDesc": "Total Liquidity (Cash + Stock + Receivables) - Payables",
+        "TotalCash": "Total Cash",
+        "TotalCashDesc": "Current liquidity in safes and banks",
+        "InventoryValue": "Inventory Value",
+        "InventoryValueDesc": "Current inventory value at purchase price",
+        "FiscalYearTotal": "Fiscal Year Total",
+        "Syncing": "Updating...",
+        "SyncButton": "Update & Sync Data",
+        "Statements": {
+            "Customers": "Customer Account Statement",
+            "Suppliers": "Supplier Account Statement",
+            "Cash": "Treasury Account Statement",
+            "Banks": "Bank Account Statement",
+            "Expenses": "Expense Account Statement",
+            "Receipts": "Receipt Vouchers",
+            "Payments": "Payment Vouchers",
+            "ProfitAndLoss": "Profit and Loss"
+        },
+        "TaxDashboard": {
+            "Title": "VAT Returns (Tax Dashboard)",
+            "Desc": "View tax balance, output, and input details"
         },
         "InventoryReport": {
             "Title": "Inventory Report",
@@ -570,13 +619,21 @@
             }
         },
         "FactoryReset": {
-            "Button": "Factory Reset (Wipe Data)",
-            "DialogTitle": "WARNING: Wipe all data?",
-            "DialogDesc": "This will permanently delete all invoices, customers, suppliers, and products. The app will return to its initial state.",
-            "Confirm": "Yes, Wipe Everything",
-            "Cancel": "Cancel",
+            "Title": "Factory Reset and Wipe Data",
+            "Description": "This area allows you to perform destructive operations such as resetting the application to its initial state.",
+            "Button": "Wipe All Data",
+            "FullReset": "Full Factory Reset",
+            "FullResetDesc": "Permanently delete all business data including invoices, customers, products, and financial transactions. User accounts and settings will remain as they are.",
+            "SecurityCheck": "Security Check Required",
+            "SecurityCheckDesc": "This action is irreversible. Please enter the security password to confirm deleting all data.",
+            "PasswordLabel": "Security Password",
+            "PasswordPlaceholder": "Enter password to confirm",
+            "DefaultPasswordHint": "Default password is 0000",
+            "ConfirmButton": "Confirm Wipe",
+            "Canceling": "Wiping data...",
             "Success": "Factory reset successful",
-            "Error": "Factory reset failed"
+            "Error": "An error occurred during factory reset",
+            "InvalidPassword": "Incorrect password"
         },
         "Form": {
             "Logo": "Company Logo",
@@ -717,6 +774,8 @@
             "Status": "Status",
             "Actions": "Actions",
             "NoInvoices": "No invoices found",
+            "Draft": "Draft",
+            "Returned": "Returned",
             "StatusLabels": {
                 "Paid": "Paid",
                 "Unpaid": "Unpaid",
@@ -762,5 +821,22 @@
                 "Other": "Other (Expense/Income)"
             }
         }
+    },
+    "POS": {
+        "WalkInCustomer": "Walk-in Customer",
+        "Cart": "Sales Cart",
+        "Clear": "Clear",
+        "Customer": "Customer",
+        "SelectCustomer": "Select Customer",
+        "EmptyCart": "Cart is Empty",
+        "Subtotal": "Subtotal",
+        "Tax": "Tax (14%)",
+        "Total": "Total",
+        "AutoPrint": "Auto-print Invoice",
+        "PayCash": "Cash Payment (Cash)",
+        "SearchPlaceholder": "Search product (Name or Barcode)...",
+        "NoProducts": "No matching products",
+        "PrintAgain": "Print Invoice Again",
+        "PaymentSuccess": "Payment successful! Invoice #"
     }
 }
