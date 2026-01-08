@@ -176,7 +176,7 @@ export default function POSPage() {
             // Build the Invoice Payload matching createInvoice signature
             const result = await createInvoice({
                 customerName: customerName,
-                issueDate: new Date().toISOString(),
+                issueDate: new Date().toISOString().split('T')[0],
                 currency: "EGP",
                 exchangeRate: 1,
                 includeTax: true, // Auto-apply tax for POS

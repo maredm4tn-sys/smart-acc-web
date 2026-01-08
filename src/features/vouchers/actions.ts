@@ -34,11 +34,13 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
         const number = `${prefix}-${(count.length + 1).toString().padStart(6, '0')}`;
 
         // 2. Create Voucher
+        const formattedDate = data.date.includes('T') ? data.date.split('T')[0] : data.date;
+
         const [newVoucher] = await db.insert(vouchers).values({
             tenantId,
             voucherNumber: number,
             type: data.type as 'receipt' | 'payment',
-            date: data.date,
+            date: formattedDate,
             amount: data.amount.toString(),
             description: data.description,
             reference: data.reference,

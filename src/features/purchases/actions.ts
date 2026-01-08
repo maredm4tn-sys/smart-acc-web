@@ -57,12 +57,14 @@ export async function createPurchaseInvoice(data: any) {
         // ---------------------------------------------------------
 
         // 1. Create Invoice
+        const formattedDate = data.issueDate.includes('T') ? data.issueDate.split('T')[0] : data.issueDate;
+
         const [invoice] = await db.insert(purchaseInvoices).values({
             tenantId: session.tenantId,
             supplierId: data.supplierId ? parseInt(data.supplierId) : null,
             supplierName: data.supplierName,
             invoiceNumber: data.invoiceNumber || `PUR-${Date.now().toString().slice(-6)}`,
-            issueDate: data.issueDate,
+            issueDate: formattedDate,
             paymentStatus: data.paymentStatus || 'unpaid',
             amountPaid: (data.amountPaid || 0).toString(),
             status: 'posted', // Automatically affect stock

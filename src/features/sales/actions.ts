@@ -83,12 +83,16 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
         else if (paidAmount > 0) paymentStatus = 'partial';
 
         // 1. Create Invoice
+        // Fix for PG: Ensure date is YYYY-MM-DD
+        const formattedDate = data.issueDate.includes('T') ? data.issueDate.split('T')[0] : data.issueDate;
+        const formattedDueDate = data.dueDate ? (data.dueDate.includes('T') ? data.dueDate.split('T')[0] : data.dueDate) : undefined;
+
         const [newInvoice] = await db.insert(invoices).values({
             tenantId: tenantId,
             invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
             customerName: data.customerName,
-            issueDate: data.issueDate,
-            dueDate: data.dueDate,
+            issueDate: formattedDate,
+            dueDate: formattedDueDate,
             currency: data.currency,
             exchangeRate: data.exchangeRate.toString(),
             subtotal: subtotal.toString(),

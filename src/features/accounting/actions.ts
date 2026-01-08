@@ -67,12 +67,15 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
 
         const fyId = fy.id;
 
+        // Fix for PG: truncate ISO date
+        const formattedDate = data.date.includes('T') ? data.date.split('T')[0] : data.date;
+
         // Insert Header
         const [entry] = await queryDb.insert(journalEntries).values({
             tenantId: tenantId,
             fiscalYearId: fyId,
             entryNumber: `JE-${Date.now()}`,
-            transactionDate: data.date,
+            transactionDate: formattedDate,
             description: data.description,
             reference: data.reference,
             currency: data.currency || "EGP",
