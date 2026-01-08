@@ -408,3 +408,12 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
         references: [users.id],
     }),
 }));
+// --- Licensing (Desktop Only) ---
+export const licensing = sqliteTable('licensing', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    trialStartDate: integer('trial_start_date', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+    isActivated: integer('is_activated', { mode: 'boolean' }).default(false).notNull(),
+    activationKey: text('activation_key'),
+    machineId: text('machine_id'),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+});

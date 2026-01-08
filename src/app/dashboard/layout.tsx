@@ -6,6 +6,8 @@ import { getDictionary } from "@/lib/i18n-server";
 
 export const dynamic = 'force-dynamic';
 
+import { ActivationDialog } from "@/features/admin/components/activation-dialog";
+
 export default async function DashboardLayout({
     children,
 }: {
@@ -16,7 +18,7 @@ export default async function DashboardLayout({
     const dict = await getDictionary();
 
     return (
-        <div className="min-h-screen bg-gray-50/50 flex font-sans">
+        <div className="min-h-screen bg-gray-50/50 flex font-sans relative">
             <AppSidebar user={session} dict={dict} />
 
             {/* Main Content */}
@@ -39,6 +41,9 @@ export default async function DashboardLayout({
                 </main>
             </div>
             <MobileNav user={session} />
+
+            {/* Licensing System (Desktop Only) */}
+            <ActivationDialog dict={dict} />
         </div>
     );
 }

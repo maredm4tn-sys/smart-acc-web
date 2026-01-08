@@ -13,6 +13,8 @@ import { getCustomers } from "@/features/customers/actions";
 import { useReactToPrint } from "react-to-print";
 import { PosReceipt, type ReceiptData } from "@/features/sales/components/pos-receipt";
 import { useTranslation } from "@/components/providers/i18n-provider";
+import { getLicenseAction } from "@/features/admin/license-actions";
+import type { LicenseStatus } from "@/lib/license-check";
 
 // --- Types ---
 type Product = {
@@ -44,6 +46,7 @@ export default function POSPage() {
     const [loading, setLoading] = useState(false);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [autoPrint, setAutoPrint] = useState(true); // New Auto Print State
+    const [license, setLicense] = useState<LicenseStatus | null>(null);
 
     // --- Printing State ---
     const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
@@ -58,6 +61,8 @@ export default function POSPage() {
     // Initial Load
     useEffect(() => {
         async function loadData() {
+            const licenseData = await getLicenseAction();
+            setLicense(licenseData);
             setLoading(true);
             try {
                 // 1. Fetch Customers
@@ -214,11 +219,17 @@ export default function POSPage() {
 
                 setReceiptData(newReceipt);
 
-                // Conditional Auto Print logic
-                if (autoPrint) {
-                    setTimeout(() => {
-                        handlePrint();
-                    }, 300);
+                // Conditional Auto Print logic (Only if activated or trial not expired)
+                if (autoPrint && (license?.isActivated || !license?.isExpired)) {
+                    // Note: In real scenarios, we might want to block print entirely for non-activated
+                    // Even if not expired, since user asked for "feature restriction"
+                    if (license?.isActivated) {
+                        setTimeout(() => {
+                            handlePrint();
+                        }, 300);
+                    } else {
+                        toast.info(dict.Common.ActivateNow);
+                    }
                 }
 
                 clearCart();
@@ -245,11 +256,14 @@ export default function POSPage() {
             {receiptData && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4">
                     <Button
-                        onClick={() => handlePrint()}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-xl border-2 border-white"
+                        onClick={() => {
+                            if (license?.isActivated) handlePrint();
+                            else toast.error(dict.Common.ActivateNow);
+                        }}
+                        className={`font-bold shadow-xl border-2 border-white ${license?.isActivated ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-gray-400 cursor-not-allowed text-gray-200"}`}
                         size="lg"
                     >
-                        🖨️ {dict.POS.PrintAgain}
+                        {license?.isActivated ? `🖨️ ${dict.POS.PrintAgain}` : `🔒 ${dict.POS.ActivateNow}`}
                     </Button>
                 </div>
             )}

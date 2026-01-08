@@ -15,7 +15,12 @@
         "Yes": "Yes",
         "No": "No",
         "NA": "N/A",
-        "StatusUpdated": "Status updated to {status}"
+        "StatusUpdated": "Status updated successfully",
+        "TrialExpired": "Trial expired (50 invoices or 14 days). Please activate to continue.",
+        "TrialVersion": "Trial Version",
+        "DaysLeft": "Days Left",
+        "InvoicesLeft": "Invoices Left",
+        "ActivateNow": "Activate Full Version"
     },
     "Sidebar": {
         "MainMenu": "Main Menu",

@@ -63,6 +63,16 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     try {
         const tenantId = await requireTenant(); // Strict Tenant
 
+        // --- License Check (TRIAL) ---
+        const { getLicenseStatus } = await import("@/lib/license-check");
+        const license = await getLicenseStatus();
+        if (license.isExpired && !license.isActivated) {
+            return {
+                success: false as const,
+                message: dict?.Common?.TrialExpired || "Trial Version Expired. Please activate the full version."
+            };
+        }
+
         // ---------------------------------------------------------
         // REMOVED db.transaction wrapper causing "return promise" error
         // Executing sequentially instead. 

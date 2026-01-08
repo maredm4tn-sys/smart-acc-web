@@ -13,6 +13,9 @@ import { syncAllPurchasesToLedger } from "@/features/purchases/sync-action";
 import { toast } from "sonner";
 import { getSalesSummary } from "@/features/reports/actions";
 import Link from "next/link";
+import { useEffect } from "react";
+import { getLicenseAction } from "@/features/admin/license-actions";
+import { useState as useLicenseState } from "react";
 
 interface ReportsClientProps {
     initialSummary: any;
@@ -22,6 +25,11 @@ interface ReportsClientProps {
 export default function ReportsClient({ initialSummary, dict }: ReportsClientProps) {
     const [summary, setSummary] = useState(initialSummary);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isActivated, setIsActivated] = useLicenseState(true);
+
+    useEffect(() => {
+        getLicenseAction().then(l => setIsActivated(l.isActivated));
+    }, []);
 
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('en-US', {

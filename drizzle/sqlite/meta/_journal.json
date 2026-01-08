@@ -43,6 +43,13 @@
       "when": 1767823075852,
       "tag": "0005_premium_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1767902073512,
+      "tag": "0006_slippery_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

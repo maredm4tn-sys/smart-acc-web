@@ -15,7 +15,12 @@
         "Yes": "نعم",
         "No": "لا",
         "NA": "غير متوفر",
-        "StatusUpdated": "تم تحديث الحالة إلى {status}"
+        "StatusUpdated": "تم تحديث الحالة إلى {status}",
+        "TrialExpired": "انتهت النسخة التجريبية (50 فاتورة أو 14 يوم)، يرجى التفعيل للمتابعة.",
+        "TrialVersion": "نسخة تجريبية",
+        "DaysLeft": "أيام متبقية",
+        "InvoicesLeft": "فواتير متبقية",
+        "ActivateNow": "تفعيل النسخة الكاملة"
     },
     "Sidebar": {
         "MainMenu": "القائمة الرئيسية",

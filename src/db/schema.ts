@@ -30,6 +30,7 @@ export const purchaseInvoices = usePg ? schemaPg.purchaseInvoices : schemaSqlite
 export const purchaseInvoiceItems = usePg ? schemaPg.purchaseInvoiceItems : schemaSqlite.purchaseInvoiceItems;
 export const vouchers = usePg ? schemaPg.vouchers : schemaSqlite.vouchers;
 export const auditLogs = usePg ? schemaPg.auditLogs : schemaSqlite.auditLogs;
+export const licensing = usePg ? null : (schemaSqlite as any).licensing;
 
 // Relations
 export const usersRelations = usePg ? schemaPg.usersRelations : schemaSqlite.usersRelations;
