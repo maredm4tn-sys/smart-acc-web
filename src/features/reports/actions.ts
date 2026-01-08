@@ -244,6 +244,9 @@ export async function getSalesSummary() {
         return result[0] || { total: 0, count: 0 };
     };
 
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
     // Parallel Fetching for all dashboard metrics
     const [
         daily,
@@ -263,10 +266,10 @@ export async function getSalesSummary() {
         getSum(gte(invoices.issueDate, startOfMonth)),
         getSum(gte(invoices.issueDate, startOfYear)),
         db.select({
-            total: sql<number>`sum(CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL))`
+            total: sql<number>`sum(${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)})`
         }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
         db.select({
-            total: sql<number>`sum(CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL))`
+            total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)})`
         }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
         db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.tenantId, tenantId)),
         db.select({ count: sql<number>`count(*)` }).from(customers).where(eq(customers.tenantId, tenantId)),
@@ -280,10 +283,10 @@ export async function getSalesSummary() {
             )
         ),
         db.select({
-            total: sql<number>`sum(CAST(${invoices.totalAmount} AS REAL) * 0.14 / 1.14)`
+            total: sql<number>`sum(${castNum(invoices.totalAmount)} * 0.14 / 1.14)`
         }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
         db.select({
-            total: sql<number>`sum(CAST(${purchaseInvoices.totalAmount} AS REAL) * 0.14 / 1.14)`
+            total: sql<number>`sum(${castNum(purchaseInvoices.totalAmount)} * 0.14 / 1.14)`
         }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
         db.select({
             stock: products.stockQuantity,

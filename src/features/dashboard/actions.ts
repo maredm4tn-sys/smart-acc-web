@@ -21,6 +21,9 @@ export async function getDashboardStats() {
     try {
         const tenantId = session.tenantId;
 
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
         const [
             revenueRes,
             accRes,
@@ -35,12 +38,12 @@ export async function getDashboardStats() {
             db.select({ value: count() }).from(accounts).where(eq(accounts.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
-            db.select({ value: sql`SUM(CAST(${invoices.totalAmount} AS REAL) - CAST(COALESCE(${invoices.amountPaid}, 0) AS REAL))` })
+            db.select({ value: sql`SUM(${castNum(invoices.totalAmount)} - ${castNum(sql`COALESCE(${invoices.amountPaid}, 0)`)})` })
                 .from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))).then(res => res[0]),
             db.query.products.findMany({
                 where: (p, { and, eq }) => and(
                     eq(p.tenantId, tenantId),
-                    sql`CAST(${p.stockQuantity} AS REAL) <= 10`
+                    sql`${castNum(p.stockQuantity)} <= 10`
                 ),
                 limit: 5
             }),
@@ -48,25 +51,25 @@ export async function getDashboardStats() {
             db.select({
                 id: invoices.id,
                 customer: invoices.customerName,
-                amount: sql`CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL)`,
+                amount: sql`${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)}`,
                 date: invoices.issueDate
             }).from(invoices).where(
                 and(
                     eq(invoices.tenantId, tenantId),
                     eq(invoices.type, 'sale'),
-                    gt(sql`CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL)`, 0)
+                    gt(sql`${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)}`, 0)
                 )
             ).orderBy(desc(invoices.issueDate)).limit(5),
             // Due Purchases (Supplier Debts > 0)
             db.select({
                 id: purchaseInvoices.id,
                 supplier: purchaseInvoices.supplierName,
-                amount: sql`CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL)`,
+                amount: sql`${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)}`,
                 date: purchaseInvoices.issueDate
             }).from(purchaseInvoices).where(
                 and(
                     eq(purchaseInvoices.tenantId, tenantId),
-                    gt(sql`CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL)`, 0)
+                    gt(sql`${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)}`, 0)
                 )
             ).orderBy(desc(purchaseInvoices.issueDate)).limit(5)
         ]);
@@ -100,32 +103,36 @@ export async function getAnalyticsData() {
     if (!tenantId) return null;
 
     try {
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+        const getMonthSql = (col: any) => isPg ? sql`TO_CHAR(${col}, 'MM')` : sql`strftime('%m', ${col})`;
+
         const [topProducts, incomeCompare] = await Promise.all([
             // 1. Top 5 Products by Sales
             db.select({
                 name: products.name,
-                value: sql<number>`SUM(CAST(invoice_items.quantity AS REAL))`
+                value: sql<number>`SUM(${castNum(sql`invoice_items.quantity`)})`
             })
                 .from(products)
                 .innerJoin(sql`invoice_items`, sql`invoice_items.product_id = products.id`)
                 .innerJoin(invoices, sql`invoice_items.invoice_id = invoices.id`)
                 .where(and(eq(products.tenantId, tenantId), eq(invoices.type, 'sale')))
                 .groupBy(products.id)
-                .orderBy(desc(sql`SUM(CAST(invoice_items.quantity AS REAL))`))
+                .orderBy(desc(sql`SUM(${castNum(sql`invoice_items.quantity`)})`))
                 .limit(5),
 
             // 2. Profit vs Expense (Simple Monthly Aggregate)
             db.select({
-                month: sql<string>`strftime('%m', ${journalEntries.transactionDate})`,
-                profit: sql<number>`SUM(CASE WHEN ${accounts.type} IN ('revenue', 'income') THEN CAST(${journalLines.credit} AS REAL) - CAST(${journalLines.debit} AS REAL) ELSE 0 END)`,
-                expense: sql<number>`SUM(CASE WHEN ${accounts.type} = 'expense' THEN CAST(${journalLines.debit} AS REAL) - CAST(${journalLines.credit} AS REAL) ELSE 0 END)`
+                month: getMonthSql(journalEntries.transactionDate),
+                profit: sql<number>`SUM(CASE WHEN ${accounts.type} IN ('revenue', 'income') THEN ${castNum(journalLines.credit)} - ${castNum(journalLines.debit)} ELSE 0 END)`,
+                expense: sql<number>`SUM(CASE WHEN ${accounts.type} = 'expense' THEN ${castNum(journalLines.debit)} - ${castNum(journalLines.credit)} ELSE 0 END)`
             })
                 .from(journalLines)
                 .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
                 .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
                 .where(eq(journalEntries.tenantId, tenantId))
-                .groupBy(sql`strftime('%m', ${journalEntries.transactionDate})`)
-                .orderBy(sql`strftime('%m', ${journalEntries.transactionDate})`)
+                .groupBy(getMonthSql(journalEntries.transactionDate))
+                .orderBy(getMonthSql(journalEntries.transactionDate))
                 .limit(12)
         ]);
 
