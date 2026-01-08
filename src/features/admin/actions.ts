@@ -89,7 +89,9 @@ export async function resetSubscriberData(tenantId: string) {
         return { success: true };
     } catch (error: any) {
         console.error("Reset Subscriber Data Error:", error);
-        return { error: `فشل إعادة الضبط: ${error.message || "خطأ داخلي"}` };
+        const detail = error.detail ? ` - ${error.detail}` : "";
+        const code = error.code ? ` (Code: ${error.code})` : "";
+        return { error: `فشل إعادة الضبط: ${error.message || "خطأ داخلي"}${detail}${code}` };
     }
 }
 

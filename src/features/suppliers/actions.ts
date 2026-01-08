@@ -63,7 +63,9 @@ export async function createSupplier(data: z.infer<typeof supplierSchema>) {
     } catch (e: any) {
         console.error("DEBUG: createSupplier Failed", e);
         // Return more detailed error for debugging online
-        return { error: `فشل الحفظ: ${e.message || "خطأ في قاعدة البيانات"}` };
+        const detail = e.detail ? ` - ${e.detail}` : "";
+        const code = e.code ? ` (Code: ${e.code})` : "";
+        return { error: `فشل الحفظ: ${e.message || "خطأ في قاعدة البيانات"}${detail}${code}` };
     }
 }
 

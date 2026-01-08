@@ -70,18 +70,35 @@ if (mode === 'desktop') {
     dbInstance = drizzlePg(pool, { schema });
 
     // Auto-Migrate for Vercel
-    // Using a self-executing async function to safely run await
     (async () => {
         try {
             console.log("Running PG Migrations...");
-            // Vercel puts files in var/task/... so relative path 'drizzle' usually works if included in 'files' or 'assets'
-            await migratePg(dbInstance, { migrationsFolder: path.join(process.cwd(), 'drizzle', 'pg') });
+
+            // Try different paths for Vercel standalone output
+            const paths = [
+                path.join(process.cwd(), 'drizzle', 'pg'),
+                path.join(process.cwd(), '.next', 'server', 'drizzle', 'pg'),
+                path.join(__dirname, '..', '..', 'drizzle', 'pg'), // Relative to current file
+                path.join('/var/task', 'drizzle', 'pg')
+            ];
+
+            let migrationFolder = paths[0];
+            for (const p of paths) {
+                if (fs.existsSync(p)) {
+                    migrationFolder = p;
+                    console.log(`[DB] Found migrations at: ${p}`);
+                    break;
+                }
+            }
+
+            console.log(`[DB] Attempting migration from: ${migrationFolder}`);
+            await migratePg(dbInstance, { migrationsFolder: migrationFolder });
             console.log("✅ [DB] PG Migrations applied!");
         } catch (e: any) {
             if (e.code === '42P07') {
                 console.log("✅ [DB] PG Migrations skipped (already applied).");
             } else {
-                console.error("❌ [DB] PG Migration failed/skipped:", e);
+                console.error("❌ [DB] PG Migration failed:", e.message, e.stack);
             }
         }
     })();

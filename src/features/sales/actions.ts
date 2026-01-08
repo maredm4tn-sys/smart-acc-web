@@ -4,7 +4,8 @@ import { db } from "@/db";
 import { invoices, invoiceItems, products, journalEntries, journalLines, accounts } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { requireTenant } from "@/lib/tenant-security"; // Added import
+import { requireTenant } from "@/lib/tenant-security";
+import { getSession } from "@/features/auth/actions";
 
 type CreateInvoiceInput = {
     customerName: string;
@@ -87,6 +88,7 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
         const formattedDate = data.issueDate.includes('T') ? data.issueDate.split('T')[0] : data.issueDate;
         const formattedDueDate = data.dueDate ? (data.dueDate.includes('T') ? data.dueDate.split('T')[0] : data.dueDate) : undefined;
 
+        const session = await getSession();
         const [newInvoice] = await db.insert(invoices).values({
             tenantId: tenantId,
             invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -98,9 +100,10 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             subtotal: subtotal.toFixed(2),
             taxTotal: taxTotal.toFixed(2),
             totalAmount: totalAmount.toFixed(2),
-            amountPaid: paidAmount.toFixed(2),
+            amountPaid: Number(paidAmount).toFixed(2),
             paymentStatus: paymentStatus,
             status: "issued",
+            createdBy: session?.userId,
         }).returning();
 
         // 2. Create Invoice Items & Update Stock
@@ -271,9 +274,11 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
 
     } catch (error: any) {
         console.error("Error creating invoice:", error);
+        const detail = error.detail ? ` - ${error.detail}` : "";
+        const code = error.code ? ` (Code: ${error.code})` : "";
         return {
             success: false as const,
-            message: `Server Error: ${error.message || String(error)}`
+            message: `Server Error: ${error.message || String(error)}${detail}${code}`
         };
     }
 }

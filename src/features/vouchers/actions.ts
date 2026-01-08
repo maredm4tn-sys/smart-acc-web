@@ -5,6 +5,7 @@ import { vouchers, accounts, customers, suppliers } from "@/db/schema";
 import { eq, and, like, desc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
+import { getSession } from "@/features/auth/actions";
 import { z } from "zod";
 import { createJournalEntry } from "@/features/accounting/actions";
 
@@ -37,6 +38,7 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
         // 2. Create Voucher
         const formattedDate = data.date.includes('T') ? data.date.split('T')[0] : data.date;
 
+        const session = await getSession();
         const [newVoucher] = await db.insert(vouchers).values({
             tenantId,
             voucherNumber: number,
@@ -46,9 +48,10 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
             description: data.description,
             reference: data.reference,
             partyType: data.partyType as any,
-            partyId: data.partyId,
-            accountId: data.accountId,
-            status: 'posted'
+            partyId: data.partyId ? Number(data.partyId) : null,
+            accountId: data.accountId ? Number(data.accountId) : null,
+            status: 'posted',
+            createdBy: session?.userId
         }).returning();
 
         // 3. Journal Entry Logic
@@ -129,7 +132,10 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
         return { success: true, message: "Voucher Created", id: newVoucher.id };
     } catch (e: any) {
         console.error("Create Voucher Error:", e);
-        return { success: false, message: e.message || "Error creating voucher" };
+        return {
+            success: false,
+            message: `فشل السند: ${e.message}${e.detail ? ' - ' + e.detail : ''}${e.code ? ' (Code: ' + e.code + ')' : ''}`
+        };
     }
 }
 
