@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { FileSpreadsheet } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 export function CustomerImport() {
+    const { dict } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -62,7 +64,7 @@ export function CustomerImport() {
                 className="flex items-center justify-center gap-2 h-10"
             >
                 <FileSpreadsheet size={16} />
-                {isUploading ? "Uploading..." : "استيراد إكسيل"}
+                {isUploading ? "Uploading..." : dict.Customers.ImportExcel}
             </Button>
         </>
     );

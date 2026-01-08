@@ -14,7 +14,7 @@ export default async function UsersPage() {
     }
 
     const users = await getUsers();
-    const dict = await getDictionary();
+    const dict = (await getDictionary()) as any;
 
     return (
         <div className="space-y-6">
@@ -37,7 +37,7 @@ export default async function UsersPage() {
                                 <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.FullName}</TableHead>
                                 <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.Username}</TableHead>
                                 <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.Role}</TableHead>
-                                <TableHead className="py-3 font-bold text-gray-700">الهاتف والعنوان</TableHead>
+                                <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.PhoneAndAddress}</TableHead>
                                 <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.DateAdded}</TableHead>
                                 <TableHead className="py-3 font-bold text-gray-700">{dict.Users.Table.Status}</TableHead>
                                 <TableHead className="py-3 font-bold text-gray-700 w-[50px]"></TableHead>

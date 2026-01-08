@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { invoices, accounts, products } from "@/db/schema";
-import { count, sum, sql, eq } from "drizzle-orm";
+import { invoices, accounts, products, purchaseInvoices, journalLines, journalEntries } from "@/db/schema";
+import { count, sum, sql, eq, and, gt, desc, gte } from "drizzle-orm";
 import { getCashierStats } from "@/features/sales/stats";
 import { getSession } from "@/features/auth/actions";
 
@@ -20,14 +20,55 @@ export async function getDashboardStats() {
     // Admin Stats
     try {
         const tenantId = session.tenantId;
-        const [revenueRes, accRes, prodRes, invRes, recRes] = await Promise.all([
+
+        const [
+            revenueRes,
+            accRes,
+            prodRes,
+            invRes,
+            recRes,
+            lowStockItems,
+            overdueInvoices,
+            duePurchases
+        ] = await Promise.all([
             db.select({ value: sum(invoices.totalAmount) }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(accounts).where(eq(accounts.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
-            // Receivables: Sum(total - paid)
-            db.select({ value: sql`SUM(${invoices.totalAmount} - COALESCE(${invoices.amountPaid}, 0))` })
-                .from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0])
+            db.select({ value: sql`SUM(CAST(${invoices.totalAmount} AS REAL) - CAST(COALESCE(${invoices.amountPaid}, 0) AS REAL))` })
+                .from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))).then(res => res[0]),
+            db.query.products.findMany({
+                where: (p, { and, eq }) => and(
+                    eq(p.tenantId, tenantId),
+                    sql`CAST(${p.stockQuantity} AS REAL) <= 10`
+                ),
+                limit: 5
+            }),
+            // Overdue Invoices (Customer Debts > 0)
+            db.select({
+                id: invoices.id,
+                customer: invoices.customerName,
+                amount: sql`CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL)`,
+                date: invoices.issueDate
+            }).from(invoices).where(
+                and(
+                    eq(invoices.tenantId, tenantId),
+                    eq(invoices.type, 'sale'),
+                    gt(sql`CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL)`, 0)
+                )
+            ).orderBy(desc(invoices.issueDate)).limit(5),
+            // Due Purchases (Supplier Debts > 0)
+            db.select({
+                id: purchaseInvoices.id,
+                supplier: purchaseInvoices.supplierName,
+                amount: sql`CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL)`,
+                date: purchaseInvoices.issueDate
+            }).from(purchaseInvoices).where(
+                and(
+                    eq(purchaseInvoices.tenantId, tenantId),
+                    gt(sql`CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL)`, 0)
+                )
+            ).orderBy(desc(purchaseInvoices.issueDate)).limit(5)
         ]);
 
         return {
@@ -37,12 +78,68 @@ export async function getDashboardStats() {
                 totalAccounts: accRes?.value || 0,
                 activeProducts: prodRes?.value || 0,
                 invoicesCount: invRes?.value || 0,
-                totalReceivables: recRes?.value || "0.00"
+                totalReceivables: recRes?.value || "0.00",
+                lowStockItems: lowStockItems.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    quantity: p.stockQuantity
+                })),
+                overdueInvoices,
+                duePurchases
             }
         };
     } catch (e) {
         console.error("Dashboard stats error", e);
         return { role: 'admin', data: null, error: true };
+    }
+}
+
+export async function getAnalyticsData() {
+    const session = await getSession();
+    const tenantId = session?.tenantId;
+    if (!tenantId) return null;
+
+    try {
+        const [topProducts, incomeCompare] = await Promise.all([
+            // 1. Top 5 Products by Sales
+            db.select({
+                name: products.name,
+                value: sql<number>`SUM(CAST(invoice_items.quantity AS REAL))`
+            })
+                .from(products)
+                .innerJoin(sql`invoice_items`, sql`invoice_items.product_id = products.id`)
+                .innerJoin(invoices, sql`invoice_items.invoice_id = invoices.id`)
+                .where(and(eq(products.tenantId, tenantId), eq(invoices.type, 'sale')))
+                .groupBy(products.id)
+                .orderBy(desc(sql`SUM(CAST(invoice_items.quantity AS REAL))`))
+                .limit(5),
+
+            // 2. Profit vs Expense (Simple Monthly Aggregate)
+            db.select({
+                month: sql<string>`strftime('%m', ${journalEntries.transactionDate})`,
+                profit: sql<number>`SUM(CASE WHEN ${accounts.type} IN ('revenue', 'income') THEN CAST(${journalLines.credit} AS REAL) - CAST(${journalLines.debit} AS REAL) ELSE 0 END)`,
+                expense: sql<number>`SUM(CASE WHEN ${accounts.type} = 'expense' THEN CAST(${journalLines.debit} AS REAL) - CAST(${journalLines.credit} AS REAL) ELSE 0 END)`
+            })
+                .from(journalLines)
+                .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+                .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+                .where(eq(journalEntries.tenantId, tenantId))
+                .groupBy(sql`strftime('%m', ${journalEntries.transactionDate})`)
+                .orderBy(sql`strftime('%m', ${journalEntries.transactionDate})`)
+                .limit(12)
+        ]);
+
+        return {
+            topProducts,
+            incomeCompare: incomeCompare.map(i => ({
+                name: `شهر ${i.month}`,
+                ربح: Number(i.profit || 0),
+                مصروف: Number(i.expense || 0)
+            }))
+        };
+    } catch (e) {
+        console.error("Analytics Data Error", e);
+        return null;
     }
 }
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { Dictionary } from "@/lib/i18n-server";
-import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet, Truck } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet, Truck, ShoppingBag, Receipt } from "lucide-react";
 import { logout } from "@/features/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -50,10 +50,10 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                 <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14">
                         <Image
-                            src="/app-logo-v2.jpg"
+                            src="/logo.png"
                             alt="Smart Acc Logo"
                             fill
-                            className="object-contain mix-blend-multiply"
+                            className="object-contain"
                         />
                     </div>
                     <div>
@@ -70,16 +70,20 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                     <>
                         <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.MainMenu}</p>
                         <SidebarItem href="/dashboard" icon={<LayoutDashboard size={20} />} label={dict.Sidebar.Dashboard} />
+                        <SidebarItem href="/dashboard/vouchers" icon={<Receipt size={20} />} label={(dict as any).Vouchers?.Title || "سندات القبض والصرف"} />
                         <SidebarItem href="/dashboard/accounts" icon={<FolderTree size={20} />} label={dict.Sidebar.ChartOfAccounts} />
                         <SidebarItem href="/dashboard/inventory" icon={<Package size={20} />} label={dict.Sidebar.Inventory} />
-                        <SidebarItem href="/dashboard/suppliers" icon={<Truck size={20} />} label="الموردين" />
+                        <SidebarItem href="/dashboard/suppliers" icon={<Truck size={20} />} label={dict.Sidebar.Suppliers} />
                         <SidebarItem href="/dashboard/customers" icon={<Users size={20} />} label={dict.Sidebar.Customers} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 
                         <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.FinancialOperations}</p>
+                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label="نقطة البيع (POS)" />
                         <SidebarItem href="/dashboard/journal" icon={<FileText size={20} />} label={dict.Sidebar.JournalEntries} />
-                        <SidebarItem href="/dashboard/expenses" icon={<Wallet size={20} />} label="المصروفات" />
+                        <SidebarItem href="/dashboard/expenses" icon={<Wallet size={20} />} label={dict.Sidebar.Expenses} />
+
+                        <SidebarItem href="/dashboard/purchases" icon={<ShoppingBag size={20} />} label={dict.Purchases?.Title || "Purchases"} />
                         <SidebarItem href="/dashboard/sales" icon={<ShoppingCart size={20} />} label={dict.Sidebar.SalesAndInvoices} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
@@ -99,6 +103,7 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                 {isCashier && (
                     <>
                         <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.POS}</p>
+                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label="نقطة البيع (POS)" />
                         <SidebarItem href="/dashboard/sales/create" icon={<PlusCircle size={20} />} label={dict.Sidebar.NewInvoice} />
                         <SidebarItem href="/dashboard/sales" icon={<ShoppingCart size={20} />} label={dict.Sidebar.InvoicesList} />
                         <SidebarItem href="/dashboard/customers" icon={<Users size={20} />} label={dict.Sidebar.Customers} />

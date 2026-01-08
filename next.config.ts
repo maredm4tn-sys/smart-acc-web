@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ["@electric-sql/pglite"],
+  images: { unoptimized: true },
+  serverExternalPackages: ["@electric-sql/pglite", "better-sqlite3", "sharp"],
+  webpack: (config) => {
+    config.externals.push("better-sqlite3", "sharp", "@electric-sql/pglite");
+    return config;
+  },
   async headers() {
     return [
       {

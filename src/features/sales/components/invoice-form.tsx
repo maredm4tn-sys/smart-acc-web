@@ -31,7 +31,8 @@ interface CustomerOption {
 import { ProductCombobox } from "./product-combobox";
 
 export function InvoiceForm({ products, customers }: { products: ProductOption[], customers: CustomerOption[] }) {
-    const { dict } = useTranslation();
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
     const router = useRouter();
     const { mutate } = useSWRConfig();
     const [totals, setTotals] = useState({ subtotal: 0, tax: 0, total: 0 });
@@ -377,7 +378,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
                         {/* Payment Field - Translated & Auto Filled */}
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
-                            <label className="text-sm font-bold text-blue-900 mb-1 block">المبلغ المدفوع (Paid)</label>
+                            <label className="text-sm font-bold text-blue-900 mb-1 block">{dict.Sales.Invoice.Form.PaidAmount}</label>
                             <Input
                                 type="number"
                                 min="0"
@@ -386,7 +387,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                                 className="bg-white text-lg font-bold text-green-700 h-12"
                             />
                             <div className="flex justify-between text-sm mt-2 font-medium bg-white/50 p-2 rounded">
-                                <span>المتبقي (دين):</span>
+                                <span>{dict.Sales.Invoice.Form.RemainingDue}:</span>
                                 <span className={cn(
                                     "font-bold font-mono",
                                     (totals.total - initialPayment) > 0.1 ? "text-red-600" : "text-green-600"
@@ -408,7 +409,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                             onClick={() => window.open(`/dashboard/sales/${createdInvoiceId}/print`, '_blank')}
                         >
                             <Printer size={18} />
-                            <span>طباعة (Print)</span>
+                            <span>{dict.Sales.Invoice.Form.PrintButton}</span>
                         </Button>
                     )}
                     <Button type="submit" size="lg" className="gap-2 min-w-[150px]" disabled={isSubmitting} title="Press F2 to Save">

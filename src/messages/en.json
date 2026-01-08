@@ -3,17 +3,26 @@
     "General": {
         "Overview": "Overview"
     },
+    "Common": {
+        "Previous": "Previous",
+        "Next": "Next",
+        "Page": "Page",
+        "Error": "Error"
+    },
     "Sidebar": {
         "MainMenu": "Main Menu",
         "Dashboard": "Dashboard",
         "ChartOfAccounts": "Chart of Accounts",
         "Inventory": "Inventory & Products",
+        "Suppliers": "Suppliers",
         "Customers": "Customers",
+        "Expenses": "Expenses",
         "FinancialOperations": "Financial Operations",
         "JournalEntries": "Journal Entries",
         "SalesAndInvoices": "Sales & Invoices",
         "Reports": "Reports",
         "IncomeStatement": "Income Statement",
+        "AccountStatement": "Detailed Account Statement",
         "Management": "Management",
         "Users": "Users",
         "Settings": "Settings",
@@ -25,6 +34,7 @@
     "Dashboard": {
         "Welcome": "Welcome",
         "FinancialManager": "Financial Manager",
+        "SystemAdmin": "System Admin",
         "Cashier": "Cashier",
         "SummaryText": "Here is your company performance summary for today.",
         "POSReady": "POS terminal is ready. Have a successful day!",
@@ -74,6 +84,14 @@
         "Description": "Manage financial structure and general ledger accounts",
         "NewAccount": "New Account",
         "ImportDefault": "Import Default",
+        "Tree": {
+            "DeleteConfirm": "Are you sure you want to delete account",
+            "DeleteError": "Unexpected error during deletion",
+            "NoAccounts": "No accounts yet.",
+            "StartGuide": "Start building your chart of accounts.",
+            "AddSubAccount": "Add Sub-account",
+            "Delete": "Delete"
+        },
         "Types": {
             "asset": "Assets",
             "liability": "Liabilities",
@@ -86,6 +104,8 @@
         "Title": "Inventory Management",
         "Description": "List of products, services, and stock balances",
         "NewItem": "New Item",
+        "ExportExcel": "Export (Excel)",
+        "ImportExcel": "Import (Excel)",
         "SearchPlaceholder": "Search products...",
         "Search": "Search",
         "Table": {
@@ -99,6 +119,14 @@
             "NoItems": "No products found. Start by adding a new item.",
             "Goods": "Goods",
             "Service": "Service"
+        },
+        "ImportDialog": {
+            "Title": "Import Products from Excel",
+            "Description": "Upload an Excel file (.xlsx) with columns: Name, Buy Price, Sell Price, Stock",
+            "FileLabel": "Select File",
+            "Processing": "Processing...",
+            "Success": "Products imported successfully",
+            "Error": "Failed to import products"
         }
     },
     "Customers": {
@@ -106,12 +134,91 @@
         "Description": "Manage customers list and contacts",
         "NewCustomer": "Add Customer",
         "ListTitle": "Customers List",
+        "ExportExcel": "Export (Excel)",
+        "ImportExcel": "Import (Excel)",
         "Table": {
             "Name": "Name",
             "Phone": "Phone",
             "Email": "Email",
             "TaxId": "Tax ID",
+            "Company": "Company",
+            "Address": "Address",
+            "TotalDebt": "Total Debt",
+            "Actions": "Actions",
             "NoCustomers": "No customers found."
+        }
+    },
+    "Suppliers": {
+        "Title": "Suppliers",
+        "Description": "Manage suppliers list and companies",
+        "NewSupplier": "Add Supplier",
+        "ListTitle": "Suppliers List",
+        "Table": {
+            "Name": "Name",
+            "Company": "Company",
+            "Address": "Address",
+            "Phone": "Phone",
+            "TaxId": "Tax ID",
+            "Actions": "Actions",
+            "NoSuppliers": "No suppliers found."
+        },
+        "AddDialog": {
+            "Button": "Add Supplier",
+            "Title": "Add New Supplier",
+            "Name": "Supplier Name",
+            "Company": "Company Name",
+            "Phone": "Phone",
+            "TaxId": "Tax ID",
+            "Email": "Email",
+            "Address": "Address",
+            "Cancel": "Cancel",
+            "Save": "Save",
+            "Placeholders": {
+                "Name": "Ex: John Doe",
+                "Company": "Ex: Tech Corp",
+                "Phone": "01xxxxxxxxx"
+            },
+            "Success": "Supplier added successfully",
+            "Error": "Error adding supplier"
+        }
+    },
+    "Expenses": {
+        "Title": "Expenses",
+        "Description": "Track and manage business expenses",
+        "NewExpense": "Add Expense",
+        "ExportExcel": "Export (Excel)",
+        "ListTitle": "Expenses List",
+        "Summary": {
+            "TotalMonthly": "Monthly Expenses Total",
+            "MonthToDate": "From month start to date"
+        },
+        "LatestTransactions": "Latest Transactions",
+        "Table": {
+            "Date": "Date",
+            "Description": "Description",
+            "Category": "Category",
+            "Amount": "Amount",
+            "Account": "Expense Account",
+            "EntryNo": "Entry No",
+            "Actions": "Actions",
+            "NoExpenses": "No expenses found."
+        },
+        "AddDialog": {
+            "Trigger": "Add Expense",
+            "Title": "New Expense Entry",
+            "Description": "Create a journal entry to deduct amount from treasury.",
+            "Date": "Expense Date",
+            "Account": "Expense Account",
+            "SelectAccount": "Select type...",
+            "Amount": "Amount",
+            "Notes": "Notes / Description",
+            "NotePlaceholder": "Ex: Electricity bill",
+            "Cancel": "Cancel",
+            "Save": "Save Expense",
+            "Saving": "Saving...",
+            "Success": "Expense recorded successfully",
+            "Error": "Failed to record expense",
+            "NoAccounts": "No expense accounts found."
         }
     },
     "Dialogs": {
@@ -194,9 +301,53 @@
         "Title": "Journal Entries",
         "Description": "General Ledger view.",
         "NewEntry": "New Entry",
+        "ExportExcel": "Export (Excel)",
         "FinancialLog": "Financial Operations Log",
+        "Types": {
+            "Invoice": "Invoice",
+            "Payment": "Payment",
+            "Manual": "Manual"
+        },
         "Success": "Entry posted successfully",
         "Error": "Failed to post entry",
+        "Form": {
+            "Date": "Entry Date",
+            "Description": "Entry Description",
+            "Account": "Account",
+            "SelectAccount": "Select Account...",
+            "Debit": "Debit",
+            "Credit": "Credit",
+            "AddLine": "Add Line",
+            "TotalDebit": "Total Debit",
+            "TotalCredit": "Total Credit",
+            "Difference": "Difference",
+            "Save": "Post Entry",
+            "Errors": {
+                "DateRequired": "Date is required",
+                "DescOptional": "Brief description...",
+                "Unbalanced": "Entry is unbalanced (Debit != Credit)",
+                "MinLines": "Entry must have at least 2 lines"
+            }
+        },
+        "Form": {
+            "Date": "Entry Date",
+            "Description": "Entry Description",
+            "Account": "Account",
+            "SelectAccount": "Select Account...",
+            "Debit": "Debit",
+            "Credit": "Credit",
+            "AddLine": "Add Line",
+            "TotalDebit": "Total Debit",
+            "TotalCredit": "Total Credit",
+            "Difference": "Difference",
+            "Save": "Post Entry",
+            "Errors": {
+                "DateRequired": "Date is required",
+                "DescOptional": "Brief description...",
+                "Unbalanced": "Entry is unbalanced (Debit != Credit)",
+                "MinLines": "Entry must have at least 2 lines"
+            }
+        },
         "Errors": {
             "NotBalanced": "Journal entry must be balanced"
         },
@@ -243,6 +394,12 @@
                 "Tax": "Tax (14%)",
                 "GrandTotal": "Grand Total",
                 "Submit": "Issue Invoice",
+                "PaidAmount": "Paid Amount",
+                "RemainingDue": "Remaining Due",
+                "PrintButton": "Print",
+                "PaidAmount": "Paid Amount",
+                "RemainingDue": "Remaining Due",
+                "Print": "Print",
                 "Table": {
                     "Item": "Product / Service",
                     "Description": "Description",
@@ -290,7 +447,17 @@
             "Issued": "Issued",
             "Draft": "Draft",
             "Cancelled": "Cancelled",
-            "Print": "Print"
+            "Print": "Print",
+            "Type": "Type",
+            "CreateReturn": "Create Return",
+            "Types": {
+                "Return": "Return",
+                "Sale": "Sale"
+            },
+            "StatusLabels": {
+                "Returned": "Returned",
+                "PartiallyReturned": "Partially Returned"
+            }
         }
     },
     "Confirm": {
@@ -299,16 +466,39 @@
     "Reports": {
         "Title": "Reports & Analytics",
         "Description": "Get clear insights into your business performance and sales.",
+        "Overview": {
+            "Today": "Today's Sales",
+            "Month": "Monthly Sales",
+            "Year": "Yearly Sales",
+            "InvoiceCount": "Invoices"
+        },
         "InventoryReport": {
             "Title": "Inventory Report",
+            "CardDescription": "Track product quantities, stock value, and low stock alerts.",
             "TotalItems": "Total Items",
             "TotalCost": "Total Cost Value",
             "TotalSales": "Sales Value",
             "Profit": "Potential Profit",
-            "LowStock": "Low Stock Alerts"
+            "LowStock": "Low Stock Alerts",
+            "Subtitles": {
+                "Goods": "Stock Items (Goods)",
+                "Capital": "Inventory Capital",
+                "PotentialRevenue": "Sales potential",
+                "ProfitMargin": "Gross profit margin"
+            },
+            "Table": {
+                "ProductName": "Product Name",
+                "SKU": "SKU",
+                "CurrentStock": "Current Stock",
+                "BuyPrice": "Buy Price",
+                "Action": "Action",
+                "NoLowStock": "Inventory looks good! No items below 5.",
+                "OrderSupply": "Order Supply"
+            }
         },
         "IncomeStatement": {
-            "Title": "Profit Reports",
+            "Title": "Income Statement (P&L)",
+            "CardDescription": "Detailed view of revenue, expenses, and net profit over a specific period.",
             "Subtitle": "Income Statement",
             "FromDate": "From Date",
             "ToDate": "To Date",
@@ -319,11 +509,16 @@
             "TotalExpenses": "Total Expenses",
             "NetProfit": "Net Profit / Loss",
             "ExpenseDetails": "Expense Details",
+            "RevenueDetails": "Revenue Details",
+            "ExportComprehensive": "Comprehensive Export (Excel)",
             "Table": {
-                "Item": "Expense Item",
+                "Date": "Date",
+                "Item": "Item",
+                "Category": "Category",
                 "Value": "Value",
                 "Percentage": "Percentage",
-                "NoExpenses": "No expenses recorded in this period."
+                "NoExpenses": "No expenses recorded in this period.",
+                "NoRevenues": "No revenue recorded in this period."
             }
         }
     },
@@ -336,6 +531,7 @@
             "Username": "Username",
             "Role": "Role",
             "DateAdded": "Date Added",
+            "PhoneAndAddress": "Phone & Address",
             "Status": "Status",
             "Roles": {
                 "Admin": "System Admin",
@@ -347,6 +543,8 @@
             "FullName": "Full Name",
             "Username": "Username (Login)",
             "Password": "Password",
+            "Phone": "Phone Number",
+            "Address": "Address",
             "Role": "Role",
             "Roles": {
                 "Admin": "Admin",
@@ -356,13 +554,48 @@
             "Cancel": "Cancel",
             "Placeholders": {
                 "Name": "ex: John Doe",
-                "Username": "cashier1"
+                "Username": "cashier1",
+                "Phone": "ex: 01xxxxxxxxx",
+                "Address": "ex: Address..."
             }
         }
     },
     "Settings": {
         "Title": "Company Settings",
         "Description": "Customize entity details, logo, and invoice currency.",
+        "Tabs": {
+            "Facility": "Facility Settings",
+            "Backup": "Backup & Restore",
+            "Subscribers": "Subscribers",
+            "Danger": "Danger Zone"
+        },
+        "Backup": {
+            "Title": "Backup & Restore (Desktop)",
+            "Description": "Desktop Exclusive: Save your data to an external file or restore it when needed.",
+            "AlertTitle": "Important Warning",
+            "AlertDescription": "Restoring an old backup means you will lose any data (invoices/customers) added after that backup date.\nAlways take a fresh backup before restoring.",
+            "BackupNow": "Create Backup Now",
+            "RestoreFromFile": "Restore from File",
+            "Messages": {
+                "BackupSuccess": "Backup created successfully",
+                "SavedTo": "File saved to: {path}",
+                "BackupFailed": "Backup failed",
+                "RestoreWarning": "CRITICAL WARNING: Restoring a backup will PERMANENTLY DELETE current data and replace it with the selected backup.\n\nAre you sure you want to proceed?",
+                "RestoreSuccess": "Restore successful",
+                "Restarting": "Restarting application...",
+                "RestoreFailed": "Restore failed",
+                "UnexpectedError": "Unexpected error"
+            }
+        },
+        "FactoryReset": {
+            "Button": "Factory Reset (Wipe Data)",
+            "DialogTitle": "WARNING: Wipe all data?",
+            "DialogDesc": "This will permanently delete all invoices, customers, suppliers, and products. The app will return to its initial state.",
+            "Confirm": "Yes, Wipe Everything",
+            "Cancel": "Cancel",
+            "Success": "Factory reset successful",
+            "Error": "Factory reset failed"
+        },
         "Form": {
             "Logo": "Company Logo",
             "Upload": "Click to Upload",
@@ -468,6 +701,70 @@
                 "Title": "Delete Organization",
                 "Button": "Delete Organization",
                 "Desc": "Permanently remove this organization and all its data."
+            }
+        }
+    },
+    "Purchases": {
+        "Title": "Purchase Invoices",
+        "Description": "Manage supplier invoices and restock inventory.",
+        "NewInvoice": "New Purchase",
+        "Form": {
+            "Supplier": "Supplier",
+            "SelectSupplier": "Select Supplier",
+            "Date": "Issue Date",
+            "Items": "Items",
+            "AddItem": "Add Item",
+            "Total": "Total",
+            "Save": "Save Invoice",
+            "Product": "Product",
+            "Quantity": "Qty",
+            "Cost": "Unit Cost",
+            "SelectProduct": "Select Product",
+            "InvoiceNumber": "Invoice No (Supplier)",
+            "Notes": "Notes",
+            "PaymentStatus": "Payment Status",
+            "AmountPaid": "Amount Paid"
+        },
+        "Table": {
+            "InvoiceNo": "Invoice No",
+            "Supplier": "Supplier",
+            "Date": "Date",
+            "Amount": "Amount",
+            "Status": "Status",
+            "Actions": "Actions",
+            "NoInvoices": "No invoices found"
+        }
+    },
+    "Vouchers": {
+        "Title": "Financial Vouchers",
+        "Receipt": "Receipt Voucher",
+        "Payment": "Payment Voucher",
+        "NewReceipt": "New Receipt",
+        "NewPayment": "New Payment",
+        "Table": {
+            "Number": "Voucher No",
+            "Date": "Date",
+            "Type": "Type",
+            "Party": "Party / Account",
+            "Amount": "Amount",
+            "Status": "Status",
+            "NoVouchers": "No vouchers found"
+        },
+        "Form": {
+            "Type": "Type",
+            "Date": "Date",
+            "Amount": "Amount",
+            "Description": "Description",
+            "PartyType": "Party Type",
+            "Party": "Party",
+            "SelectParty": "Select Client/Supplier",
+            "Account": "Account",
+            "Reference": "Reference / Check No",
+            "Save": "Save Voucher",
+            "Types": {
+                "Customer": "Customer",
+                "Supplier": "Supplier",
+                "Other": "Other (Expense/Income)"
             }
         }
     }

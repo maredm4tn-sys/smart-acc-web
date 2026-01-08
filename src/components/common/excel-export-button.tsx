@@ -18,7 +18,7 @@ export function ExcelExportButton({
     getData,
     fileName = "Export",
     sheetName = "Sheet1",
-    label = "تصدير (Excel)",
+    label = "Export (Excel)",
     className
 }: ExcelExportButtonProps) {
     const [isLoading, setIsLoading] = useState(false);

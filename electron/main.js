@@ -125,18 +125,28 @@ function startServer() {
     });
 
     serverProcess.on('error', (err) => console.error('Failed to start server:', err));
+    serverProcess.on('exit', (code, signal) => {
+        console.error(`Next.js Server process exited with code ${code} and signal ${signal}`);
+    });
 }
 
 function createWindow() {
+    let iconPath;
+    if (app.isPackaged) {
+        iconPath = path.join(process.resourcesPath, 'app-server', 'public', 'icon.png');
+    } else {
+        iconPath = path.join(__dirname, '../public/icon.png');
+    }
+
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
         title: "Smart Accountant - Offline",
-        icon: path.join(__dirname, '../public/logo.png'),
+        icon: iconPath,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
+            nodeIntegration: false, // Security: keep false
+            contextIsolation: true, // Security: keep true
         },
         autoHideMenuBar: true,
     });

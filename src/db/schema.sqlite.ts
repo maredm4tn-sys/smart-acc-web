@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 import { relations, sql } from 'drizzle-orm';
 import * as crypto from 'crypto';
 
@@ -111,6 +111,11 @@ export const journalEntries = sqliteTable('journal_entries', {
     createdBy: text('created_by'),
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+}, (table) => {
+    return {
+        tenantDateIdx: index('journal_entries_tenant_date_idx').on(table.tenantId, table.transactionDate),
+        entryNumIdx: index('journal_entries_num_idx').on(table.tenantId, table.entryNumber),
+    };
 });
 
 export const journalEntriesRelations = relations(journalEntries, ({ one, many }) => ({
@@ -137,6 +142,10 @@ export const journalLines = sqliteTable('journal_lines', {
     description: text('description'),
     debit: text('debit').default('0.00').notNull(),
     credit: text('credit').default('0.00').notNull(),
+}, (table) => {
+    return {
+        accountEntryIdx: index('journal_lines_acc_entry_idx').on(table.accountId, table.journalEntryId),
+    };
 });
 
 export const journalLinesRelations = relations(journalLines, ({ one }) => ({
@@ -222,7 +231,10 @@ export const invoices = sqliteTable('invoices', {
     totalAmount: text('total_amount').notNull(),
 
     // --- AR Fields ---
-    paymentStatus: text('payment_status').default('paid').notNull(), // Enum simulated
+    paymentStatus: text("payment_status").notNull().default("paid"), // paid, partial, unpaid
+    type: text("type").notNull().default("sale"), // sale, return
+    relatedInvoiceId: text("related_invoice_id"), // for returns, links to original invoice
+    notes: text("notes"),
     amountPaid: text('amount_paid').default('0.00').notNull(),
 
     status: text('status').default('draft').notNull(), // Enum simulated
@@ -239,6 +251,10 @@ export const invoiceItems = sqliteTable('invoice_items', {
     quantity: text('quantity').notNull(),
     unitPrice: text('unit_price').notNull(),
     total: text('total').notNull(),
+}, (table) => {
+    return {
+        invoiceProductIdx: index('invoice_items_invoice_prod_idx').on(table.invoiceId, table.productId),
+    };
 });
 
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
@@ -261,6 +277,111 @@ export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
     product: one(products, {
         fields: [invoiceItems.productId],
         references: [products.id],
+    }),
+}));
+
+// --- Purchase Invoices ---
+export const purchaseInvoices = sqliteTable('purchase_invoices', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    supplierId: integer('supplier_id').references(() => suppliers.id),
+    supplierName: text('supplier_name').notNull(),
+    invoiceNumber: text('invoice_number'), // رقم فاتورة المورد
+    referenceNumber: text('reference_number'), // رقم داخلي (اختياري)
+    issueDate: text('issue_date').notNull(), // ISO Date
+    dueDate: text('due_date'), // ISO Date
+    currency: text('currency').default('EGP').notNull(),
+    exchangeRate: text('exchange_rate').default('1.000000').notNull(),
+
+    subtotal: text('subtotal').notNull(),
+    taxTotal: text('tax_total').default('0.00').notNull(),
+    totalAmount: text('total_amount').notNull(),
+
+    // Payment Info
+    paymentStatus: text("payment_status").notNull().default("unpaid"), // paid, partial, unpaid
+    amountPaid: text('amount_paid').default('0.00').notNull(),
+
+    status: text('status').default('draft').notNull(), // draft, posted, void
+    type: text("type").notNull().default("purchase"), // purchase, return
+    relatedInvoiceId: integer('related_invoice_id'), // links to original purchase invoice
+    notes: text("notes"),
+
+    createdBy: text('created_by').references(() => users.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+});
+
+export const purchaseInvoiceItems = sqliteTable('purchase_invoice_items', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    purchaseInvoiceId: integer('purchase_invoice_id').references(() => purchaseInvoices.id, { onDelete: 'cascade' }).notNull(),
+    productId: integer('product_id').references(() => products.id),
+    description: text('description').notNull(),
+    quantity: text('quantity').notNull(),
+    unitCost: text('unit_cost').notNull(), // سعر الشراء
+    total: text('total').notNull(),
+});
+
+export const purchaseInvoicesRelations = relations(purchaseInvoices, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [purchaseInvoices.tenantId],
+        references: [tenants.id],
+    }),
+    supplier: one(suppliers, {
+        fields: [purchaseInvoices.supplierId],
+        references: [suppliers.id],
+    }),
+    items: many(purchaseInvoiceItems),
+    createdByUser: one(users, {
+        fields: [purchaseInvoices.createdBy],
+        references: [users.id],
+    }),
+}));
+
+export const purchaseInvoiceItemsRelations = relations(purchaseInvoiceItems, ({ one }) => ({
+    purchaseInvoice: one(purchaseInvoices, {
+        fields: [purchaseInvoiceItems.purchaseInvoiceId],
+        references: [purchaseInvoices.id],
+    }),
+    product: one(products, {
+        fields: [purchaseInvoiceItems.productId],
+        references: [products.id],
+    }),
+}));
+
+// --- Financial Vouchers (Receipts & Payments) ---
+export const vouchers = sqliteTable('vouchers', {
+    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    voucherNumber: text('voucher_number').notNull(),
+    type: text('type').notNull(), // 'receipt' (قبض) or 'payment' (صرف)
+    date: text('date').notNull(), // ISO Date
+    amount: text('amount').notNull(),
+    description: text('description'),
+    reference: text('reference'), // Manual Ref or Check No
+
+    // Linked Party (Customer or Supplier)
+    partyType: text('party_type'), // 'customer', 'supplier', 'other'
+    partyId: integer('party_id'), // ID of customer or supplier if applicable
+
+    // Linked Account (Target Account for Expenses/Income)
+    accountId: integer('account_id').references(() => accounts.id),
+
+    status: text('status').default('draft').notNull(),
+    createdBy: text('created_by').references(() => users.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+});
+
+export const vouchersRelations = relations(vouchers, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [vouchers.tenantId],
+        references: [tenants.id],
+    }),
+    createdByUser: one(users, {
+        fields: [vouchers.createdBy],
+        references: [users.id],
+    }),
+    account: one(accounts, {
+        fields: [vouchers.accountId],
+        references: [accounts.id],
     }),
 }));
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingCart, FileText, PlusCircle } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, FileText, PlusCircle, ShoppingBag, Receipt } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 
@@ -36,10 +36,20 @@ export function MobileNav({ user }: { user?: User }) {
             </div>
 
             {isAdmin && (
-                <Link href="/dashboard/reports/income-statement" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/reports') ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <FileText size={24} strokeWidth={isActive('/dashboard/reports') ? 2.5 : 2} />
-                    <span className="text-[10px] font-medium mt-1">{dict.Sidebar.Reports}</span>
-                </Link>
+                <>
+                    <Link href="/dashboard/vouchers" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/vouchers') ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <Receipt size={24} strokeWidth={isActive('/dashboard/vouchers') ? 2.5 : 2} />
+                        <span className="text-[10px] font-medium mt-1">{(dict as any).Vouchers?.Title || "Vouchers"}</span>
+                    </Link>
+                    <Link href="/dashboard/purchases" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/purchases') ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <ShoppingBag size={24} strokeWidth={isActive('/dashboard/purchases') ? 2.5 : 2} />
+                        <span className="text-[10px] font-medium mt-1">{(dict as any).Purchases?.Title || "Purchases"}</span>
+                    </Link>
+                    <Link href="/dashboard/reports/income-statement" className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${isActive('/dashboard/reports') ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <FileText size={24} strokeWidth={isActive('/dashboard/reports') ? 2.5 : 2} />
+                        <span className="text-[10px] font-medium mt-1">{dict.Sidebar.Reports}</span>
+                    </Link>
+                </>
             )}
         </div>
     );

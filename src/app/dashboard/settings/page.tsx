@@ -11,11 +11,15 @@ import { BackupManager } from "@/features/settings/components/backup-manager";
 
 export default async function SettingsPage() {
     const settings = await getSettings();
-    const dict = await getDictionary();
+
+    const dict = (await getDictionary()) as any;
     const session = await getSession();
+
 
     const isSuperAdmin = session?.role === "SUPER_ADMIN";
     const users = isSuperAdmin ? await getAllUsers() : [];
+
+    const isDesktop = process.env.NEXT_PUBLIC_APP_MODE === 'desktop';
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
@@ -26,12 +30,12 @@ export default async function SettingsPage() {
 
             <Tabs defaultValue="facility" className="space-y-4">
                 <TabsList>
-                    <TabsTrigger value="facility">إعدادات المنشأة</TabsTrigger>
-                    <TabsTrigger value="backup">النسخ الاحتياطي</TabsTrigger>
+                    <TabsTrigger value="facility">{dict.Settings.Tabs.Facility}</TabsTrigger>
+                    {isDesktop && <TabsTrigger value="backup">{dict.Settings.Tabs.Backup}</TabsTrigger>}
                     {isSuperAdmin && (
                         <>
-                            <TabsTrigger value="subscribers">إدارة المشتركين</TabsTrigger>
-                            <TabsTrigger value="danger">منطقة الخطر</TabsTrigger>
+                            <TabsTrigger value="subscribers">{dict.Settings.Tabs.Subscribers}</TabsTrigger>
+                            <TabsTrigger value="danger">{dict.Settings.Tabs.Danger}</TabsTrigger>
                         </>
                     )}
                 </TabsList>
@@ -40,9 +44,11 @@ export default async function SettingsPage() {
                     <SettingsForm initialData={settings} />
                 </TabsContent>
 
-                <TabsContent value="backup" className="space-y-4">
-                    <BackupManager />
-                </TabsContent>
+                {isDesktop && (
+                    <TabsContent value="backup" className="space-y-4">
+                        <BackupManager />
+                    </TabsContent>
+                )}
 
                 {isSuperAdmin && (
                     <>

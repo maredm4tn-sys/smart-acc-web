@@ -3,17 +3,26 @@
     "General": {
         "Overview": "نظرة عامة"
     },
+    "Common": {
+        "Previous": "السابق",
+        "Next": "التالي",
+        "Page": "صفحة",
+        "Error": "خطأ"
+    },
     "Sidebar": {
         "MainMenu": "القائمة الرئيسية",
         "Dashboard": "لوحة التحكم",
         "ChartOfAccounts": "شجرة الحسابات",
         "Inventory": "المخزون والمنتجات",
+        "Suppliers": "الموردين",
         "Customers": "العملاء",
+        "Expenses": "المصروفات",
         "FinancialOperations": "العمليات المالية",
         "JournalEntries": "القيود اليومية",
         "SalesAndInvoices": "المبيعات والفواتير",
         "Reports": "التقارير",
         "IncomeStatement": "تقارير الأرباح",
+        "AccountStatement": "كشف حساب تفصيلي",
         "Management": "الإدارة",
         "Users": "المستخدمين",
         "Settings": "الإعدادات",
@@ -25,6 +34,7 @@
     "Dashboard": {
         "Welcome": "مرحباً",
         "FinancialManager": "المدير المالي",
+        "SystemAdmin": "مدير النظام",
         "Active": "نشط",
         "Due": "المستحقات",
         "Receivables": "حسابات العملاء",
@@ -74,6 +84,14 @@
         "Description": "إدارة الهيكل المالي وحسابات الأستاذ العام",
         "NewAccount": "حساب جديد",
         "ImportDefault": "استيراد افتراضي",
+        "Tree": {
+            "DeleteConfirm": "هل أنت متأكد من حذف حساب",
+            "DeleteError": "حدث خطأ غير متوقع أثناء الحذف",
+            "NoAccounts": "لا توجد حسابات بعد.",
+            "StartGuide": "ابدأ بإنشاء دليل الحسابات الخاص بك.",
+            "AddSubAccount": "إضافة حساب فرعي",
+            "Delete": "حذف"
+        },
         "Types": {
             "asset": "الأصول",
             "liability": "الخصوم",
@@ -86,6 +104,8 @@
         "Title": "إدارة المخزون",
         "Description": "قائمة المنتجات والخدمات والأرصدة المخزنية",
         "NewItem": "صنف جديد",
+        "ExportExcel": "تصدير (Excel)",
+        "ImportExcel": "استيراد (Excel)",
         "SearchPlaceholder": "بحث عن منتج...",
         "Search": "بحث",
         "Table": {
@@ -99,6 +119,14 @@
             "NoItems": "لا توجد منتجات. ابدأ بإضافة صنف جديد.",
             "Goods": "مخزني",
             "Service": "خدمة"
+        },
+        "ImportDialog": {
+            "Title": "استيراد منتجات من Excel",
+            "Description": "قم برفع ملف Excel (.xlsx) يحتوي على الأعمدة: اسم الصنف، سعر الشراء، سعر البيع، الرصيد",
+            "FileLabel": "اختيار الملف",
+            "Processing": "جاري المعالجة...",
+            "Success": "تم استيراد المنتجات بنجاح",
+            "Error": "فشل استيراد المنتجات"
         }
     },
     "Customers": {
@@ -106,12 +134,91 @@
         "Description": "إدارة قائمة العملاء وجهات الاتصال",
         "NewCustomer": "إضافة عميل",
         "ListTitle": "قائمة العملاء",
+        "ExportExcel": "تصدير (Excel)",
+        "ImportExcel": "استيراد (Excel)",
         "Table": {
             "Name": "الاسم",
             "Phone": "الهاتف",
             "Email": "البريد الإلكتروني",
             "TaxId": "الرقم الضريبي",
+            "Company": "الشركة",
+            "Address": "العنوان",
+            "TotalDebt": "إجمالي الديون",
+            "Actions": "إجراءات",
             "NoCustomers": "لا يوجد عملاء مسجلين حالياً."
+        }
+    },
+    "Suppliers": {
+        "Title": "الموردين",
+        "Description": "إدارة قائمة الموردين والشركات",
+        "NewSupplier": "إضافة مورد",
+        "ListTitle": "قائمة الموردين",
+        "Table": {
+            "Name": "الاسم",
+            "Company": "الشركة",
+            "Address": "العنوان",
+            "Phone": "الهاتف",
+            "TaxId": "الرقم الضريبي",
+            "Actions": "إجراءات",
+            "NoSuppliers": "لا يوجد موردين حالياً."
+        },
+        "AddDialog": {
+            "Button": "إضافة مورد",
+            "Title": "إضافة مورد جديد",
+            "Name": "اسم المورد",
+            "Company": "اسم الشركة",
+            "Phone": "رقم الهاتف",
+            "TaxId": "الرقم الضريبي",
+            "Email": "البريد الإلكتروني",
+            "Address": "العنوان",
+            "Cancel": "إلغاء",
+            "Save": "حفظ",
+            "Placeholders": {
+                "Name": "مثال: محمد علي",
+                "Company": "مثال: شركة النور",
+                "Phone": "01xxxxxxxxx"
+            },
+            "Success": "تم إضافة المورد بنجاح",
+            "Error": "حدث خطأ أثناء الإضافة"
+        }
+    },
+    "Expenses": {
+        "Title": "المصروفات",
+        "Description": "تتبع وإدارة مصروفات العمل",
+        "NewExpense": "إضافة مصروف",
+        "ExportExcel": "تصدير (Excel)",
+        "ListTitle": "قائمة المصروفات",
+        "Summary": {
+            "TotalMonthly": "إجمالي مصروفات الشهر",
+            "MonthToDate": "من أول الشهر الحالي حتى اليوم"
+        },
+        "LatestTransactions": "آخر العمليات المسجلة",
+        "Table": {
+            "Date": "التاريخ",
+            "Description": "الوصف",
+            "Category": "الفئة",
+            "Amount": "المبلغ",
+            "Account": "بند المصروف",
+            "EntryNo": "رقم القيد",
+            "Actions": "إجراءات",
+            "NoExpenses": "لا توجد مصروفات مسجلة."
+        },
+        "AddDialog": {
+            "Trigger": "تسجيل مصروف",
+            "Title": "تسجيل مصروف جديد",
+            "Description": "سيتم إنشاء قيد يومية لخصم المبلغ من الخزينة.",
+            "Date": "تاريخ المصروف",
+            "Account": "بند المصروف (الحساب)",
+            "SelectAccount": "اختر نوع المصروف...",
+            "Amount": "المبلغ",
+            "Notes": "ملاحظات / وصف",
+            "NotePlaceholder": "مثال: فاتورة كهرباء",
+            "Cancel": "إلغاء",
+            "Save": "حفظ المصروف",
+            "Saving": "جاري الحفظ...",
+            "Success": "تم تسجيل المصروف بنجاح",
+            "Error": "فشل تسجيل المصروف",
+            "NoAccounts": "لا توجد حسابات مصروفات."
         }
     },
     "Dialogs": {
@@ -194,9 +301,34 @@
         "Title": "دفتر اليومية",
         "Description": "عرض واجهة قيود اليومية العامة (General Ledger).",
         "NewEntry": "قيد جديد",
+        "ExportExcel": "تصدير (Excel)",
         "FinancialLog": "سجل العمليات المالية",
+        "Types": {
+            "Invoice": "فاتورة",
+            "Payment": "دفعة",
+            "Manual": "يدوي"
+        },
         "Success": "تم ترحيل القيد بنجاح",
         "Error": "فشل ترحيل القيد",
+        "Form": {
+            "Date": "تاريخ القيد",
+            "Description": "بيان القيد (شرح عام)",
+            "Account": "الحساب",
+            "SelectAccount": "اختر الحساب...",
+            "Debit": "مدين",
+            "Credit": "دائن",
+            "AddLine": "إضافة سطر",
+            "TotalDebit": "إجمالي المدين",
+            "TotalCredit": "إجمالي الدائن",
+            "Difference": "الفرق",
+            "Save": "حفظ القيد",
+            "Errors": {
+                "DateRequired": "التاريخ مطلوب",
+                "DescOptional": "شرح مختصر...",
+                "Unbalanced": "القيد غير متوازن (المدين لا يساوي الدائن)",
+                "MinLines": "يجب أن يحتوي القيد على طرفين على الأقل"
+            }
+        },
         "Errors": {
             "NotBalanced": "القيد غير متوازن"
         },
@@ -243,6 +375,9 @@
                 "Tax": "الضريبة (14%)",
                 "GrandTotal": "الإجمالي الكلي",
                 "Submit": "إصدار الفاتورة",
+                "PaidAmount": "المبلغ المدفوع (Paid)",
+                "RemainingDue": "المتبقي (دين)",
+                "PrintButton": "طباعة (Print)",
                 "Table": {
                     "Item": "المنتج / الخدمة",
                     "Description": "الوصف",
@@ -290,7 +425,17 @@
             "Issued": "مصدرة",
             "Draft": "مسودة",
             "Cancelled": "ملغاة",
-            "Print": "طباعة"
+            "Print": "طباعة",
+            "Type": "النوع",
+            "CreateReturn": "إنشاء مرتجع",
+            "Types": {
+                "Return": "مرتجع",
+                "Sale": "بيع"
+            },
+            "StatusLabels": {
+                "Returned": "تم الإرجاع",
+                "PartiallyReturned": "مرتجع جزئي"
+            }
         }
     },
     "Confirm": {
@@ -299,16 +444,43 @@
     "Reports": {
         "Title": "التقارير والإحصائيات",
         "Description": "احصل على رؤى مفصلة حول أداء عملك ومبيعاتك",
+        "Overview": {
+            "Today": "مبيعات اليوم",
+            "Month": "مبيعات الشهر",
+            "Year": "مبيعات السنة",
+            "InvoiceCount": "فاتورة",
+            "CustomerDebts": "ديون العملاء (مستحق للتحصيل)",
+            "SupplierDebts": "ديون الموردين (مستحق للدفع)",
+            "CustomerDebtsDesc": "إجمالي المبالغ غير المحصلة من المبيعات الآجلة",
+            "SupplierDebtsDesc": "إجمالي المبالغ غير المدفوعة للمشتريات الآجلة"
+        },
         "InventoryReport": {
             "Title": "تقرير المخزون",
+            "CardDescription": "متابعة كميات المنتجات وقيمة المخزون وتنبيهات النواقص.",
             "TotalItems": "إجمالي الأصناف",
             "TotalCost": "قيمة التكلفة",
             "TotalSales": "قيمة البيع المتوقعة",
             "Profit": "الربح المتوقع",
-            "LowStock": "تنبيهات النواقص"
+            "LowStock": "تنبيهات النواقص",
+            "Subtitles": {
+                "Goods": "منتج مخزني (Goods)",
+                "Capital": "رأس المال في المخزن",
+                "PotentialRevenue": "عند بيع كل الكمية",
+                "ProfitMargin": "هامش الربح الإجمالي"
+            },
+            "Table": {
+                "ProductName": "اسم المنتج",
+                "SKU": "SKU",
+                "CurrentStock": "الكمية الحالية",
+                "BuyPrice": "سعر الشراء",
+                "Action": "إجراء",
+                "NoLowStock": "مخزونك تمام! لا توجد نواقص (أقل من 5).",
+                "OrderSupply": "طلب توريد"
+            }
         },
         "IncomeStatement": {
-            "Title": "تقارير الأرباح",
+            "Title": "قائمة الدخل (الأرباح والخسائر)",
+            "CardDescription": "عرض تفصيلي للإيرادات والمصروفات وصافي الربح خلال فترة زمنية محددة.",
             "Subtitle": "قائمة الدخل - Income Statement",
             "FromDate": "من تاريخ",
             "ToDate": "إلى تاريخ",
@@ -319,11 +491,16 @@
             "TotalExpenses": "إجمالي المصروفات",
             "NetProfit": "صافي الربح / الخسارة",
             "ExpenseDetails": "تفاصيل المصروفات",
+            "RevenueDetails": "تفاصيل الإيرادات",
+            "ExportComprehensive": "تصدير الشامل (Excel)",
             "Table": {
-                "Item": "بند المصروف",
+                "Date": "التاريخ",
+                "Item": "البند",
+                "Category": "التصنيف",
                 "Value": "القيمة",
                 "Percentage": "النسبة",
-                "NoExpenses": "لا توجد مصروفات مسجلة في هذه الفترة."
+                "NoExpenses": "لا توجد مصروفات مسجلة في هذه الفترة.",
+                "NoRevenues": "لا توجد إيرادات مسجلة."
             }
         }
     },
@@ -336,6 +513,7 @@
             "Username": "اسم المستخدم",
             "Role": "الصلاحية",
             "DateAdded": "تاريخ الإضافة",
+            "PhoneAndAddress": "الهاتف والعنوان",
             "Status": "الحالة",
             "Roles": {
                 "Admin": "مدير نظام (Admin)",
@@ -347,6 +525,8 @@
             "FullName": "الاسم الكامل",
             "Username": "اسم المستخدم (للدخول)",
             "Password": "كلمة المرور",
+            "Phone": "رقم الهاتف",
+            "Address": "العنوان",
             "Role": "الصلاحية",
             "Roles": {
                 "Admin": "مدير (Admin)",
@@ -356,13 +536,48 @@
             "Cancel": "إلغاء",
             "Placeholders": {
                 "Name": "مثال: محمد أحمد",
-                "Username": "cashier1"
+                "Username": "cashier1",
+                "Phone": "مثال: 01xxxxxxxxx",
+                "Address": "العنوان..."
             }
         }
     },
     "Settings": {
         "Title": "إعدادات الشركة",
         "Description": "تخصيص بيانات المنشأة والشعار والعملة للفواتير.",
+        "Tabs": {
+            "Facility": "إعدادات المنشأة",
+            "Backup": "النسخ الاحتياطي",
+            "Subscribers": "إدارة المشتركين",
+            "Danger": "منطقة الخطر"
+        },
+        "Backup": {
+            "Title": "النسخ الاحتياطي والاستعادة (Desktop)",
+            "Description": "ميزة حصرية لنسخة سطح المكتب: احفظ بياناتك في ملف خارجي أو استرجعها عند الحاجة.",
+            "AlertTitle": "تنبيه هام",
+            "AlertDescription": "استعادة نسخة قديمة تعني أنك ستفقد أي بيانات (فواتير/عملاء) تم إضافتها بعد تاريخ تلك النسخة. يفضل دائماً أخذ نسخة احتياطية جديدة قبل القيام بعملية الاستعادة.",
+            "BackupNow": "حفظ نسخة احتياطية الآن",
+            "RestoreFromFile": "استعادة نسخة من ملف",
+            "Messages": {
+                "BackupSuccess": "تم النسخ الاحتياطي بنجاح",
+                "SavedTo": "تم حفظ الملف في: {path}",
+                "BackupFailed": "فشل النسخ الاحتياطي",
+                "RestoreWarning": "تحذير خطير: استعادة نسخة احتياطية ستقوم بحذف جميع البيانات الحالية نهائياً واستبدالها بالنسخة المختارة.\n\nهل أنت متأكد أنك تريد المتابعة؟",
+                "RestoreSuccess": "تمت العملية بنجاح",
+                "Restarting": "يتم الآن إعادة تشغيل التطبيق...",
+                "RestoreFailed": "فشل الاستعادة",
+                "UnexpectedError": "حدث خطأ غير متوقع"
+            }
+        },
+        "FactoryReset": {
+            "Button": "ضبط المصنع (حذف البيانات)",
+            "DialogTitle": "تحذير: هل أنت متأكد من حذف كل البيانات؟",
+            "DialogDesc": "سيتم حذف جميع الفواتير، العملاء، الموردين، والمنتجات. سيعود البرنامج لحالته الأصلية. لا يمكن التراجع عن هذا الإجراء.",
+            "Confirm": "نعم، احذف كل شيء",
+            "Cancel": "إلغاء",
+            "Success": "تم ضبط المصنع بنجاح",
+            "Error": "حدث خطأ أثناء ضبط المصنع"
+        },
         "Form": {
             "Logo": "شعار الشركة",
             "Upload": "اضغط للرفع",
@@ -468,6 +683,83 @@
                 "Title": "حذف المؤسسة",
                 "Button": "حذف المؤسسة نهائياً",
                 "Desc": "حذف المؤسسة وكامل بياناتها بشكل نهائي لا رجعة فيه."
+            }
+        }
+    },
+    "Purchases": {
+        "Title": "فواتير المشتريات",
+        "Description": "إدارة فواتير المشتريات وتوريد المخزون.",
+        "NewInvoice": "فاتورة شراء جديدة",
+        "Form": {
+            "Supplier": "المورد",
+            "SelectSupplier": "اختر المورد",
+            "Date": "تاريخ الإصدار",
+            "Items": "الأصناف",
+            "AddItem": "إضافة صنف",
+            "Total": "الإجمالي",
+            "Save": "حفظ الفاتورة",
+            "Product": "المنتج",
+            "Quantity": "الكمية",
+            "Cost": "سعر الشراء",
+            "SelectProduct": "اختر المنتج",
+            "InvoiceNumber": "رقم الفاتورة (عند المورد)",
+            "Notes": "ملاحظات",
+            "PaymentStatus": "حالة الدفع",
+            "AmountPaid": "المبلغ المدفوع"
+        },
+        "Table": {
+            "InvoiceNo": "رقم الفاتورة",
+            "Supplier": "المورد",
+            "Date": "التاريخ",
+            "Total": "الإجمالي",
+            "PaidAmount": "المدفوع",
+            "Balance": "المتبقي",
+            "Status": "الحالة",
+            "Actions": "إجراءات",
+            "NoInvoices": "لا توجد فواتير مشتريات",
+            "StatusLabels": {
+                "Paid": "مدفوعة",
+                "Unpaid": "غير مدفوعة",
+                "Partial": "مدفوعة جزئياً"
+            },
+            "Edit": "تعديل",
+            "Return": "مرتجع"
+        },
+        "Messages": {
+            "Success": "تم حفظ فاتورة المشتريات بنجاح",
+            "UpdateSuccess": "تم تحديث الفاتورة بنجاح"
+        }
+    },
+    "Vouchers": {
+        "Title": "سندات القبض والصرف",
+        "Receipt": "سند قبض",
+        "Payment": "سند صرف",
+        "NewReceipt": "سند قبض جديد",
+        "NewPayment": "سند صرف جديد",
+        "Table": {
+            "Number": "رقم السند",
+            "Date": "التاريخ",
+            "Type": "النوع",
+            "Party": "الجهة / الحساب",
+            "Amount": "المبلغ",
+            "Status": "الحالة",
+            "NoVouchers": "لا توجد سندات"
+        },
+        "Form": {
+            "Type": "نوع السند",
+            "Date": "التاريخ",
+            "Amount": "المبلغ",
+            "Description": "البيان / الوصف",
+            "PartyType": "نوع الجهة",
+            "Party": "الجهة",
+            "SelectParty": "اختر العميل/المورد",
+            "Account": "الحساب المقابل",
+            "Reference": "المرجع / رقم الشيك",
+            "Save": "حفظ السند",
+            "Types": {
+                "Customer": "عميل",
+                "Supplier": "مورد",
+                "Other": "أخرى (مصروفات/إيرادات)"
             }
         }
     }

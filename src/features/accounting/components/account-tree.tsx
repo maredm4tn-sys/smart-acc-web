@@ -16,7 +16,8 @@ interface AccountTreeItemProps {
 }
 
 function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
-    const { dict } = useTranslation();
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
     const [isOpen, setIsOpen] = useState(false);
     const hasChildren = account.children && account.children.length > 0;
     const router = useRouter();
@@ -34,7 +35,7 @@ function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
         e.stopPropagation();
 
         // Use standard confirm for now
-        if (!confirm(`هل أنت متأكد من حذف حساب "${account.name}"؟`)) return;
+        if (!confirm(`${dict.Accounts.Tree.DeleteConfirm} "${account.name}"?`)) return;
 
         try {
             const res = await deleteAccount(account.id);
@@ -45,7 +46,7 @@ function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
                 toast.error(res.message);
             }
         } catch (error) {
-            toast.error("حدث خطأ غير متوقع أثناء الحذف");
+            toast.error(dict.Accounts.Tree.DeleteError);
         }
     };
 
@@ -80,10 +81,10 @@ function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
                 </div>
 
                 <div className="opacity-0 group-hover:opacity-100 flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" title="Add Sub-account">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" title={dict.Accounts.Tree.AddSubAccount}>
                         <Plus size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-red-500 hover:bg-red-50" title="Delete" onClick={handleDelete}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:text-red-500 hover:bg-red-50" title={dict.Accounts.Tree.Delete} onClick={handleDelete}>
                         <Trash2 size={14} />
                     </Button>
                 </div>
@@ -101,11 +102,14 @@ function AccountTreeItem({ account, level = 0 }: AccountTreeItemProps) {
 }
 
 export function AccountTree({ accounts }: { accounts: AccountWithChildren[] }) {
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
+
     if (accounts.length === 0) {
         return (
             <div className="text-center py-10 text-gray-500">
-                <p>لا توجد حسابات بعد.</p>
-                <p className="text-sm">ابدأ بإنشاء دليل الحسابات الخاص بك.</p>
+                <p>{dict.Accounts.Tree.NoAccounts || "لا توجد حسابات بعد."}</p>
+                <p className="text-sm">{dict.Accounts.Tree.StartGuide || "ابدأ بإنشاء دليل الحسابات الخاص بك."}</p>
             </div>
         );
     }

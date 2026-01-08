@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 export default async function ExpensesPage() {
     // Fetch expense accounts for the dropdown
     const accountsList = await getExpenseAccounts();
-    const dict = await getDictionary(); // Assuming we might add translations later
+    const rawDict = await getDictionary();
+    const dict = rawDict as any;
 
     const data = await getExpensesList();
 
@@ -27,9 +28,9 @@ export default async function ExpensesPage() {
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         <Wallet className="text-red-500" />
-                        المصروفات اليومية
+                        {dict.Expenses.Title}
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">تتبع وتسجيل جميع المصروفات والنثريات</p>
+                    <p className="text-sm text-gray-500 mt-1">{dict.Expenses.Description}</p>
                 </div>
 
                 <AddExpenseDialog accounts={accountsList} />
@@ -41,12 +42,12 @@ export default async function ExpensesPage() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
                             <Wallet className="h-4 w-4 text-red-500" />
-                            إجمالي مصروفات الشهر
+                            {dict.Expenses.Summary.TotalMonthly}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-700">{formatCurrency(data.monthlyTotal)}</div>
-                        <p className="text-xs text-gray-400 mt-1">من أول الشهر الحالي حتى اليوم</p>
+                        <p className="text-xs text-gray-400 mt-1">{dict.Expenses.Summary.MonthToDate}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -54,25 +55,25 @@ export default async function ExpensesPage() {
             {/* Expenses List */}
             <Card className="border-none shadow-md">
                 <CardHeader>
-                    <CardTitle className="text-lg">آخر العمليات المسجلة</CardTitle>
+                    <CardTitle className="text-lg">{dict.Expenses.LatestTransactions}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-gray-50">
-                                    <TableHead className="text-right w-[120px]">التاريخ</TableHead>
-                                    <TableHead className="text-right">بند المصروف</TableHead>
-                                    <TableHead className="text-right">الوصف</TableHead>
-                                    <TableHead className="text-right">المبلغ</TableHead>
-                                    <TableHead className="text-right w-[100px]">رقم القيد</TableHead>
+                                    <TableHead className="w-[120px]">{dict.Expenses.Table.Date}</TableHead>
+                                    <TableHead>{dict.Expenses.Table.Account}</TableHead>
+                                    <TableHead>{dict.Expenses.Table.Description}</TableHead>
+                                    <TableHead>{dict.Expenses.Table.Amount}</TableHead>
+                                    <TableHead className="w-[100px]">{dict.Expenses.Table.EntryNo}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {data.expenses.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-12 text-gray-500">
-                                            لا توجد مصروفات مسجلة حتى الآن.
+                                            {dict.Expenses.Table.NoExpenses}
                                         </TableCell>
                                     </TableRow>
                                 ) : (

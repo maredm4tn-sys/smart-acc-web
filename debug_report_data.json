@@ -1,0 +1,45 @@
+{
+  "expenses": [],
+  "revenue": [
+    {
+      "date": "2026-01-08T01:07:10.226Z",
+      "createdAt": "2026-01-08T01:07:10.000Z",
+      "entryNumber": "SAL-31",
+      "name": "مبيعات لعميل: مركز البيانات الحكومي",
+      "accountName": "Revenue",
+      "value": 1750000
+    },
+    {
+      "date": "2026-01-08T01:07:10.226Z",
+      "createdAt": "2026-01-08T01:07:10.000Z",
+      "entryNumber": "SAL-30",
+      "name": "مبيعات لعميل: مركز البيانات الحكومي",
+      "accountName": "Revenue",
+      "value": 6750000
+    },
+    {
+      "date": "2026-01-08T01:07:10.226Z",
+      "createdAt": "2026-01-08T01:07:10.000Z",
+      "entryNumber": "SAL-29",
+      "name": "مبيعات لعميل: مركز البيانات الحكومي",
+      "accountName": "Revenue",
+      "value": 1750000
+    },
+    {
+      "date": "2026-01-08T01:07:10.226Z",
+      "createdAt": "2026-01-08T01:07:10.000Z",
+      "entryNumber": "SAL-28",
+      "name": "مبيعات لعميل: مركز البيانات الحكومي",
+      "accountName": "Revenue",
+      "value": 6750000
+    },
+    {
+      "date": "2026-01-08T01:07:10.226Z",
+      "createdAt": "2026-01-08T01:07:10.000Z",
+      "entryNumber": "SAL-27",
+      "name": "مبيعات لعميل: مركز البيانات الحكومي",
+      "accountName": "Revenue",
+      "value": 1750000
+    }
+  ]
+}

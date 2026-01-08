@@ -32,7 +32,7 @@ export async function createProduct(inputData: CreateProductInput) {
     const dict = await getDictionary();
     const { getSession } = await import("@/features/auth/actions");
     const session = await getSession();
-    if (!session || session.role !== 'admin') {
+    if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
         return { success: false, message: "Unauthorized: Admins only" };
     }
 
@@ -94,7 +94,7 @@ export async function updateProduct(data: UpdateProductInput) {
     const dict = await getDictionary();
     const { getSession } = await import("@/features/auth/actions");
     const session = await getSession();
-    if (!session || session.role !== 'admin') {
+    if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
         return { success: false, message: "Unauthorized: Admins only" };
     }
     try {
@@ -129,7 +129,7 @@ export async function bulkImportProducts(productsList: { name: string; sku?: str
     try {
         const { getSession } = await import("@/features/auth/actions");
         const session = await getSession();
-        if (!session || session.role !== 'admin') {
+        if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
             return { success: false, message: "Unauthorized: Admins only" };
         }
 

@@ -78,6 +78,7 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
             currency: data.currency || "EGP",
             exchangeRate: (data.exchangeRate || 1).toString(),
             status: "posted",
+            createdAt: new Date(), // Explicitly set to ensure ms precision
         }).returning();
 
         // Insert Lines

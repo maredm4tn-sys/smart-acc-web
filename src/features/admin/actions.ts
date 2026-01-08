@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { users, invoices, products, customers, journalEntries, accounts, auditLogs, tenants } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, invoices, products, customers, journalEntries, accounts, auditLogs, tenants, suppliers, vouchers, purchaseInvoices, purchaseInvoiceItems, invoiceItems, journalLines } from "@/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import { getSession } from "@/features/auth/actions";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
@@ -15,34 +15,55 @@ async function checkSuperAdmin() {
     return session;
 }
 
+async function checkAdmin() {
+    const session = await getSession();
+    if (!session || (session.role !== 'SUPER_ADMIN' && session.role !== 'admin')) {
+        throw new Error("Unauthorized: Admin access required");
+    }
+    return session;
+}
+
 export async function resetSubscriberData(tenantId: string) {
     try {
-        await checkSuperAdmin();
+        const session = await getSession();
+        if (!session) throw new Error("Unauthorized");
+
+        // Only SUPER_ADMIN can reset ANY tenant. 
+        // Regular admins can only reset THEIR OWN tenant.
+        if (session.role !== 'SUPER_ADMIN' && session.tenantId !== tenantId) {
+            throw new Error("Unauthorized: You can only reset your own data");
+        }
+
+        // Final check: Must be at least an admin
+        if (session.role !== 'SUPER_ADMIN' && session.role !== 'admin') {
+            throw new Error("Unauthorized: Admin rights required");
+        }
 
         // Safety: Ensure tenant exists
         const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
         if (!tenant) return { error: "Tenant not found" };
 
-        // 1. Delete Invoices (Cascades items)
+        // Order matters for Foreign Key constraints
+        // 1. Delete Details/Lines first
+        await db.delete(journalLines).where(sql`journal_entry_id IN (SELECT id FROM journal_entries WHERE tenant_id = ${tenantId})`);
+        await db.delete(invoiceItems).where(sql`invoice_id IN (SELECT id FROM invoices WHERE tenant_id = ${tenantId})`);
+        await db.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (SELECT id FROM purchase_invoices WHERE tenant_id = ${tenantId})`);
+
+        // 2. Delete Headers
         await db.delete(invoices).where(eq(invoices.tenantId, tenantId));
-
-        // 2. Delete Products
-        await db.delete(products).where(eq(products.tenantId, tenantId));
-
-        // 3. Delete Customers
-        await db.delete(customers).where(eq(customers.tenantId, tenantId));
-
-        // 4. Delete Journal Entries (Cascades lines)
+        await db.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+        await db.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
         await db.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
 
-        // 5. Delete any specific audit logs for this tenant? 
-        // Usually we keep audit logs for security, but if "Complete Data Purge" is requested...
-        // The user said "Search Indexes or Cache". 
-        // We don't have search indexes tables seen in schema.ts (based on imports).
-        // We will stick to operational data.
+        // 3. Delete Master Data
+        await db.delete(products).where(eq(products.tenantId, tenantId));
+        await db.delete(customers).where(eq(customers.tenantId, tenantId));
+        await db.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
+
+        // 4. Clear certain logs if needed (optional, keeping system reset logs)
+        // await db.delete(auditLogs).where(eq(auditLogs.tenantId, tenantId));
 
         // Audit the reset itself (System level)
-        const session = await checkSuperAdmin();
         await db.insert(auditLogs).values({
             tenantId: tenantId,
             userId: session.userId,
@@ -245,7 +266,7 @@ export async function updateTenant(tenantId: string, data: {
 // Restoration of factoryReset for backward compatibility and global admin use
 export async function factoryReset() {
     try {
-        const session = await checkSuperAdmin();
+        const session = await checkAdmin();
         // Get the current user's tenant ID from the session
         let tenantId = session.tenantId;
 

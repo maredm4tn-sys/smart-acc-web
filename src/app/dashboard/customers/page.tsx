@@ -10,7 +10,8 @@ import { Users } from "lucide-react";
 import { getDictionary } from "@/lib/i18n-server";
 
 export default async function CustomersPage() {
-    const dict = await getDictionary();
+    const rawDict = await getDictionary();
+    const dict = rawDict as any;
     const customers = await getCustomers();
     const session = await getSession();
     const isAdmin = session?.role === 'admin' || session?.role === 'SUPER_ADMIN';
@@ -29,7 +30,7 @@ export default async function CustomersPage() {
                         <ExcelExportButton
                             getData={getCustomersExport}
                             fileName="Customers_List"
-                            label="تصدير (Excel)"
+                            label={dict.Customers.ExportExcel}
                         />
                     )}
                 </div>
@@ -47,13 +48,13 @@ export default async function CustomersPage() {
                         <Table className="table-fixed w-full">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[18%] text-center align-middle">الاسم</TableHead>
-                                    <TableHead className="w-[12%] text-center align-middle">الشركة</TableHead>
-                                    <TableHead className="w-[15%] text-center align-middle">العنوان</TableHead>
-                                    <TableHead className="w-[15%] text-center align-middle">الهاتف</TableHead>
-                                    <TableHead className="w-[20%] text-center align-middle">البريد</TableHead>
-                                    <TableHead className="w-[12%] text-center align-middle">إجمالي الديون</TableHead>
-                                    <TableHead className="w-[8%] text-center align-middle">إجراءات</TableHead>
+                                    <TableHead className="w-[18%] text-center align-middle">{dict.Customers.Table.Name}</TableHead>
+                                    <TableHead className="w-[12%] text-center align-middle">{dict.Customers.Table.Company}</TableHead>
+                                    <TableHead className="w-[15%] text-center align-middle">{dict.Customers.Table.Address}</TableHead>
+                                    <TableHead className="w-[15%] text-center align-middle">{dict.Customers.Table.Phone}</TableHead>
+                                    <TableHead className="w-[20%] text-center align-middle">{dict.Customers.Table.Email}</TableHead>
+                                    <TableHead className="w-[12%] text-center align-middle">{dict.Customers.Table.TotalDebt}</TableHead>
+                                    <TableHead className="w-[8%] text-center align-middle">{dict.Customers.Table.Actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -117,7 +118,7 @@ export default async function CustomersPage() {
                                     {c.email && <div className="flex justify-between border-b pb-1"><span>{dict.Customers.Table.Email}:</span> <span>{c.email}</span></div>}
                                     {c.taxId && <div className="flex justify-between border-b pb-1"><span>{dict.Customers.Table.TaxId}:</span> <span>{c.taxId}</span></div>}
                                     <div className="flex justify-between font-bold pt-1">
-                                        <span>Total Debt:</span>
+                                        <span>{dict.Customers.Table.TotalDebt}:</span>
                                         <span className={c.totalDebt > 0 ? 'text-red-600' : 'text-green-600'}>
                                             {c.totalDebt?.toFixed(2) || "0.00"}
                                         </span>

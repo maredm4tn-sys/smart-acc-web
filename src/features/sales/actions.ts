@@ -409,15 +409,242 @@ export async function deleteInvoice(id: number) {
     }
 }
 
-export async function getInvoices() {
+const createReturnInvoiceSchema = z.object({
+    originalInvoiceId: z.number(),
+    returnDate: z.string(),
+    items: z.array(z.object({
+        productId: z.number(),
+        description: z.string(),
+        quantity: z.number().positive(),
+        unitPrice: z.number().nonnegative(),
+    })).min(1),
+    tenantId: z.string().optional()
+});
+
+export async function createReturnInvoice(inputData: z.infer<typeof createReturnInvoiceSchema>) {
+    const dict = await getDictionary();
+    const validation = createReturnInvoiceSchema.safeParse(inputData);
+    if (!validation.success) return { success: false, message: "Invalid Data" };
+
+    const data = validation.data;
+
+    try {
+        const tenantId = await requireTenant();
+
+        // 1. Get Original Invoice
+        const originalInvoice = await db.query.invoices.findFirst({
+            where: (inv, { eq, and }) => and(eq(inv.id, data.originalInvoiceId), eq(inv.tenantId, tenantId))
+        });
+
+        if (!originalInvoice) throw new Error("Original Invoice not found");
+
+        // Calculate Return Totals
+        let subtotal = 0;
+        data.items.forEach(item => {
+            subtotal += item.quantity * item.unitPrice;
+        });
+
+        // Use original exchange rate
+        const exchangeRate = Number(originalInvoice.exchangeRate) || 1;
+
+        // Calculate Tax (Proportional) - Assuming flat rate for simplicity or derived from original
+        // Better: Check if original had tax. 
+        // We will assume 14% if original had tax, or 0.
+        const originalSubtotal = Number(originalInvoice.subtotal);
+        const originalTax = Number(originalInvoice.taxTotal);
+        const taxRate = originalSubtotal > 0 ? (originalTax / originalSubtotal) : 0;
+
+        const taxTotal = subtotal * taxRate;
+        const totalAmount = subtotal + taxTotal;
+
+        // 2. Create Return Invoice
+        // Note: Amounts are positive, 'type' = 'return' distinguishes it.
+        const [returnInvoice] = await db.insert(invoices).values({
+            tenantId: tenantId,
+            invoiceNumber: `RET-${originalInvoice.invoiceNumber}-${Date.now().toString().slice(-4)}`,
+            customerName: originalInvoice.customerName,
+            issueDate: data.returnDate,
+            dueDate: data.returnDate,
+            currency: originalInvoice.currency,
+            exchangeRate: originalInvoice.exchangeRate,
+            subtotal: (-subtotal).toString(), // Store as negative for financial reporting ease? Or positive?
+            // Let's store as NEGATIVE to make summation easier in reports.
+            taxTotal: (-taxTotal).toString(),
+            totalAmount: (-totalAmount).toString(),
+            amountPaid: (-totalAmount).toString(), // Assuming full refund paid or credited immediately
+            paymentStatus: 'paid',
+            status: "issued",
+            type: "return",
+            relatedInvoiceId: originalInvoice.id.toString(),
+            notes: `مرتجع من فاتورة ${originalInvoice.invoiceNumber}`
+        }).returning();
+
+        // 3. Invoice Items & RESTOCK
+        for (const item of data.items) {
+            await db.insert(invoiceItems).values({
+                invoiceId: returnInvoice.id,
+                productId: item.productId,
+                description: item.description,
+                quantity: item.quantity.toString(),
+                unitPrice: item.unitPrice.toString(),
+                total: (-1 * item.quantity * item.unitPrice).toString(),
+            });
+
+            // RESTOCK (Increase Quantity)
+            await db.update(products)
+                .set({ stockQuantity: sql`${products.stockQuantity} + ${item.quantity}` })
+                .where(eq(products.id, item.productId));
+        }
+
+        // 4. Accounting Entry (Reverse of Sale)
+
+        // Find OR Create Sales Account
+        let salesAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq, or }) => and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%مبيعات%'), like(accounts.name, '%Sales%'), like(accounts.name, '%Revenue%'))
+            )
+        });
+        if (!salesAccount) {
+            const [newSales] = await db.insert(accounts).values({
+                tenantId,
+                name: "إيرادات المبيعات (تلقائي)",
+                code: `401-${Date.now().toString().slice(-4)}`,
+                type: 'revenue',
+                currency: 'EGP',
+                balance: '0'
+            }).returning();
+            salesAccount = newSales;
+        }
+
+        // Find OR Create Cash Account
+        let cashAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq }) => and(eq(accounts.tenantId, tenantId), like(accounts.name, '%نقدية%'))
+        });
+        if (!cashAccount) {
+            const [newCash] = await db.insert(accounts).values({
+                tenantId,
+                name: "النقدية (تلقائي)",
+                code: `101-${Date.now().toString().slice(-4)}`,
+                type: 'asset',
+                currency: 'EGP',
+                balance: '0'
+            }).returning();
+            cashAccount = newCash;
+        }
+
+        if (salesAccount && cashAccount) {
+            const { createJournalEntry } = await import("@/features/accounting/actions");
+            const baseSubtotal = subtotal * exchangeRate;
+            const baseTaxTotal = taxTotal * exchangeRate;
+            const baseTotal = totalAmount * exchangeRate;
+
+            const lines = [
+                // Debit Sales (Reduce Revenue)
+                {
+                    accountId: salesAccount.id,
+                    debit: baseSubtotal,
+                    credit: 0,
+                    description: `مردودات مبيعات - فاتورة ${originalInvoice.invoiceNumber}`
+                },
+                // Debit Tax (Reduce Tax Liability)
+                ...(baseTaxTotal > 0 ? [{
+                    accountId: salesAccount.id, // Using Sales Account for Tax simplicity as per original setup
+                    debit: baseTaxTotal,
+                    credit: 0,
+                    description: `ضريبة مردودات - فاتورة ${originalInvoice.invoiceNumber}`
+                }] : []),
+                // Credit Cash (Refund)
+                {
+                    accountId: cashAccount.id,
+                    debit: 0,
+                    credit: baseTotal,
+                    description: `سداد قيمة مرتجع - فاتورة ${originalInvoice.invoiceNumber}`
+                }
+            ];
+
+            const jeResult = await createJournalEntry({
+                date: data.returnDate,
+                reference: returnInvoice.invoiceNumber,
+                description: `مرتجع مبيعات فاتورة ${originalInvoice.invoiceNumber}`,
+                currency: originalInvoice.currency,
+                exchangeRate: Number(originalInvoice.exchangeRate),
+                lines: lines
+            });
+
+            if (!jeResult.success) {
+                console.error("Journal Entry Failed for Return:", jeResult.message);
+                // We return SUCCESS but with a warning because the invoice itself was created
+                return {
+                    success: true,
+                    message: `تم إنشاء المرتجع، ولكن فشل القيد المحاسبي: ${jeResult.message}`,
+                    id: returnInvoice.id
+                };
+            }
+        } else {
+            console.error("Critical: Could not find or create accounts for return invoice accounting.");
+        }
+
+        // Check if fully returned or partially
+        // 1. Get all returns for this invoice (including the one we just created)
+        const allReturns = await db.query.invoices.findMany({
+            where: (inv, { eq, and }) => and(
+                eq(inv.relatedInvoiceId, originalInvoice.id.toString()),
+                eq(inv.type, 'return')
+            )
+        });
+
+        // 2. Sum up totals (Absolute values because returns are negative)
+        const totalReturnedAmount = allReturns.reduce((sum, ret) => sum + Math.abs(Number(ret.totalAmount)), 0);
+        const originalTotal = Number(originalInvoice.totalAmount);
+
+        // 3. Determine Status
+        // Allow a tiny epsilon for float comparisons
+        const isFullyReturned = Math.abs(totalReturnedAmount - originalTotal) < 0.1;
+
+        const newStatus = isFullyReturned ? 'returned' : 'partially_returned';
+
+        // Update Original Invoice Status
+        await db.update(invoices)
+            .set({ status: newStatus })
+            .where(eq(invoices.id, originalInvoice.id));
+
+        revalidatePath("/dashboard/sales");
+        revalidatePath("/dashboard/reports/income-statement");
+
+        return { success: true, message: "تم تسجيل المرتجع والقيد المحاسبي بنجاح", id: returnInvoice.id };
+
+    } catch (e: any) {
+        console.error("Return Invoice Error:", e);
+        return { success: false, message: `Error: ${e.message}` };
+    }
+}
+
+export async function getInvoices(page: number = 1, pageSize: number = 100) {
     try {
         const tenantId = await requireTenant(); // Strict Tenant
+        const limit = pageSize;
+        const offset = (page - 1) * limit;
 
-        return await db.select().from(invoices)
-            .where(eq(invoices.tenantId, tenantId))
-            .orderBy(desc(invoices.issueDate), desc(invoices.id));
+        const data = await db.query.invoices.findMany({
+            where: (invoices, { eq, and }) => eq(invoices.tenantId, tenantId),
+            orderBy: desc(invoices.createdAt), // Order by CreatedAt Timestamp DESC
+            limit: limit + 1,
+            offset: offset,
+            with: {
+                items: true
+            }
+        });
+
+        const hasNextPage = data.length > limit;
+        const paginatedInvoices = hasNextPage ? data.slice(0, limit) : data;
+
+        return {
+            invoices: paginatedInvoices,
+            hasNextPage
+        };
     } catch (e) {
-        console.warn("Error fetching invoices or unauthorized");
-        return [];
+        console.warn("Error fetching invoices or unauthorized", e);
+        return { invoices: [], hasNextPage: false };
     }
 }

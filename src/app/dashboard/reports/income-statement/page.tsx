@@ -38,12 +38,46 @@ export default function IncomeStatementPage() {
     const [startDate, setStartDate] = useState<string>(firstDay.toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState<string>(lastDay.toISOString().split('T')[0]);
 
+    // Interface for detail items
+    interface DetailItem {
+        date: string;
+        createdAt?: Date | null;
+        entryNumber: string; // Added entryNumber
+        name: string;
+        accountName: string;
+        value: number;
+    }
+
+    // Robust Time Extractor
+    const getTimeFromItem = (item: DetailItem) => {
+        // 1. Try createdAt
+        if (item.createdAt) {
+            const dateObj = new Date(item.createdAt);
+            // Fix 1970 issue
+            if (dateObj.getFullYear() === 1970) {
+                return new Date(dateObj.getTime() * 1000);
+            }
+            return dateObj;
+        }
+
+        // 2. Try entryNumber (JE-<Timestamp>)
+        if (item.entryNumber && item.entryNumber.startsWith('JE-')) {
+            const ts = parseInt(item.entryNumber.replace('JE-', ''), 10);
+            if (!isNaN(ts)) {
+                return new Date(ts);
+            }
+        }
+
+        return null;
+    };
+
     // Data State
     const [data, setData] = useState<{
         totalRevenue: number;
         totalExpenses: number;
         netProfit: number;
-        expenseDetails: { name: string; value: number }[];
+        expenseDetails: DetailItem[];
+        revenueDetails?: DetailItem[];
     } | null>(null);
 
     const [isPending, startTransition] = useTransition();
@@ -55,7 +89,6 @@ export default function IncomeStatementPage() {
                 setData(result);
             } catch (error) {
                 console.error("Failed to fetch report", error);
-                // Could add toast here
             }
         });
     };
@@ -71,7 +104,7 @@ export default function IncomeStatementPage() {
                     <ExcelExportButton
                         getData={getProfitExport}
                         fileName="Profit_Report"
-                        label="تصدير الشامل (Excel)"
+                        label={dict.Reports.IncomeStatement.ExportComprehensive}
                     />
                 )}
             </div>
@@ -88,6 +121,7 @@ export default function IncomeStatementPage() {
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
+                                    aria-label="From Date"
                                     className="w-full sm:w-[200px] pr-10 pl-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
                                 />
                             </div>
@@ -100,6 +134,7 @@ export default function IncomeStatementPage() {
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
+                                    aria-label="To Date"
                                     className="w-full sm:w-[200px] pr-10 pl-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
                                 />
                             </div>
@@ -124,7 +159,6 @@ export default function IncomeStatementPage() {
                     <div className="grid gap-6 md:grid-cols-3">
                         {/* Revenue */}
                         <Card className="border-none shadow-md bg-white border-r-4 border-r-emerald-500 overflow-hidden relative">
-
                             <CardContent className="p-6">
                                 <div className="text-sm font-medium text-gray-500 mb-1">{dict.Reports.IncomeStatement.TotalRevenue}</div>
                                 <div className="text-2xl font-bold text-emerald-600 flex items-center gap-2 dir-ltr">
@@ -136,7 +170,6 @@ export default function IncomeStatementPage() {
 
                         {/* Expenses */}
                         <Card className="border-none shadow-md bg-white border-r-4 border-r-red-500 overflow-hidden relative">
-
                             <CardContent className="p-6">
                                 <div className="text-sm font-medium text-gray-500 mb-1">{dict.Reports.IncomeStatement.TotalExpenses}</div>
                                 <div className="text-2xl font-bold text-red-600 flex items-center gap-2 dir-ltr">
@@ -151,7 +184,6 @@ export default function IncomeStatementPage() {
                             "border-none shadow-md border-r-4 overflow-hidden relative",
                             data.netProfit >= 0 ? "bg-blue-600 text-white border-r-blue-400" : "bg-red-600 text-white border-r-red-400"
                         )}>
-
                             <CardContent className="p-6">
                                 <div className="text-sm font-medium text-blue-100 mb-1">{dict.Reports.IncomeStatement.NetProfit}</div>
                                 <div className="text-3xl font-bold text-white flex items-center gap-2 dir-ltr">
@@ -161,77 +193,190 @@ export default function IncomeStatementPage() {
                         </Card>
                     </div>
 
-                    {/* Detailed Table (Desktop) */}
-                    <Card className="border-none shadow-md bg-white hidden md:block">
-                        <CardHeader className="border-b border-gray-100 pb-4">
-                            <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-gray-500" />
-                                {dict.Reports.IncomeStatement.ExpenseDetails}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-gray-50/50">
-                                    <TableRow>
-                                        <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
-                                        <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
-                                        <TableHead className="text-left font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Percentage}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {data.expenseDetails.length > 0 ? (
-                                        data.expenseDetails.map((item, index) => (
-                                            <TableRow key={index} className="hover:bg-blue-50/30 transition-colors">
-                                                <TableCell className="font-medium text-gray-700">{item.name}</TableCell>
-                                                <TableCell className="text-left font-bold text-gray-900 dir-ltr">{formatCurrency(item.value)}</TableCell>
-                                                <TableCell className="text-left text-sm text-gray-500 dir-ltr">
-                                                    {data.totalExpenses > 0
-                                                        ? ((item.value / data.totalExpenses) * 100).toFixed(1) + '%'
-                                                        : '0%'}
+                    {/* Details Tables (Desktop) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 hidden md:grid">
+                        {/* Revenue Table */}
+                        <Card className="border-none shadow-md bg-white h-96 flex flex-col">
+                            <CardHeader className="border-b border-gray-100 pb-4 shrink-0">
+                                <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <TrendingUp className="h-5 w-5 text-emerald-500" />
+                                    {dict.Reports.IncomeStatement.RevenueDetails}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0 overflow-auto custom-scrollbar flex-1">
+                                <Table>
+                                    <TableHeader className="bg-emerald-50/50 sticky top-0 z-10">
+                                        <TableRow>
+                                            <TableHead className="text-right font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
+                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
+                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
+                                            <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {data.revenueDetails && data.revenueDetails.length > 0 ? (
+                                            data.revenueDetails.map((item, index) => (
+                                                <TableRow key={index} className="hover:bg-emerald-50/30 transition-colors">
+                                                    <TableCell className="text-xs text-gray-500 align-top whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                            {(() => {
+                                                                const time = getTimeFromItem(item);
+                                                                return time ? (
+                                                                    <span className="text-[11px] font-mono text-blue-600 dir-ltr bg-blue-50 px-1 rounded-sm w-fit mt-0.5">
+                                                                        {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                                    </span>
+                                                                ) : null;
+                                                            })()}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="font-medium text-gray-700 text-sm align-top">{item.name}</TableCell>
+                                                    <TableCell className="text-xs text-slate-500 align-top">{item.accountName}</TableCell>
+                                                    <TableCell className="text-left font-bold text-gray-900 dir-ltr align-top">{formatCurrency(item.value)}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                                                    {dict.Reports.IncomeStatement.Table.NoRevenues}
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="h-24 text-center text-gray-500">
-                                                {dict.Reports.IncomeStatement.Table.NoExpenses}
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
 
-                    {/* Mobile Card View (Expenses) */}
-                    <div className="md:hidden space-y-4">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-gray-500" />
-                            {dict.Reports.IncomeStatement.ExpenseDetails}
-                        </h3>
-                        {data.expenseDetails.length > 0 ? (
-                            data.expenseDetails.map((item, index) => (
-                                <Card key={index} className="border-none shadow-sm bg-white">
-                                    <CardContent className="p-4 flex items-center justify-between">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{item.name}</p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                {data.totalExpenses > 0
-                                                    ? ((item.value / data.totalExpenses) * 100).toFixed(1) + '%'
-                                                    : '0%'}
-                                            </p>
-                                        </div>
-                                        <div className="font-bold text-gray-900 dir-ltr">
-                                            {formatCurrency(item.value)}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))
-                        ) : (
-                            <div className="p-8 text-center text-gray-500 bg-white rounded-lg border border-dashed">
-                                {dict.Reports.IncomeStatement.Table.NoExpenses}
-                            </div>
-                        )}
+                        {/* Expenses Table */}
+                        <Card className="border-none shadow-md bg-white h-96 flex flex-col">
+                            <CardHeader className="border-b border-gray-100 pb-4 shrink-0">
+                                <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-red-500" />
+                                    {dict.Reports.IncomeStatement.ExpenseDetails}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0 overflow-auto custom-scrollbar flex-1">
+                                <Table>
+                                    <TableHeader className="bg-red-50/50 sticky top-0 z-10">
+                                        <TableRow>
+                                            <TableHead className="text-right font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
+                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
+                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
+                                            <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {data.expenseDetails.length > 0 ? (
+                                            data.expenseDetails.map((item, index) => (
+                                                <TableRow key={index} className="hover:bg-red-50/30 transition-colors">
+                                                    <TableCell className="text-xs text-gray-500 align-top whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                            {(() => {
+                                                                const time = getTimeFromItem(item);
+                                                                return time ? (
+                                                                    <span className="text-[11px] font-mono text-blue-600 dir-ltr bg-blue-50 px-1 rounded-sm w-fit mt-0.5">
+                                                                        {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                                    </span>
+                                                                ) : null;
+                                                            })()}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="font-medium text-gray-700 text-sm align-top">{item.name}</TableCell>
+                                                    <TableCell className="text-xs text-slate-500 align-top">{item.accountName}</TableCell>
+                                                    <TableCell className="text-left font-bold text-gray-900 dir-ltr align-top">{formatCurrency(item.value)}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                                                    {dict.Reports.IncomeStatement.Table.NoExpenses}
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-6">
+                        {/* Mobile Revenue */}
+                        <div>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-3">
+                                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                                {dict.Reports.IncomeStatement.RevenueDetails}
+                            </h3>
+                            {data.revenueDetails && data.revenueDetails.length > 0 ? (
+                                data.revenueDetails.map((item, index) => (
+                                    <Card key={index} className="border-none shadow-sm bg-white mb-2">
+                                        <CardContent className="p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="font-bold text-gray-900">{item.name}</div>
+                                                <div className="font-bold text-emerald-600 dir-ltr">{formatCurrency(item.value)}</div>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-gray-500">
+                                                <div className="flex flex-col">
+                                                    <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                    {(() => {
+                                                        const time = getTimeFromItem(item);
+                                                        return time ? (
+                                                            <span className="text-[11px] font-mono text-blue-600 dir-ltr bg-blue-50 px-1 rounded-sm w-fit mt-0.5">
+                                                                {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                            </span>
+                                                        ) : null;
+                                                    })()}
+                                                </div>
+                                                <span>{item.accountName}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="p-4 text-center text-sm text-gray-500 bg-white rounded-lg border border-dashed">
+                                    {dict.Reports.IncomeStatement.Table.NoRevenues}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Mobile Expenses */}
+                        <div>
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-3">
+                                <FileText className="h-5 w-5 text-red-500" />
+                                {dict.Reports.IncomeStatement.ExpenseDetails}
+                            </h3>
+                            {data.expenseDetails.length > 0 ? (
+                                data.expenseDetails.map((item, index) => (
+                                    <Card key={index} className="border-none shadow-sm bg-white mb-2">
+                                        <CardContent className="p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="font-bold text-gray-900">{item.name}</div>
+                                                <div className="font-bold text-red-600 dir-ltr">{formatCurrency(item.value)}</div>
+                                            </div>
+                                            <div className="flex justify-between text-xs text-gray-500">
+                                                <div className="flex flex-col">
+                                                    <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                    {(() => {
+                                                        const time = getTimeFromItem(item);
+                                                        return time ? (
+                                                            <span className="text-[11px] font-mono text-blue-600 dir-ltr bg-blue-50 px-1 rounded-sm w-fit mt-0.5">
+                                                                {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                            </span>
+                                                        ) : null;
+                                                    })()}
+                                                </div>
+                                                <span>{item.accountName}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="p-4 text-center text-sm text-gray-500 bg-white rounded-lg border border-dashed">
+                                    {dict.Reports.IncomeStatement.Table.NoExpenses}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                 </div>

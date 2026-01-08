@@ -2,10 +2,10 @@
 
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Activity, CreditCard, DollarSign, Users, Package, TrendingUp, AlertTriangle, Calendar, Plus, FileText, ShoppingCart, Wallet } from "lucide-react";
+import { Activity, CreditCard, DollarSign, Users, Package, TrendingUp, AlertTriangle, Calendar, Plus, FileText, ShoppingCart, Wallet, Truck } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/components/providers/i18n-provider";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { getDashboardStats } from "@/features/dashboard/actions";
 
 
@@ -114,7 +114,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <span>👋</span>
-                        <span>{dict.Dashboard.Welcome}، {session?.fullName || dict.Dashboard.FinancialManager}</span>
+                        <span>{dict.Dashboard.Welcome}، {session?.fullName || dict.Dashboard.SystemAdmin}</span>
                     </h2>
                     <p className="text-slate-500 mt-1">{dict.Dashboard.SummaryText}</p>
                 </div>
@@ -149,7 +149,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
 
             {/* Charts & Actions */}
             <div className="grid gap-6 md:grid-cols-7">
-                <RevenueChart />
+                <AnalyticsCharts />
 
                 <div className="col-span-3 flex flex-col gap-6">
                     <Card className="border-none shadow-sm bg-white overflow-hidden">
@@ -180,19 +180,90 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                         </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-sm bg-amber-50/50 border-amber-100 overflow-hidden flex-1">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="flex items-center gap-2 text-base text-amber-900">
-                                <AlertTriangle className="h-4 w-4" />
+                    <Card className="border-none shadow-sm bg-white overflow-hidden flex-1">
+                        <CardHeader className="pb-2 border-b bg-slate-50/50">
+                            <CardTitle className="flex items-center gap-2 text-base text-slate-900 font-black">
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
                                 {dict.Dashboard.SystemAlerts}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 pt-2">
+                        <CardContent className="p-4 pt-4 space-y-6">
+                            {/* Low Stock Alerts */}
                             <div className="space-y-3">
-                                <div className="text-sm text-center text-gray-400 py-4">
-                                    {/* Real alerts integration pending */}
-                                    No active alerts
-                                </div>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Package size={14} /> متطلبات المخزن
+                                </h4>
+                                {stats.lowStockItems && stats.lowStockItems.length > 0 ? (
+                                    stats.lowStockItems.map((item: any) => (
+                                        <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100 group transition-all hover:bg-amber-100">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-900">{item.name}</span>
+                                                <span className="text-[10px] text-amber-700 font-bold uppercase tracking-tighter">
+                                                    نقص في المخزون
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-sm font-black text-red-600 font-mono">{item.quantity}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
+                                        لا توجد نواقص حالياً
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Overdue Customer Invoices */}
+                            <div className="space-y-3">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Users size={14} /> مديونيات العملاء
+                                </h4>
+                                {stats.overdueInvoices && stats.overdueInvoices.length > 0 ? (
+                                    stats.overdueInvoices.map((inv: any) => (
+                                        <Link key={inv.id} href={`/dashboard/sales`} className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100 group transition-all hover:bg-rose-100 block">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-900">{inv.customer}</span>
+                                                <span className="text-[10px] text-rose-700 font-bold uppercase tracking-tighter">
+                                                    فاتورة متأخرة
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-sm font-black text-rose-600 font-mono">{Number(inv.amount).toLocaleString()}</span>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
+                                        جميع المبيعات محصلة بالكامل
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Due Supplier Payments */}
+                            <div className="space-y-3">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <Truck size={14} /> مستحقات الموردين
+                                </h4>
+                                {stats.duePurchases && stats.duePurchases.length > 0 ? (
+                                    stats.duePurchases.map((inv: any) => (
+                                        <Link key={inv.id} href={`/dashboard/purchases`} className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-100 group transition-all hover:bg-blue-100 block">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-900">{inv.supplier}</span>
+                                                <span className="text-[10px] text-blue-700 font-bold uppercase tracking-tighter">
+                                                    موعد سداد قادم
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-sm font-black text-blue-600 font-mono">{Number(inv.amount).toLocaleString()}</span>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
+                                        لا توجد دفعات مستحقة للموردين
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

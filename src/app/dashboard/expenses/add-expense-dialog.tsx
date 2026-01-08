@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "@/components/providers/i18n-provider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ type Account = {
 
 export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
     const [open, setOpen] = useState(false);
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
     const [isPending, startTransition] = useTransition();
     // const { toast } = useToast(); // Sonner uses direct import
 
@@ -31,7 +34,7 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
         e.preventDefault();
 
         if (!accountId || !amount) {
-            toast.error("بيانات ناقصة", { description: "يرجى اختيار بند المصروف وتحديد المبلغ." });
+            toast.error(dict.Expenses.AddDialog.Error, { description: dict.Expenses.AddDialog.Error });
             return;
         }
 
@@ -46,7 +49,7 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
             const result = await createExpense(formData);
 
             if (result.success) {
-                toast.success("تم بنجاح", { description: "تم تسجيل المصروف وخصمه من الخزينة." });
+                toast.success(dict.Expenses.AddDialog.Success, { description: dict.Expenses.AddDialog.Description });
                 setOpen(false);
                 // Reset form
                 setAmount("");
@@ -62,18 +65,18 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
             <DialogTrigger asChild>
                 <Button className="gap-2 bg-red-600 hover:bg-red-700 text-white">
                     <PlusCircle size={16} />
-                    تسجيل مصروف
+                    {dict.Expenses.AddDialog.Trigger}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>تسجيل مصروف جديد</DialogTitle>
-                    <DialogDescription>سيتم إنشاء قيد يومية لخصم المبلغ من الخزينة.</DialogDescription>
+                    <DialogTitle>{dict.Expenses.AddDialog.Title}</DialogTitle>
+                    <DialogDescription>{dict.Expenses.AddDialog.Description}</DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="date">تاريخ المصروف</Label>
+                        <Label htmlFor="date">{dict.Expenses.AddDialog.Date}</Label>
                         <Input
                             id="date"
                             type="date"
@@ -84,14 +87,14 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>بند المصروف (الحساب)</Label>
+                        <Label>{dict.Expenses.AddDialog.Account}</Label>
                         <Select value={accountId} onValueChange={setAccountId}>
                             <SelectTrigger>
-                                <SelectValue placeholder="اختر نوع المصروف..." />
+                                <SelectValue placeholder={dict.Expenses.AddDialog.SelectAccount} />
                             </SelectTrigger>
                             <SelectContent>
                                 {accounts.length === 0 ? (
-                                    <div className="p-2 text-sm text-gray-500 text-center">لا توجد حسابات مصروفات. أضفها من شجرة الحسابات.</div>
+                                    <div className="p-2 text-sm text-gray-500 text-center">{dict.Expenses.AddDialog.NoAccounts}</div>
                                 ) : (
                                     accounts.map((acc) => (
                                         <SelectItem key={acc.id} value={acc.id.toString()}>
@@ -104,7 +107,7 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="amount">المبلغ (EGP)</Label>
+                        <Label htmlFor="amount">{dict.Expenses.AddDialog.Amount}</Label>
                         <Input
                             id="amount"
                             type="number"
@@ -117,25 +120,25 @@ export function AddExpenseDialog({ accounts }: { accounts: Account[] }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="desc">ملاحظات / وصف (اختياري)</Label>
+                        <Label htmlFor="desc">{dict.Expenses.AddDialog.Notes}</Label>
                         <Input
                             id="desc"
-                            placeholder="مثال: فاتورة كهرباء شهر 1"
+                            placeholder={dict.Expenses.AddDialog.NotePlaceholder}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
 
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>{dict.Expenses.AddDialog.Cancel}</Button>
                         <Button type="submit" disabled={isPending} className="bg-red-600 hover:bg-red-700">
                             {isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    جاري الحفظ...
+                                    {dict.Expenses.AddDialog.Saving}
                                 </>
                             ) : (
-                                "حفظ المصروف"
+                                dict.Expenses.AddDialog.Save
                             )}
                         </Button>
                     </div>

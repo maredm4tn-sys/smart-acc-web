@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { accounts, journalEntries, journalLines, tenants, invoices, products } from "@/db/schema";
-import { and, eq, gte, lte, sql, or } from "drizzle-orm";
+import { accounts, journalEntries, journalLines, tenants, invoices, products, purchaseInvoices, customers, suppliers } from "@/db/schema";
+import { and, eq, gte, lte, sql, or, desc, like } from "drizzle-orm";
 import { getSession } from "@/features/auth/actions";
 import { getActiveTenantId } from "@/lib/actions-utils";
 
@@ -67,9 +67,14 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
     // 5. Detailed Expenses Breakdown
     const expenseDetails = await db
         .select({
+            date: journalEntries.transactionDate,
+            createdAt: journalEntries.createdAt, // Added createdAt
+            entryNumber: journalEntries.entryNumber, // Added entryNumber for fallback
+            description: journalEntries.description,
             accountName: accounts.name,
-            totalDebit: sql<number>`sum(${journalLines.debit})`,
-            totalCredit: sql<number>`sum(${journalLines.credit})`,
+            reference: journalEntries.reference,
+            totalDebit: journalLines.debit,
+            totalCredit: journalLines.credit,
         })
         .from(journalLines)
         .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
@@ -82,18 +87,71 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
                 lte(journalEntries.transactionDate, endDate.toISOString().split('T')[0])
             )
         )
-        .groupBy(accounts.name);
+        .orderBy(desc(journalEntries.transactionDate), desc(journalEntries.id)); // Sort by Date DESC, then ID DESC (Newest First)
 
     const formattedExpenses = expenseDetails.map(item => ({
-        name: item.accountName,
+        date: item.date,
+        createdAt: item.createdAt, // Pass createdAt
+        entryNumber: item.entryNumber, // Pass entryNumber
+        name: item.description || item.accountName,
+        accountName: item.accountName,
         value: (Number(item.totalDebit) || 0) - (Number(item.totalCredit) || 0)
     })).filter(item => item.value > 0);
+
+    // 6. Detailed Revenue Breakdown
+    const revenueDetails = await db
+        .select({
+            date: journalEntries.transactionDate,
+            createdAt: journalEntries.createdAt, // Added createdAt
+            entryNumber: journalEntries.entryNumber, // Added entryNumber for fallback
+            description: journalEntries.description,
+            accountName: accounts.name,
+            reference: journalEntries.reference,
+            totalDebit: journalLines.debit,
+            totalCredit: journalLines.credit,
+        })
+        .from(journalLines)
+        .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+        .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))
+        .where(
+            and(
+                eq(journalEntries.tenantId, tenantId),
+                or(
+                    eq(accounts.type, 'revenue'),
+                    eq(accounts.type, 'income'),
+                    sql`${accounts.name} LIKE '%مبيعات%'`,
+                    sql`${accounts.name} LIKE '%Sales%'`,
+                    sql`${accounts.name} LIKE '%Revenue%'`
+                ),
+                gte(journalEntries.transactionDate, startDate.toISOString().split('T')[0]),
+                lte(journalEntries.transactionDate, endDate.toISOString().split('T')[0])
+            )
+        )
+        .orderBy(desc(journalEntries.transactionDate), desc(journalEntries.id)); // Sort by Date DESC, then ID DESC (Newest First)
+
+    const formattedRevenue = revenueDetails.map(item => ({
+        date: item.date,
+        createdAt: item.createdAt, // Pass createdAt
+        entryNumber: item.entryNumber, // Pass entryNumber
+        name: item.description || item.accountName,
+        accountName: item.accountName,
+        value: (Number(item.totalCredit) || 0) - (Number(item.totalDebit) || 0)
+    })).filter(item => item.value > 0);
+
+    try {
+        const fs = await import('fs');
+        fs.writeFileSync('debug_report_data.json', JSON.stringify({
+            expenses: formattedExpenses.slice(0, 5),
+            revenue: formattedRevenue.slice(0, 5)
+        }, null, 2));
+    } catch (e) { console.error("Debug Write Failed", e); }
 
     return {
         totalRevenue,
         totalExpenses,
         netProfit,
-        expenseDetails: formattedExpenses
+        expenseDetails: formattedExpenses,
+        revenueDetails: formattedRevenue
     };
 }
 
@@ -118,15 +176,37 @@ export async function getProfitExport() {
             { "البند": "إجمالي المصروفات", "القيمة": Number(data.totalExpenses.toFixed(2)) },
             { "البند": "صافي الربح / الخسارة", "القيمة": Number(data.netProfit.toFixed(2)) },
             { "البند": "", "القيمة": "" }, // Spacer
-            { "البند": "تفاصيل المصروفات:", "القيمة": "" },
+            { "البند": "تفاصيل الإيرادات:", "القيمة": "" },
         ];
 
-        data.expenseDetails.forEach(exp => {
-            rows.push({
-                "البند": exp.name,
-                "القيمة": Number(exp.value.toFixed(2))
+        // Add Revenue Details
+        if (data.revenueDetails && data.revenueDetails.length > 0) {
+            data.revenueDetails.forEach(rev => {
+                rows.push({
+                    "البند": rev.name,
+                    "القيمة": Number(rev.value.toFixed(2))
+                });
             });
-        });
+        } else {
+            rows.push({ "البند": "لا توجد إيرادات", "القيمة": 0 });
+        }
+
+
+        rows.push({ "البند": "", "القيمة": "" }); // Spacer
+        rows.push({ "البند": "تفاصيل المصروفات:", "القيمة": "" });
+
+        // Add Expense Details
+        if (data.expenseDetails && data.expenseDetails.length > 0) {
+            data.expenseDetails.forEach(exp => {
+                rows.push({
+                    "البند": exp.name,
+                    "القيمة": Number(exp.value.toFixed(2))
+                });
+            });
+        } else {
+            rows.push({ "البند": "لا توجد مصروفات", "القيمة": 0 });
+        }
+
 
         return rows;
     } catch (e) {
@@ -142,9 +222,11 @@ export async function getSalesSummary() {
     if (!tenantId) return null;
 
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString();
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    const startOfDay = formatDate(now);
+    const startOfMonth = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    const startOfYear = formatDate(new Date(now.getFullYear(), 0, 1));
 
     // Helper to get sum
     const getSum = async (dateCondition: any) => {
@@ -162,14 +244,68 @@ export async function getSalesSummary() {
         return result[0] || { total: 0, count: 0 };
     };
 
-    const daily = await getSum(gte(invoices.issueDate, startOfDay));
-    const monthly = await getSum(gte(invoices.issueDate, startOfMonth));
-    const yearly = await getSum(gte(invoices.issueDate, startOfYear));
+    // Parallel Fetching for all dashboard metrics
+    const [
+        daily,
+        monthly,
+        yearly,
+        customerDebtsRes,
+        supplierDebtsRes,
+        productsCount,
+        customersCount,
+        suppliersCount,
+        cashBalanceRes,
+        vatCollectedRes,
+        vatPaidRes,
+        inventoryItems
+    ] = await Promise.all([
+        getSum(gte(invoices.issueDate, startOfDay)),
+        getSum(gte(invoices.issueDate, startOfMonth)),
+        getSum(gte(invoices.issueDate, startOfYear)),
+        db.select({
+            total: sql<number>`sum(CAST(${invoices.totalAmount} AS REAL) - CAST(${invoices.amountPaid} AS REAL))`
+        }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
+        db.select({
+            total: sql<number>`sum(CAST(${purchaseInvoices.totalAmount} AS REAL) - CAST(${purchaseInvoices.amountPaid} AS REAL))`
+        }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
+        db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.tenantId, tenantId)),
+        db.select({ count: sql<number>`count(*)` }).from(customers).where(eq(customers.tenantId, tenantId)),
+        db.select({ count: sql<number>`count(*)` }).from(suppliers).where(eq(suppliers.tenantId, tenantId)),
+        db.select({
+            balance: sql<number>`sum(${journalLines.debit}) - sum(${journalLines.credit})`
+        }).from(journalLines).innerJoin(accounts, eq(journalLines.accountId, accounts.id)).where(
+            and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%نقدية%'), like(accounts.name, '%خزينة%'), like(accounts.name, '%Cash%'))
+            )
+        ),
+        db.select({
+            total: sql<number>`sum(CAST(${invoices.totalAmount} AS REAL) * 0.14 / 1.14)`
+        }).from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))),
+        db.select({
+            total: sql<number>`sum(CAST(${purchaseInvoices.totalAmount} AS REAL) * 0.14 / 1.14)`
+        }).from(purchaseInvoices).where(and(eq(purchaseInvoices.tenantId, tenantId), eq(purchaseInvoices.type, 'purchase'))),
+        db.select({
+            stock: products.stockQuantity,
+            price: products.buyPrice
+        }).from(products).where(and(eq(products.tenantId, tenantId), eq(products.type, 'goods')))
+    ]);
+
+    const totalInventoryValue = inventoryItems.reduce((acc, item) => acc + (Number(item.stock || 0) * Number(item.price || 0)), 0);
 
     return {
         daily: { total: Number(daily.total || 0), count: daily.count },
         monthly: { total: Number(monthly.total || 0), count: monthly.count },
         yearly: { total: Number(yearly.total || 0), count: yearly.count },
+        customerDebts: Number(customerDebtsRes[0]?.total || 0),
+        supplierDebts: Number(supplierDebtsRes[0]?.total || 0),
+        productsCount: productsCount[0]?.count || 0,
+        customersCount: customersCount[0]?.count || 0,
+        suppliersCount: suppliersCount[0]?.count || 0,
+        cashBalance: Number(cashBalanceRes[0]?.balance || 0),
+        vatCollected: Number(vatCollectedRes[0]?.total || 0),
+        vatPaid: Number(vatPaidRes[0]?.total || 0),
+        inventoryValue: totalInventoryValue,
     };
 }
 

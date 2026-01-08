@@ -10,7 +10,8 @@ import { Loader2, Plus } from "lucide-react";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export function AddUserDialog() {
-    const { dict } = useTranslation();
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -77,12 +78,12 @@ export function AddUserDialog() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>رقم الهاتف</Label>
-                            <Input name="phone" placeholder="01xxxxxxxxx" />
+                            <Label>{dict.Users.Dialog.Phone}</Label>
+                            <Input name="phone" placeholder={dict.Users.Dialog.Placeholders.Phone} />
                         </div>
                         <div className="space-y-2">
-                            <Label>العنوان</Label>
-                            <Input name="address" placeholder="العنوان..." />
+                            <Label>{dict.Users.Dialog.Address}</Label>
+                            <Input name="address" placeholder={dict.Users.Dialog.Placeholders.Address} />
                         </div>
                     </div>
                     <div className="pt-4 flex justify-end gap-2">

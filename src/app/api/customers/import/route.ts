@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
         const session = await getSession();
         const tenantId = session?.tenantId;
 
-        if (!tenantId || session.role !== 'admin') {
+        if (!tenantId || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 

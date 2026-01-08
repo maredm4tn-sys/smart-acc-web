@@ -26,6 +26,9 @@ export const suppliers = usePg ? schemaPg.suppliers : schemaSqlite.suppliers;
 export const customers = usePg ? schemaPg.customers : schemaSqlite.customers;
 export const invoices = usePg ? schemaPg.invoices : schemaSqlite.invoices;
 export const invoiceItems = usePg ? schemaPg.invoiceItems : schemaSqlite.invoiceItems;
+export const purchaseInvoices = usePg ? schemaPg.purchaseInvoices : schemaSqlite.purchaseInvoices;
+export const purchaseInvoiceItems = usePg ? schemaPg.purchaseInvoiceItems : schemaSqlite.purchaseInvoiceItems;
+export const vouchers = usePg ? schemaPg.vouchers : schemaSqlite.vouchers;
 export const auditLogs = usePg ? schemaPg.auditLogs : schemaSqlite.auditLogs;
 
 // Relations
@@ -38,4 +41,7 @@ export const customersRelations = usePg ? schemaPg.customersRelations : schemaSq
 export const suppliersRelations = usePg ? schemaPg.suppliersRelations : schemaSqlite.suppliersRelations;
 export const invoicesRelations = usePg ? schemaPg.invoicesRelations : schemaSqlite.invoicesRelations;
 export const invoiceItemsRelations = usePg ? schemaPg.invoiceItemsRelations : schemaSqlite.invoiceItemsRelations;
+export const purchaseInvoicesRelations = usePg ? schemaPg.purchaseInvoicesRelations : schemaSqlite.purchaseInvoicesRelations;
+export const purchaseInvoiceItemsRelations = usePg ? schemaPg.purchaseInvoiceItemsRelations : schemaSqlite.purchaseInvoiceItemsRelations;
+export const vouchersRelations = usePg ? schemaPg.vouchersRelations : schemaSqlite.vouchersRelations;
 export const auditLogsRelations = usePg ? schemaPg.auditLogsRelations : schemaSqlite.auditLogsRelations;

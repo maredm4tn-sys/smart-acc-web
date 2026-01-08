@@ -77,8 +77,12 @@ if (mode === 'desktop') {
             // Vercel puts files in var/task/... so relative path 'drizzle' usually works if included in 'files' or 'assets'
             await migratePg(dbInstance, { migrationsFolder: path.join(process.cwd(), 'drizzle', 'pg') });
             console.log("✅ [DB] PG Migrations applied!");
-        } catch (e) {
-            console.error("❌ [DB] PG Migration failed/skipped:", e);
+        } catch (e: any) {
+            if (e.code === '42P07') {
+                console.log("✅ [DB] PG Migrations skipped (already applied).");
+            } else {
+                console.error("❌ [DB] PG Migration failed/skipped:", e);
+            }
         }
     })();
 
@@ -88,6 +92,7 @@ if (mode === 'desktop') {
     // Only verify file exists if we are strictly LOCAL dev, on Vercel this might fail if not careful.
     // For now we assume local dev.
     const sqlite = new Database('smart-acc-dev.db');
+    sqlite.pragma('journal_mode = WAL');
     dbInstance = drizzle(sqlite, { schema });
 }
 

@@ -1,3 +1,4 @@
+import { getDictionary } from "@/lib/i18n-server";
 import { AddSupplierDialog } from "@/features/suppliers/components/add-supplier-dialog";
 import { SupplierActions } from "@/features/suppliers/components/supplier-actions";
 import { getSuppliers } from "@/features/suppliers/actions";
@@ -6,14 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, Truck } from "lucide-react";
 
 export default async function SuppliersPage() {
+    const dict = await getDictionary();
     const suppliers = await getSuppliers();
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">الموردين</h2>
-                    <p className="text-muted-foreground">إدارة قائمة الموردين والشركات</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">{dict.Suppliers.Title}</h2>
+                    <p className="text-muted-foreground">{dict.Suppliers.Description}</p>
                 </div>
                 <div className="flex flex-row-reverse justify-start gap-3">
                     <AddSupplierDialog />
@@ -24,26 +26,26 @@ export default async function SuppliersPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Truck className="h-5 w-5 text-primary" />
-                        قائمة الموردين
+                        {dict.Suppliers.ListTitle}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table className="table-fixed w-full">
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-center">الاسم</TableHead>
-                                <TableHead className="text-center">الشركة</TableHead>
-                                <TableHead className="text-center">العنوان</TableHead>
-                                <TableHead className="text-center">الهاتف</TableHead>
-                                <TableHead className="text-center">الرقم الضريبي</TableHead>
-                                <TableHead className="text-center w-[100px]">إجراءات</TableHead>
+                                <TableHead className="text-center">{dict.Suppliers.Table.Name}</TableHead>
+                                <TableHead className="text-center">{dict.Suppliers.Table.Company}</TableHead>
+                                <TableHead className="text-center">{dict.Suppliers.Table.Address}</TableHead>
+                                <TableHead className="text-center">{dict.Suppliers.Table.Phone}</TableHead>
+                                <TableHead className="text-center">{dict.Suppliers.Table.TaxId}</TableHead>
+                                <TableHead className="text-center w-[100px]">{dict.Suppliers.Table.Actions}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {suppliers.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                        لا يوجد موردين حالياً
+                                        {dict.Suppliers.Table.NoSuppliers}
                                     </TableCell>
                                 </TableRow>
                             ) : (

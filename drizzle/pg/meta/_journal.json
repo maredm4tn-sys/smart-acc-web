@@ -15,6 +15,13 @@
       "when": 1767716058677,
       "tag": "0001_jazzy_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767758793103,
+      "tag": "0002_woozy_cerise",
+      "breakpoints": true
     }
   ]
 }

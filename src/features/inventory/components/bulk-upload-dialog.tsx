@@ -16,8 +16,10 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Upload, FileSpreadsheet, Loader2 } from "lucide-react";
 import { bulkImportProducts } from "../actions";
+import { useTranslation } from "@/components/providers/i18n-provider"; // Added hook
 
 export function BulkUploadDialog() {
+    const { dict } = useTranslation(); // Use hook
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -87,20 +89,19 @@ export function BulkUploadDialog() {
             <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
                     <FileSpreadsheet size={16} />
-                    <span>استيراد (Excel)</span>
+                    <span>{dict.Inventory.ImportExcel}</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>استيراد منتجات من Excel</DialogTitle>
+                    <DialogTitle>{dict.Inventory.ImportDialog.Title}</DialogTitle>
                     <DialogDescription>
-                        قم برفع ملف Excel (.xlsx) يحتوي على الأعمدة التالية:<br />
-                        <b>اسم الصنف، سعر الشراء، سعر البيع، الرصيد</b>
+                        {dict.Inventory.ImportDialog.Description}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
-                    <Label htmlFor="excel-upload">اختيار الملف</Label>
+                    <Label htmlFor="excel-upload">{dict.Inventory.ImportDialog.FileLabel}</Label>
                     <div className="flex gap-2">
                         <Input
                             id="excel-upload"
@@ -113,7 +114,7 @@ export function BulkUploadDialog() {
                     {isLoading && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                             <Loader2 className="animate-spin h-4 w-4" />
-                            <span>جاري المعالجة...</span>
+                            <span>{dict.Inventory.ImportDialog.Processing}</span>
                         </div>
                     )}
                 </div>

@@ -38,7 +38,7 @@ export default async function JournalListPage() {
                         <ExcelExportButton
                             getData={getJournalExport}
                             fileName="Journal_Entries"
-                            label="تصدير (Excel)"
+                            label={dict.Journal.ExportExcel}
                         />
                     )}
                     <Link href="/dashboard/journal/new">
@@ -89,9 +89,9 @@ export default async function JournalListPage() {
                                                         entry.type === 'Payment' ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-50' :
                                                             'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-50'
                                                 }>
-                                                    {entry.type === 'Invoice' ? (lang === 'ar' ? 'فاتورة' : 'Invoice') :
-                                                        entry.type === 'Payment' ? (lang === 'ar' ? 'دفعة' : 'Payment') :
-                                                            (lang === 'ar' ? 'يدوي' : 'Manual')}
+                                                    {entry.type === 'Invoice' ? dict.Journal.Types.Invoice :
+                                                        entry.type === 'Payment' ? dict.Journal.Types.Payment :
+                                                            dict.Journal.Types.Manual}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>

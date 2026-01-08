@@ -38,7 +38,7 @@ export default async function InventoryPage() {
                         <ExcelExportButton
                             getData={getInventoryExport}
                             fileName="Inventory_Report"
-                            label="تصدير (Excel)"
+                            label={dict.Inventory.ExportExcel}
                         />
                     )}
                     <BulkUploadDialog />

@@ -2,11 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getInventoryReport } from "@/features/reports/actions";
 import { Package, TrendingUp, DollarSign, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { getDictionary } from "@/lib/i18n-server";
 
 export default async function InventoryReportPage() {
     const data = await getInventoryReport();
-    const dict = await getDictionary();
+    const dict = (await getDictionary()) as any;
 
     if (!data) return <div>Loading...</div>;
 
@@ -21,53 +22,52 @@ export default async function InventoryReportPage() {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Package className="text-blue-600" />
-                تقرير المخزون
-                <span className="text-sm font-normal text-gray-500 mt-1 block">Inventory Valuation & Alerts</span>
+                {dict.Reports.InventoryReport.Title}
             </h1>
 
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="border-none shadow-sm bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">إجمالي الأصناف</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500">{dict.Reports.InventoryReport.TotalItems}</CardTitle>
                         <Package className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{data.totalItems}</div>
-                        <p className="text-xs text-gray-400">منتج مخزني (Goods)</p>
+                        <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.Goods}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-sm bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">قيمة الشراء (التكلفة)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500">{dict.Reports.InventoryReport.TotalCost}</CardTitle>
                         <DollarSign className="h-4 w-4 text-blue-400" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-700">{formatCurrency(data.totalCostValue)}</div>
-                        <p className="text-xs text-gray-400">رأس المال في المخزن</p>
+                        <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.Capital}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-sm bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">قيمة البيع المتوقعة</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500">{dict.Reports.InventoryReport.TotalSales}</CardTitle>
                         <DollarSign className="h-4 w-4 text-emerald-400" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-700">{formatCurrency(data.totalSalesValue)}</div>
-                        <p className="text-xs text-gray-400">عند بيع كل الكمية</p>
+                        <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.PotentialRevenue}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-sm bg-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">الربح المتوقع</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-500">{dict.Reports.InventoryReport.Profit}</CardTitle>
                         <TrendingUp className="h-4 w-4 text-purple-400" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-purple-700">{formatCurrency(data.potentialProfit)}</div>
-                        <p className="text-xs text-gray-400">هامش الربح الإجمالي</p>
+                        <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.ProfitMargin}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -77,25 +77,25 @@ export default async function InventoryReportPage() {
                 <CardHeader className="bg-red-50 border-b border-red-100 pb-3">
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-red-600" />
-                        <CardTitle className="text-red-900">تنبيهات النواقص (Low Stock Alerts)</CardTitle>
+                        <CardTitle className="text-red-900">{dict.Reports.InventoryReport.LowStock}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-right">اسم المنتج</TableHead>
-                                <TableHead className="text-right">SKU</TableHead>
-                                <TableHead className="text-center">الكمية الحالية</TableHead>
-                                <TableHead className="text-right">سعر الشراء</TableHead>
-                                <TableHead className="text-right">إجراء</TableHead>
+                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.ProductName}</TableHead>
+                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.SKU}</TableHead>
+                                <TableHead className="text-center">{dict.Reports.InventoryReport.Table.CurrentStock}</TableHead>
+                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.BuyPrice}</TableHead>
+                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.Action}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {data.lowStockItems.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                                        مخزونك تمام! لا توجد نواقص (أقل من 5).
+                                        {dict.Reports.InventoryReport.Table.NoLowStock}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -111,9 +111,12 @@ export default async function InventoryReportPage() {
                                         </TableCell>
                                         <TableCell>{formatCurrency(Number(item.buyPrice))}</TableCell>
                                         <TableCell>
-                                            <span className="text-xs text-blue-600 cursor-pointer hover:underline">
-                                                طلب توريد
-                                            </span>
+                                            <Link
+                                                href={`/dashboard/purchases/create?productId=${item.id}`}
+                                                className="text-xs text-blue-600 hover:underline font-bold"
+                                            >
+                                                {dict.Reports.InventoryReport.Table.OrderSupply}
+                                            </Link>
                                         </TableCell>
                                     </TableRow>
                                 ))

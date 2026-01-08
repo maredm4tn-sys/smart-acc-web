@@ -26,10 +26,10 @@ export default function LoginPage() {
                 <div className="flex justify-center mb-10">
                     <div className="relative h-48 w-48">
                         <Image
-                            src="/app-logo-v2.jpg"
+                            src="/logo.png"
                             alt={dict.Logo}
                             fill
-                            className="object-contain mix-blend-multiply"
+                            className="object-contain"
                             priority
                         />
                     </div>

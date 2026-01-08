@@ -6,12 +6,12 @@
   "author": "Mared",
   "description": "Smart Accountant Offline Version",
   "scripts": {
-    "dev": "next dev -p 3002",
-    "build": "next build",
+    "dev": "next dev -p 3002 --turbo --turbo-log-level=silent",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "electron-dev": "concurrently \"cross-env BROWSER=none NEXT_PUBLIC_APP_MODE=desktop npm run dev\" \"wait-on http://localhost:3002 && electron .\"",
-    "electron-build": "cross-env NEXT_PUBLIC_APP_MODE=desktop next build && node scripts/fix-nested-build.js",
+    "electron-build": "cross-env NEXT_PUBLIC_APP_MODE=desktop next build --webpack && node scripts/fix-nested-build.js",
     "dist": "node scripts/build-dist.js",
     "db:generate:sqlite": "drizzle-kit generate --config=drizzle.config.ts",
     "db:generate:pg": "drizzle-kit generate --config=drizzle.config.pg.ts"
@@ -53,7 +53,10 @@
       "output": "dist"
     },
     "win": {
-      "target": "dir",
+      "target": [
+        "dir",
+        "zip"
+      ],
       "icon": "build/icon.png",
       "forceCodeSigning": false,
       "verifyUpdateCodeSignature": false
@@ -84,6 +87,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.69.0",
+    "react-to-print": "^3.2.0",
     "recharts": "^3.6.0",
     "sonner": "^2.0.7",
     "swr": "^2.3.8",
@@ -106,6 +110,7 @@
     "drizzle-kit": "^0.31.8",
     "electron": "30.1.0",
     "electron-builder": "24.13.3",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "nodemailer": "^7.0.12",

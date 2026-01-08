@@ -227,7 +227,10 @@ export const invoices = pgTable('invoices', {
     totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
 
     // --- AR Fields ---
-    paymentStatus: text('payment_status', { enum: ['paid', 'unpaid', 'partial'] }).default('paid').notNull(), // Default 'paid' for legacy
+    paymentStatus: text("payment_status").notNull().default("paid"), // paid, partial, unpaid
+    type: text("type").notNull().default("sale"), // sale, return
+    relatedInvoiceId: text("related_invoice_id"), // for returns, links to original invoice
+    notes: text("notes"),
     amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
 
     status: text('status', { enum: ['draft', 'issued', 'paid', 'cancelled'] }).default('draft').notNull(),
@@ -266,6 +269,110 @@ export const invoiceItemsRelations = relations(invoiceItems, ({ one }) => ({
     product: one(products, {
         fields: [invoiceItems.productId],
         references: [products.id],
+    }),
+}));
+
+// --- Purchase Invoices ---
+export const purchaseInvoices = pgTable('purchase_invoices', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    supplierId: integer('supplier_id').references(() => suppliers.id),
+    supplierName: text('supplier_name').notNull(),
+    invoiceNumber: text('invoice_number'),
+    referenceNumber: text('reference_number'),
+    issueDate: date('issue_date').notNull(),
+    dueDate: date('due_date'),
+    currency: text('currency').default('EGP').notNull(),
+    exchangeRate: decimal('exchange_rate', { precision: 10, scale: 6 }).default('1.000000').notNull(),
+
+    subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
+    taxTotal: decimal('tax_total', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+
+    // Payment Info
+    paymentStatus: text("payment_status").notNull().default("unpaid"), // paid, partial, unpaid
+    amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
+
+    status: text('status', { enum: ['draft', 'posted', 'void'] }).default('draft').notNull(),
+    type: text("type").notNull().default("purchase"), // purchase, return
+    relatedInvoiceId: integer('related_invoice_id'), // links to original purchase invoice
+    notes: text("notes"),
+
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const purchaseInvoiceItems = pgTable('purchase_invoice_items', {
+    id: serial('id').primaryKey(),
+    purchaseInvoiceId: integer('purchase_invoice_id').references(() => purchaseInvoices.id, { onDelete: 'cascade' }).notNull(),
+    productId: integer('product_id').references(() => products.id),
+    description: text('description').notNull(),
+    quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
+    unitCost: decimal('unit_cost', { precision: 15, scale: 2 }).notNull(),
+    total: decimal('total', { precision: 15, scale: 2 }).notNull(),
+});
+
+export const purchaseInvoicesRelations = relations(purchaseInvoices, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [purchaseInvoices.tenantId],
+        references: [tenants.id],
+    }),
+    supplier: one(suppliers, {
+        fields: [purchaseInvoices.supplierId],
+        references: [suppliers.id],
+    }),
+    items: many(purchaseInvoiceItems),
+    createdByUser: one(users, {
+        fields: [purchaseInvoices.createdBy],
+        references: [users.id],
+    }),
+}));
+
+export const purchaseInvoiceItemsRelations = relations(purchaseInvoiceItems, ({ one }) => ({
+    purchaseInvoice: one(purchaseInvoices, {
+        fields: [purchaseInvoiceItems.purchaseInvoiceId],
+        references: [purchaseInvoices.id],
+    }),
+    product: one(products, {
+        fields: [purchaseInvoiceItems.productId],
+        references: [products.id],
+    }),
+}));
+
+// --- Financial Vouchers (Receipts & Payments) ---
+export const vouchers = pgTable('vouchers', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    voucherNumber: text('voucher_number').notNull(),
+    type: text('type', { enum: ['receipt', 'payment'] }).notNull(),
+    date: date('date').notNull(),
+    amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+    description: text('description'),
+    reference: text('reference'),
+
+    // Linked Party
+    partyType: text('party_type', { enum: ['customer', 'supplier', 'other'] }),
+    partyId: integer('party_id'),
+
+    accountId: integer('account_id').references(() => accounts.id),
+
+    status: text('status', { enum: ['draft', 'posted', 'void'] }).default('draft').notNull(),
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const vouchersRelations = relations(vouchers, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [vouchers.tenantId],
+        references: [tenants.id],
+    }),
+    createdByUser: one(users, {
+        fields: [vouchers.createdBy],
+        references: [users.id],
+    }),
+    account: one(accounts, {
+        fields: [vouchers.accountId],
+        references: [accounts.id],
     }),
 }));
 

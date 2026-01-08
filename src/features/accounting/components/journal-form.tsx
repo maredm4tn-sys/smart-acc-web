@@ -44,7 +44,8 @@ interface AccountOption {
 }
 
 export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
-    const { dict } = useTranslation();
+    const { dict: rawDict } = useTranslation();
+    const dict = rawDict as any;
     const [totals, setTotals] = useState({ debit: 0, credit: 0, diff: 0 });
 
     const { control, register, handleSubmit, watch, formState: { errors } } = useForm<JournalFormValues>({
@@ -87,13 +88,13 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
             });
 
             if (response.success) {
-                toast.success(response.message);
+                toast.success(dict.Journal.Success);
                 router.push("/dashboard/journal");
             } else {
-                toast.error(response.message);
+                toast.error(dict.Journal.Error);
             }
         } catch (e) {
-            toast.error("حدث خطأ غير متوقع");
+            toast.error(dict.Journal.Error);
         }
     };
 
@@ -102,13 +103,13 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
             {/* Header Data */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label className="text-sm font-medium mb-1 block">تاريخ القيد</label>
+                    <label className="text-sm font-medium mb-1 block">{dict.Journal.Form.Date}</label>
                     <Input type="date" {...register("date")} />
                     {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>}
                 </div>
                 <div className="md:col-span-2">
-                    <label className="text-sm font-medium mb-1 block">بيان القيد (شرح عام)</label>
-                    <Input placeholder="شرح مختصر للعملية..." {...register("description")} />
+                    <label className="text-sm font-medium mb-1 block">{dict.Journal.Form.Description}</label>
+                    <Input placeholder={dict.Journal.Form.Errors.DescOptional} {...register("description")} />
                 </div>
             </div>
 
@@ -133,7 +134,7 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             {...register(`lines.${index}.accountId` as const)}
                                         >
-                                            <option value="">اختر الحساب...</option>
+                                            <option value="">{dict.Journal.Form.SelectAccount}</option>
                                             {accounts.map(acc => (
                                                 <option key={acc.id} value={acc.id}>
                                                     {acc.code} - {acc.name}
@@ -143,7 +144,7 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
                                         {errors.lines?.[index]?.accountId && <p className="text-red-500 text-xs">{errors.lines[index]?.accountId?.message}</p>}
                                     </TableCell>
                                     <TableCell className="p-2">
-                                        <Input {...register(`lines.${index}.description` as const)} placeholder="شرح" />
+                                        <Input {...register(`lines.${index}.description` as const)} placeholder={dict.Journal.Form.Description} />
                                     </TableCell>
                                     <TableCell className="p-2">
                                         <Input
@@ -180,7 +181,7 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
                 <div>
                     <Button type="button" variant="outline" onClick={() => append({ accountId: "", debit: 0, credit: 0, description: "" })} className="gap-2">
                         <Plus size={16} />
-                        <span>إضافة سطر</span>
+                        <span>{dict.Journal.Form.AddLine}</span>
                     </Button>
                 </div>
 
@@ -204,7 +205,7 @@ export function JournalEntryForm({ accounts }: { accounts: AccountOption[] }) {
                 <div>
                     <Button type="submit" size="lg" className="gap-2 min-w-[150px]" disabled={Math.abs(totals.diff) > 0.001}>
                         <Save size={18} />
-                        <span>حفظ القيد</span>
+                        <span>{dict.Journal.Form.Save}</span>
                     </Button>
                 </div>
             </div>
