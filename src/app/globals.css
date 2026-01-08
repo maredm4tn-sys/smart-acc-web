@@ -72,6 +72,19 @@
 
   body {
     @apply bg-background text-foreground;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Force Latin Numerals for everything */
+  :root {
+    font-feature-settings: "tnum", "lnum";
+  }
+
+  /* Force LTR for numeric inputs */
+  input[type="number"],
+  .dir-ltr {
+    direction: ltr !important;
+    text-align: left;
   }
 }
 

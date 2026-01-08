@@ -24,8 +24,7 @@ export default function ReportsClient({ initialSummary, dict }: ReportsClientPro
     const [isSyncing, setIsSyncing] = useState(false);
 
     const formatCurrency = (val: number) => {
-        const locale = dict?.Reports?.SubTitle ? (dict.Reports.SubTitle.includes('الرؤية') ? 'ar-EG' : 'en-US') : 'en-US';
-        return new Intl.NumberFormat(locale, {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'EGP',
         }).format(val);

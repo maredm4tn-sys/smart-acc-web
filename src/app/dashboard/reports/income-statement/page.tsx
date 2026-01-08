@@ -23,7 +23,7 @@ export default function IncomeStatementPage() {
 
     // Format currency helper
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'EGP',
             minimumFractionDigits: 2
