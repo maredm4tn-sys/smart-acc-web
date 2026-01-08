@@ -377,7 +377,7 @@
                 "Submit": "Issue Invoice",
                 "PaidAmount": "Paid Amount",
                 "RemainingDue": "Remaining Due",
-                "Print": "Print",
+                "PrintButton": "Print",
                 "Table": {
                     "Item": "Product / Service",
                     "Description": "Description",
