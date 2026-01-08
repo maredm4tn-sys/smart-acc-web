@@ -34,11 +34,12 @@ export async function getDashboardStats() {
             overdueInvoices,
             duePurchases
         ] = await Promise.all([
-            db.select({ value: sql`SUM(${castNum(invoices.totalAmount)})` }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
+            // Use COALESCE to ensure SUM doesn't return NULL (causing NaN in UI)
+            db.select({ value: sql`COALESCE(SUM(${castNum(invoices.totalAmount)}), 0)` }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(accounts).where(eq(accounts.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
-            db.select({ value: sql`SUM(${castNum(invoices.totalAmount)} - ${castNum(sql`COALESCE(${invoices.amountPaid}, 0)`)})` })
+            db.select({ value: sql`COALESCE(SUM(${castNum(invoices.totalAmount)} - ${castNum(sql`COALESCE(${invoices.amountPaid}, 0)`)}), 0)` })
                 .from(invoices).where(and(eq(invoices.tenantId, tenantId), eq(invoices.type, 'sale'))).then(res => res[0]),
             db.query.products.findMany({
                 where: (p, { and, eq }) => and(

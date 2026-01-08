@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { vouchers, accounts, customers, suppliers } from "@/db/schema";
-import { eq, and, like, desc } from "drizzle-orm";
+import { eq, and, like, desc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
 import { z } from "zod";
@@ -28,10 +28,11 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
     try {
         const tenantId = await requireTenant();
 
-        // 1. Generate Number
-        const count = await db.query.vouchers.findMany({ where: eq(vouchers.tenantId, tenantId) });
+        // 1. Generate Number (Efficiently)
+        const [countRes] = await db.select({ value: count() }).from(vouchers).where(eq(vouchers.tenantId, tenantId));
+        const voucherCount = Number(countRes?.value || 0);
         const prefix = data.type === 'receipt' ? 'RV' : 'PV';
-        const number = `${prefix}-${(count.length + 1).toString().padStart(6, '0')}`;
+        const number = `${prefix}-${(voucherCount + 1).toString().padStart(6, '0')}`;
 
         // 2. Create Voucher
         const formattedDate = data.date.includes('T') ? data.date.split('T')[0] : data.date;

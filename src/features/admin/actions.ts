@@ -28,64 +28,53 @@ export async function resetSubscriberData(tenantId: string) {
         const session = await getSession();
         if (!session) throw new Error("Unauthorized");
 
-        // Only SUPER_ADMIN can reset ANY tenant. 
-        // Regular admins can only reset THEIR OWN tenant.
         if (session.role !== 'SUPER_ADMIN' && session.tenantId !== tenantId) {
             throw new Error("Unauthorized: You can only reset your own data");
         }
 
-        // Final check: Must be at least an admin
-        if (session.role !== 'SUPER_ADMIN' && session.role !== 'admin') {
-            throw new Error("Unauthorized: Admin rights required");
-        }
-
-        // Safety: Ensure tenant exists
         const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
         if (!tenant) return { error: "Tenant not found" };
 
-        // Order matters for Foreign Key constraints
-        // 1. Delete Details/Lines first
-        await db.delete(journalLines).where(sql`journal_entry_id IN (SELECT id FROM journal_entries WHERE tenant_id = ${tenantId})`);
-        await db.delete(invoiceItems).where(sql`invoice_id IN (SELECT id FROM invoices WHERE tenant_id = ${tenantId})`);
-        await db.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (SELECT id FROM purchase_invoices WHERE tenant_id = ${tenantId})`);
+        // Transactional delete in correct order for PostgreSQL
+        await db.transaction(async (tx) => {
+            // Level 4: Details/Items
+            await tx.delete(journalLines).where(sql`journal_entry_id IN (SELECT id FROM journal_entries WHERE tenant_id = ${tenantId})`);
+            await tx.delete(invoiceItems).where(sql`invoice_id IN (SELECT id FROM invoices WHERE tenant_id = ${tenantId})`);
+            await tx.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (SELECT id FROM purchase_invoices WHERE tenant_id = ${tenantId})`);
 
-        // 2. Delete Headers
-        await db.delete(invoices).where(eq(invoices.tenantId, tenantId));
-        await db.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
-        await db.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
-        await db.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+            // Level 3: Headers
+            await tx.delete(invoices).where(eq(invoices.tenantId, tenantId));
+            await tx.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+            await tx.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
+            await tx.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
 
-        // 3. Delete Master Data
-        await db.delete(products).where(eq(products.tenantId, tenantId));
-        await db.delete(customers).where(eq(customers.tenantId, tenantId));
-        await db.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
+            // Level 2: Master Data
+            await tx.delete(products).where(eq(products.tenantId, tenantId));
+            await tx.delete(customers).where(eq(customers.tenantId, tenantId));
+            await tx.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
 
-        // 4. Clear certain logs if needed (optional, keeping system reset logs)
-        // await db.delete(auditLogs).where(eq(auditLogs.tenantId, tenantId));
+            // Note: We keeping Accounts as they define the COA
+            // Optional: reset account balances
+            await tx.update(accounts).set({ balance: "0" }).where(eq(accounts.tenantId, tenantId));
 
-        // Audit the reset itself (System level)
-        await db.insert(auditLogs).values({
-            tenantId: tenantId,
-            userId: session.userId,
-            action: "FACTORY_RESET",
-            entity: "SYSTEM",
-            entityId: tenantId,
-            details: `Factory reset performed for tenant ${tenant.name}`,
-            createdAt: new Date(),
+            // Audit
+            await tx.insert(auditLogs).values({
+                tenantId: tenantId,
+                userId: session.userId,
+                action: "FACTORY_RESET",
+                entity: "SYSTEM",
+                entityId: tenantId,
+                details: `Factory reset performed for tenant ${tenant.name}`,
+                createdAt: new Date(),
+            });
         });
 
-        // Revalidate ALL paths that might display data
         revalidatePath("/dashboard");
-        revalidatePath(`/dashboard/settings/subscribers/${tenantId}`);
-        revalidatePath("/dashboard/invoices");
-        revalidatePath("/dashboard/inventory");
-        revalidatePath("/dashboard/customers");
-        revalidatePath("/dashboard/reports");
-
+        revalidatePath("/dashboard/settings");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Reset Subscriber Data Error:", error);
-        return { error: "Failed to reset subscriber data" };
+        return { error: `فشل إعادة الضبط: ${error.message || "خطأ داخلي"}` };
     }
 }
 

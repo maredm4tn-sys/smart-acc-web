@@ -60,9 +60,10 @@ export async function createSupplier(data: z.infer<typeof supplierSchema>) {
         });
         revalidatePath("/dashboard/suppliers");
         return { success: true };
-    } catch (e) {
-        console.error(e);
-        return { error: "Failed to create supplier" };
+    } catch (e: any) {
+        console.error("DEBUG: createSupplier Failed", e);
+        // Return more detailed error for debugging online
+        return { error: `فشل الحفظ: ${e.message || "خطأ في قاعدة البيانات"}` };
     }
 }
 
@@ -76,18 +77,15 @@ export async function updateSupplier(id: any, data: z.infer<typeof supplierSchem
     }
 
     try {
-        // Convert ID to number only if we are in Postgres? No, Schema defines ID as number for Suppliers.
-        // Wait, Schema used serial('id') which is number in both PG and SQLite (integer mode number).
-        // BUT check helper: 'const [supplier] = ...' 
-
         await db.update(suppliers)
             .set(data)
             .where(and(eq(suppliers.id, Number(id)), eq(suppliers.tenantId, session.tenantId)));
 
         revalidatePath("/dashboard/suppliers");
         return { success: true };
-    } catch (e) {
-        return { error: "Failed to update supplier" };
+    } catch (e: any) {
+        console.error("DEBUG: updateSupplier Failed", e);
+        return { error: `فشل التعديل: ${e.message || "خطأ غير معروف"}` };
     }
 }
 
