@@ -470,7 +470,7 @@
         "Overview": {
             "Today": "Today's Sales",
             "Month": "Monthly Sales",
-            "Year": "Yearly Sales",
+            "YearlySales": "Yearly Sales",
             "Invoice": "Invoice",
             "Deals": "Deals",
             "InvoiceCount": "Invoices",
