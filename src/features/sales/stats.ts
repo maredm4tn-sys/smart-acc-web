@@ -9,8 +9,11 @@ export async function getCashierStats(userId: string) {
         // Fix: Use Egypt Time for 'Today' calculation
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
 
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
         const result = await db.select({
-            total: sql<number>`COALESCE(SUM(${invoices.totalAmount}), 0)`,
+            total: sql<number>`COALESCE(SUM(${castNum(invoices.totalAmount)}), 0)`,
             count: sql<number>`COUNT(*)`
         })
             .from(invoices)

@@ -228,10 +228,13 @@ export async function getSalesSummary() {
     const startOfMonth = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
     const startOfYear = formatDate(new Date(now.getFullYear(), 0, 1));
 
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
     // Helper to get sum
     const getSum = async (dateCondition: any) => {
         const result = await db.select({
-            total: sql<number>`sum(${invoices.totalAmount})`,
+            total: sql<number>`sum(${castNum(invoices.totalAmount)})`,
             count: sql<number>`count(${invoices.id})`
         })
             .from(invoices)
@@ -243,9 +246,6 @@ export async function getSalesSummary() {
             );
         return result[0] || { total: 0, count: 0 };
     };
-
-    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
-    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
 
     // Parallel Fetching for all dashboard metrics
     const [

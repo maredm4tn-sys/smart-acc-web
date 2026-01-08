@@ -265,8 +265,10 @@ export async function createPurchaseReturnInvoice(data: {
             });
 
             // Decrement Stock
+            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             await db.update(products)
-                .set({ stockQuantity: sql`CAST(${products.stockQuantity} AS REAL) - ${item.quantity}` })
+                .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
                 .where(eq(products.id, item.productId));
         }
 
@@ -344,10 +346,12 @@ export async function updatePurchaseInvoice(id: number, data: any) {
         // ---------------------------------------------------------
         // 2. Revert old stock impact
         // ---------------------------------------------------------
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
         for (const oldItem of oldInvoice.items) {
             if (oldItem.productId) {
                 await db.update(products)
-                    .set({ stockQuantity: sql`CAST(${products.stockQuantity} AS REAL) - ${oldItem.quantity}` })
+                    .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${oldItem.quantity}` })
                     .where(eq(products.id, oldItem.productId));
             }
         }

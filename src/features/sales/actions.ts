@@ -111,8 +111,10 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             });
 
             // Decrement Stock
+            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             await db.update(products)
-                .set({ stockQuantity: sql`${products.stockQuantity} - ${item.quantity}` })
+                .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
                 .where(eq(products.id, item.productId));
         }
 
@@ -389,10 +391,12 @@ export async function deleteInvoice(id: number) {
         await db.transaction(async (tx) => {
             // Restore Stock
             const items = await tx.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             for (const item of items) {
                 if (item.productId) {
                     await tx.update(products)
-                        .set({ stockQuantity: sql`${products.stockQuantity} + ${item.quantity}` })
+                        .set({ stockQuantity: sql`${castNum(products.stockQuantity)} + ${item.quantity}` })
                         .where(eq(products.id, item.productId)); // Product logic should ideally also filter by tenant but existing code relies on ID uniqueness. Good for now.
                 }
             }
@@ -491,8 +495,10 @@ export async function createReturnInvoice(inputData: z.infer<typeof createReturn
             });
 
             // RESTOCK (Increase Quantity)
+            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
             await db.update(products)
-                .set({ stockQuantity: sql`${products.stockQuantity} + ${item.quantity}` })
+                .set({ stockQuantity: sql`${castNum(products.stockQuantity)} + ${item.quantity}` })
                 .where(eq(products.id, item.productId));
         }
 

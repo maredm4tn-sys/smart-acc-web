@@ -97,6 +97,9 @@ export async function getCustomers() {
         // For type safety with Drizzle, let's fetch customers and their invoices or use a raw query if relation heavily nested.
         // Simplest V2 approach:
 
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
         const rows = await db.select({
             id: customers.id,
             name: customers.name,
@@ -105,7 +108,7 @@ export async function getCustomers() {
             email: customers.email,
             address: customers.address,
             taxId: customers.taxId,
-            totalDebt: sql<number>`COALESCE(SUM(${invoices.totalAmount} - COALESCE(${invoices.amountPaid}, 0)), 0)`
+            totalDebt: sql<number>`COALESCE(SUM(${castNum(invoices.totalAmount)} - COALESCE(${castNum(invoices.amountPaid)}, 0)), 0)`
         })
             .from(customers)
             .leftJoin(invoices, eq(customers.name, invoices.customerName)) // ideally join on ID, but schema uses name currently

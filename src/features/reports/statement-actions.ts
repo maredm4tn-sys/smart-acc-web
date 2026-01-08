@@ -36,10 +36,13 @@ export async function getAccountStatement(
     // If Liability/Revenue/Equity, it should be Credit - Debit.
     // For simplicity, we calculate Net Debit, then adjust display based on type.
 
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
     const openingBalanceQuery = await db
         .select({
-            totalDebit: sql<number>`sum(${journalLines.debit})`,
-            totalCredit: sql<number>`sum(${journalLines.credit})`
+            totalDebit: sql<number>`sum(${castNum(journalLines.debit)})`,
+            totalCredit: sql<number>`sum(${castNum(journalLines.credit)})`
         })
         .from(journalLines)
         .innerJoin(journalEntries, eq(journalLines.journalEntryId, journalEntries.id))

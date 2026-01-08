@@ -81,6 +81,8 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
             createdAt: new Date(), // Explicitly set to ensure ms precision
         }).returning();
 
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
         // Insert Lines
         for (const line of data.lines) {
             await queryDb.insert(journalLines).values({
@@ -93,7 +95,7 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
 
             await queryDb.update(accounts)
                 .set({
-                    balance: sql`${accounts.balance} + ${line.debit} - ${line.credit}`
+                    balance: sql`${castNum(accounts.balance)} + ${line.debit} - ${line.credit}`
                 })
                 .where(eq(accounts.id, line.accountId));
         }
@@ -397,8 +399,11 @@ export async function getExpensesList(limit = 20) {
     // Start of current month in YYYY-MM-DD
     const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString().split('T')[0];
 
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
     const monthlySum = await db.select({
-        total: sql<number>`sum(${journalLines.debit})`
+        total: sql<number>`sum(${castNum(journalLines.debit)})`
     })
         .from(journalLines)
         .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
