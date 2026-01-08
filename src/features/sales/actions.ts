@@ -95,10 +95,10 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             dueDate: formattedDueDate,
             currency: data.currency,
             exchangeRate: data.exchangeRate.toString(),
-            subtotal: subtotal.toString(),
-            taxTotal: taxTotal.toString(),
-            totalAmount: totalAmount.toString(),
-            amountPaid: paidAmount.toString(),
+            subtotal: subtotal.toFixed(2),
+            taxTotal: taxTotal.toFixed(2),
+            totalAmount: totalAmount.toFixed(2),
+            amountPaid: paidAmount.toFixed(2),
             paymentStatus: paymentStatus,
             status: "issued",
         }).returning();
@@ -109,9 +109,9 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 invoiceId: newInvoice.id,
                 productId: item.productId,
                 description: item.description,
-                quantity: item.quantity.toString(),
-                unitPrice: item.unitPrice.toString(),
-                total: (item.quantity * item.unitPrice).toString(),
+                quantity: Number(item.quantity).toFixed(2),
+                unitPrice: Number(item.unitPrice).toFixed(2),
+                total: (item.quantity * item.unitPrice).toFixed(2),
             });
 
             // Decrement Stock

@@ -42,7 +42,7 @@ export async function createVoucher(input: z.infer<typeof createVoucherSchema>) 
             voucherNumber: number,
             type: data.type as 'receipt' | 'payment',
             date: formattedDate,
-            amount: data.amount.toString(),
+            amount: Number(data.amount).toFixed(2),
             description: data.description,
             reference: data.reference,
             partyType: data.partyType as any,

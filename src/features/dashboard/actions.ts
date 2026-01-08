@@ -78,11 +78,11 @@ export async function getDashboardStats() {
         return {
             role: 'admin',
             data: {
-                totalRevenue: revenueRes?.value || "0.00",
-                totalAccounts: accRes?.value || 0,
-                activeProducts: prodRes?.value || 0,
-                invoicesCount: invRes?.value || 0,
-                totalReceivables: recRes?.value || "0.00",
+                totalRevenue: Number(revenueRes?.value || 0).toFixed(2),
+                totalAccounts: Number(accRes?.value || 0),
+                activeProducts: Number(prodRes?.value || 0),
+                invoicesCount: Number(invRes?.value || 0),
+                totalReceivables: Number(recRes?.value || 0).toFixed(2),
                 lowStockItems: lowStockItems.map(p => ({
                     id: p.id,
                     name: p.name,
@@ -94,7 +94,20 @@ export async function getDashboardStats() {
         };
     } catch (e) {
         console.error("Dashboard stats error", e);
-        return { role: 'admin', data: null, error: true };
+        return {
+            role: 'admin',
+            data: {
+                totalRevenue: "0.00",
+                totalAccounts: 0,
+                activeProducts: 0,
+                invoicesCount: 0,
+                totalReceivables: "0.00",
+                lowStockItems: [],
+                overdueInvoices: [],
+                duePurchases: []
+            },
+            error: true
+        };
     }
 }
 

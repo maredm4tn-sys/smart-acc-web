@@ -66,10 +66,10 @@ export async function createPurchaseInvoice(data: any) {
             invoiceNumber: data.invoiceNumber || `PUR-${Date.now().toString().slice(-6)}`,
             issueDate: formattedDate,
             paymentStatus: data.paymentStatus || 'unpaid',
-            amountPaid: (data.amountPaid || 0).toString(),
+            amountPaid: Number(data.amountPaid || 0).toFixed(2),
             status: 'posted', // Automatically affect stock
-            totalAmount: data.totalAmount.toString(),
-            subtotal: data.subtotal.toString(),
+            totalAmount: Number(data.totalAmount).toFixed(2),
+            subtotal: Number(data.subtotal).toFixed(2),
             // @ts-ignore
             createdBy: session.userId,
         }).returning();
@@ -80,9 +80,9 @@ export async function createPurchaseInvoice(data: any) {
                 purchaseInvoiceId: invoice.id,
                 productId: item.productId ? parseInt(item.productId) : null,
                 description: item.description,
-                quantity: item.quantity.toString(),
-                unitCost: item.unitCost.toString(),
-                total: item.total.toString(),
+                quantity: Number(item.quantity).toFixed(2),
+                unitCost: Number(item.unitCost).toFixed(2),
+                total: Number(item.total).toFixed(2),
             });
 
             // Update Product Stock & Average Cost

@@ -37,10 +37,26 @@ export async function resetSubscriberData(tenantId: string) {
 
         // Transactional delete in correct order for PostgreSQL
         await db.transaction(async (tx) => {
-            // Level 4: Details/Items
-            await tx.delete(journalLines).where(sql`journal_entry_id IN (SELECT id FROM journal_entries WHERE tenant_id = ${tenantId})`);
-            await tx.delete(invoiceItems).where(sql`invoice_id IN (SELECT id FROM invoices WHERE tenant_id = ${tenantId})`);
-            await tx.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (SELECT id FROM purchase_invoices WHERE tenant_id = ${tenantId})`);
+            // Level 4: Details/Items (Avoid complex subqueries)
+            const tenantInvoices = await tx.select({ id: invoices.id }).from(invoices).where(eq(invoices.tenantId, tenantId));
+            const invoiceIds = tenantInvoices.map(i => i.id);
+
+            const tenantPurchases = await tx.select({ id: purchaseInvoices.id }).from(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+            const purchaseIds = tenantPurchases.map(p => p.id);
+
+            const tenantJournalEntries = await tx.select({ id: journalEntries.id }).from(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+            const jeIds = tenantJournalEntries.map(je => je.id);
+
+            // Conditional deletion to avoid empty IN clauses
+            if (jeIds.length > 0) {
+                await tx.delete(journalLines).where(sql`journal_entry_id IN (${sql.join(jeIds, sql`, `)})`);
+            }
+            if (invoiceIds.length > 0) {
+                await tx.delete(invoiceItems).where(sql`invoice_id IN (${sql.join(invoiceIds, sql`, `)})`);
+            }
+            if (purchaseIds.length > 0) {
+                await tx.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (${sql.join(purchaseIds, sql`, `)})`);
+            }
 
             // Level 3: Headers
             await tx.delete(invoices).where(eq(invoices.tenantId, tenantId));
@@ -53,8 +69,7 @@ export async function resetSubscriberData(tenantId: string) {
             await tx.delete(customers).where(eq(customers.tenantId, tenantId));
             await tx.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
 
-            // Note: We keeping Accounts as they define the COA
-            // Optional: reset account balances
+            // Level 1: Accounts Reset
             await tx.update(accounts).set({ balance: "0" }).where(eq(accounts.tenantId, tenantId));
 
             // Audit
