@@ -703,10 +703,14 @@
             "Save": "Save",
             "Cancel": "Cancel",
             "Placeholders": {
-                "Name": "ex: John Doe",
-                "Username": "cashier1",
-                "Phone": "ex: 01xxxxxxxxx",
-                "Address": "ex: Address..."
+                "FullName": "Full name is required",
+                "Username": "Username is required"
+            },
+            "Errors": {
+                "AllFieldsRequired": "All fields are required",
+                "UsernameExists": "Username is already registered",
+                "Unauthorized": "You are not authorized to perform this action",
+                "CreateError": "Error creating user"
             }
         }
     },
@@ -921,7 +925,11 @@
             "Party": "Party / Account",
             "Amount": "Amount",
             "Status": "Status",
-            "NoVouchers": "No vouchers found"
+            "NoVouchers": "No vouchers found",
+            "StatusLabels": {
+                "Posted": "Posted",
+                "Draft": "Draft"
+            }
         },
         "Form": {
             "Type": "Type",
