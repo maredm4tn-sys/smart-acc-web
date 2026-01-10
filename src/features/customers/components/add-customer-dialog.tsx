@@ -46,7 +46,8 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
             try {
                 const { queueAction } = await import("@/lib/offline-db");
                 await queueAction('CREATE_CUSTOMER', { ...data, tenantId: "" });
-                toast.success(dict.Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
+                const offlineMsg = (dict as any).Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.";
+                toast.success(offlineMsg);
                 reset();
                 setOpen(false);
                 return;

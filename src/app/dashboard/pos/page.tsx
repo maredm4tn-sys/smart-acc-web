@@ -110,11 +110,11 @@ export default function POSPage() {
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
-            toast.success(dict.Common.Offline.ConnectionRestored);
+            toast.success((dict as any).Common?.Offline?.ConnectionRestored || "تم استعادة الاتصال");
         };
         const handleOffline = () => {
             setIsOnline(false);
-            toast.error(dict.Common.Offline.ConnectionLost);
+            toast.error((dict as any).Common?.Offline?.ConnectionLost || "فقد الاتصال");
         };
 
         window.addEventListener('online', handleOnline);
@@ -172,7 +172,7 @@ export default function POSPage() {
         }
 
         if (successCount > 0) {
-            toast.success(dict.Common.Offline.SyncSuccess);
+            toast.success((dict as any).Common?.Offline?.SyncSuccess || "تمت المزامنة بنجاح");
             localStorage.setItem('last_sync_timestamp', Date.now().toString());
             setOfflineLock(false);
             await clearSyncedInvoices();
@@ -241,7 +241,7 @@ export default function POSPage() {
                     }));
                     setProducts(mapped);
                     setFilteredProducts(mapped);
-                    toast.info(dict.Common?.Offline?.WorkingOffline || "تعمل أوفلاين");
+                    toast.info((dict as any).Common?.Offline?.WorkingOffline || "تعمل أوفلاين");
                 }
             } catch (e) {
                 console.error(e);
@@ -313,7 +313,7 @@ export default function POSPage() {
         if (!isOnline) {
             try {
                 await saveOfflineInvoice(invoiceData);
-                toast.success(dict.Common.Offline.OfflineSaved);
+                toast.success((dict as any).Common?.Offline?.OfflineSaved || "تم الحفظ محلياً");
                 setReceiptData({
                     storeName: dict.Logo || "Smart Acc",
                     invoiceNumber: `OFFLINE-${Date.now()}`,

@@ -89,7 +89,8 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
                     ...data,
                     tenantId: "", // Will be filled by server on sync
                 });
-                toast.success(dict.Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
+                const offlineMsg = (dict as any).Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.";
+                toast.success(offlineMsg);
                 setOpen(false);
                 reset();
                 return;

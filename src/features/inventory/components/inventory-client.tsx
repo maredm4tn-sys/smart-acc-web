@@ -46,7 +46,7 @@ export function InventoryClient({ initialProducts, dict }: { initialProducts: an
         const local = await getLocalData(STORES.PRODUCTS);
         if (local.length > 0) {
             setProducts(local);
-            toast.info(dict.Common?.Offline?.WorkingOffline || "تعمل الآن في وضع عدم الاتصال (بيانات مخزنة)");
+            toast.info((dict as any).Common?.Offline?.WorkingOffline || "تعمل الآن في وضع عدم الاتصال (بيانات مخزنة)");
         }
     };
 
@@ -60,7 +60,7 @@ export function InventoryClient({ initialProducts, dict }: { initialProducts: an
             {isOffline && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm animate-pulse">
                     <CloudOff size={18} />
-                    <span>{dict.Common?.Offline?.NoConnection || "لا يوجد اتصال بالإنترنت. يتم عرض البيانات المخزنة محلياً."}</span>
+                    <span>{(dict as any).Common?.Offline?.NoConnection || "لا يوجد اتصال بالإنترنت. يتم عرض البيانات المخزنة محلياً."}</span>
                 </div>
             )}
 

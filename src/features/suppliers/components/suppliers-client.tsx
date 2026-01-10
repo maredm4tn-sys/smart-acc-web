@@ -43,7 +43,7 @@ export function SuppliersClient({ initialSuppliers, dict }: { initialSuppliers: 
             {isOffline && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm">
                     <CloudOff size={18} />
-                    <span>{dict.Common?.Offline?.NoConnection || "تعمل الآن في وضع عدم الاتصال (بيانات الموردين مخزنة محلياً)"}</span>
+                    <span>{(dict as any).Common?.Offline?.NoConnection || "تعمل الآن في وضع عدم الاتصال (بيانات الموردين مخزنة محلياً)"}</span>
                 </div>
             )}
 
