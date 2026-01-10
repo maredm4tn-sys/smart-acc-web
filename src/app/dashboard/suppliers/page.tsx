@@ -6,68 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Truck } from "lucide-react";
 
+import { SuppliersClient } from "@/features/suppliers/components/suppliers-client";
+
 export default async function SuppliersPage() {
     const dict = await getDictionary();
     const suppliers = await getSuppliers();
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900">{dict.Suppliers.Title}</h2>
-                    <p className="text-muted-foreground">{dict.Suppliers.Description}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict.Suppliers.Title}</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">{dict.Suppliers.Description}</p>
                 </div>
-                <div className="flex flex-row-reverse justify-start gap-3">
+                <div className="w-full sm:w-auto">
                     <AddSupplierDialog />
                 </div>
             </div>
 
-            <Card className="border-none shadow-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Truck className="h-5 w-5 text-primary" />
-                        {dict.Suppliers.ListTitle}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table className="table-fixed w-full">
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-center">{dict.Suppliers.Table.Name}</TableHead>
-                                <TableHead className="text-center">{dict.Suppliers.Table.Company}</TableHead>
-                                <TableHead className="text-center">{dict.Suppliers.Table.Address}</TableHead>
-                                <TableHead className="text-center">{dict.Suppliers.Table.Phone}</TableHead>
-                                <TableHead className="text-center">{dict.Suppliers.Table.TaxId}</TableHead>
-                                <TableHead className="text-center w-[100px]">{dict.Suppliers.Table.Actions}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {suppliers.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                        {dict.Suppliers.Table.NoSuppliers}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                suppliers.map((s) => (
-                                    <TableRow key={s.id}>
-                                        <TableCell className="text-center font-medium">{s.name}</TableCell>
-                                        <TableCell className="text-center">{s.companyName || "-"}</TableCell>
-                                        <TableCell className="text-center">{s.address || "-"}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{s.phone || "-"}</TableCell>
-                                        <TableCell className="text-center font-mono text-xs">{s.taxId || "-"}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center">
-                                                <SupplierActions supplier={s} />
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <SuppliersClient initialSuppliers={suppliers} dict={dict} />
         </div>
     );
 }

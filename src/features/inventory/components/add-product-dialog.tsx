@@ -80,6 +80,25 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
 
     const onSubmit = async (data: ProductFormValues) => {
         console.log("Submitting form data:", data);
+
+        // --- Offline Handling ---
+        if (!navigator.onLine) {
+            try {
+                const { queueAction } = await import("@/lib/offline-db");
+                await queueAction('CREATE_PRODUCT', {
+                    ...data,
+                    tenantId: "", // Will be filled by server on sync
+                });
+                toast.success(dict.Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
+                setOpen(false);
+                reset();
+                return;
+            } catch (e) {
+                toast.error("خطأ في الحفظ المحلي");
+                return;
+            }
+        }
+
         try {
             const response = await createProduct({
                 ...data,

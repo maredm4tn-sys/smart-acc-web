@@ -42,6 +42,20 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
     });
 
     const onSubmit = async (data: CustomerFormValues) => {
+        if (!navigator.onLine) {
+            try {
+                const { queueAction } = await import("@/lib/offline-db");
+                await queueAction('CREATE_CUSTOMER', { ...data, tenantId: "" });
+                toast.success(dict.Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
+                reset();
+                setOpen(false);
+                return;
+            } catch (e) {
+                toast.error("خطأ في الحفظ المحلي");
+                return;
+            }
+        }
+
         const res = await createCustomer({ ...data, tenantId: "uuid" });
         if (res.success) {
             toast.success(res.message);

@@ -49,6 +49,21 @@ export function AddSupplierDialog() {
     });
 
     function onSubmit(data: SupplierFormValues) {
+        if (!navigator.onLine) {
+            startTransition(async () => {
+                try {
+                    const { queueAction } = await import("@/lib/offline-db");
+                    await queueAction('CREATE_SUPPLIER', { ...data, tenantId: "" });
+                    toast.success(dict.Common?.Offline?.OfflineSaved || "تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
+                    setOpen(false);
+                    form.reset();
+                } catch (e) {
+                    toast.error("خطأ في الحفظ المحلي");
+                }
+            });
+            return;
+        }
+
         startTransition(async () => {
             const result = await createSupplier(data);
             if (result.success) {

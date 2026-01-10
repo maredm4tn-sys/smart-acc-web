@@ -1,12 +1,12 @@
-import { AppSidebar } from "@/components/dashboard/app-sidebar";
-import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { getSession } from "@/features/auth/actions";
 import { redirect } from "next/navigation";
 import { getDictionary, getLocale } from "@/lib/i18n-server";
+import { ActivationDialog } from "@/features/admin/components/activation-dialog";
 
 export const dynamic = 'force-dynamic';
 
-import { ActivationDialog } from "@/features/admin/components/activation-dialog";
+import { OfflineSyncManager } from "@/components/common/offline-sync-manager";
 
 export default async function DashboardLayout({
     children,
@@ -20,32 +20,12 @@ export default async function DashboardLayout({
     const isRtl = locale === 'ar';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 flex font-sans relative text-right" dir={isRtl ? "rtl" : "ltr"}>
-            <AppSidebar user={session} dict={dict} />
-
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Header (Mobile / Breadcrumbs) */}
-                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 flex items-center justify-between sticky top-0 z-10 filter">
-                    <div className="flex items-center gap-2 text-gray-500">
-                        <span className="text-sm">{dict.Sidebar.Dashboard}</span>
-                        <span className="text-gray-300">/</span>
-                        <span className="text-sm font-semibold text-gray-900">{dict.General.Overview}</span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        {/* Add User/Notif Menu here maybe */}
-                    </div>
-                </header>
-
-                <main className="flex-1 overflow-auto p-4 md:p-8 pb-20 md:pb-8">
-                    {children}
-                </main>
-            </div>
-            <MobileNav user={session} />
-
-            {/* Licensing System (Desktop Only) */}
+        <>
+            <DashboardShell user={session} dict={dict} isRtl={isRtl}>
+                {children}
+            </DashboardShell>
             <ActivationDialog dict={dict} />
-        </div>
+            <OfflineSyncManager />
+        </>
     );
 }
