@@ -134,6 +134,20 @@
             "equity": "Equity",
             "revenue": "Revenue",
             "expense": "Expenses"
+        },
+        "Messages": {
+            "CreateSuccess": "Account created successfully",
+            "ImportSuccess": "Default chart imported successfully",
+            "ImportError": "Error importing chart",
+            "CashNotFound": "No cash/treasury account found for payment"
+        },
+        "Errors": {
+            "InvalidData": "Invalid account data",
+            "CodeExists": "Account code already in use",
+            "DeleteChildError": "Cannot delete main account containing sub-accounts",
+            "DeleteTxError": "Cannot delete this account due to associated financial transactions",
+            "DeleteSuccess": "Account deleted successfully",
+            "DeleteError": "Failed to delete account"
         }
     },
     "Inventory": {
