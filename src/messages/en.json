@@ -548,6 +548,7 @@
             "Receipts": "Receipt Vouchers",
             "Payments": "Payment Vouchers",
             "ProfitAndLoss": "Profit and Loss",
+            "DepartmentSales": "Department Sales Report",
             "StatusLabels": {
                 "Posted": "Posted",
                 "Draft": "Draft"
