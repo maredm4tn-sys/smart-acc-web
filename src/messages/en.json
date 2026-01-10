@@ -200,6 +200,11 @@
             "TotalDebt": "Total Debt",
             "Actions": "Actions",
             "NoCustomers": "No customers found."
+        },
+        "Messages": {
+            "ImportSuccess": "Customers imported successfully",
+            "ImportedCount": "Imported {count} customers successfully. Errors: {errors}",
+            "FileUploaded": "File uploaded successfully"
         }
     },
     "Suppliers": {
@@ -389,7 +394,13 @@
             }
         },
         "Errors": {
-            "NotBalanced": "Journal entry must be balanced"
+            "NotBalanced": "Journal entry must be balanced",
+            "InvalidData": "Invalid entry data",
+            "FiscalYearError": "Open fiscal year not found or could not be created",
+            "PostError": "Error posting journal entry",
+            "EntryNotFound": "Entry not found",
+            "DeleteSuccess": "Entry deleted and balances adjusted successfully",
+            "DeleteError": "Failed to delete entry"
         },
         "Table": {
             "EntryNumber": "Entry No",
