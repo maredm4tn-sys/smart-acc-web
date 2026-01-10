@@ -306,7 +306,8 @@ export default function POSPage() {
             })),
             discountAmount: discount,
             paymentMethod,
-            initialPayment: total
+            initialPayment: total,
+            tenantId: "" // Added for type compatibility
         };
 
         if (!isOnline) {
