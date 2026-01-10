@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { invoices, invoiceItems, products, journalEntries, journalLines, accounts } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or, like, desc, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
 import { getSession } from "@/features/auth/actions";
@@ -20,6 +20,8 @@ type CreateInvoiceInput = {
         quantity: number;
         unitPrice: number;
     }[];
+    discountAmount?: number;
+    paymentMethod?: string;
     tenantId: string;
 };
 
@@ -40,6 +42,8 @@ const createInvoiceSchema = z.object({
         quantity: z.number().positive(),
         unitPrice: z.number().nonnegative(),
     })).min(1),
+    discountAmount: z.number().nonnegative().optional(),
+    paymentMethod: z.string().optional(),
     tenantId: z.string().optional()
 });
 
@@ -56,7 +60,7 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     const validation = extendedSchema.safeParse(inputData);
     if (!validation.success) {
         console.error("Validation Error:", validation.error);
-        return { success: false as const, message: "Invalid Data" };
+        return { success: false as const, message: dict.Common.Error };
     }
     const data = validation.data;
 
@@ -83,20 +87,88 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
         data.items.forEach(item => {
             subtotal += item.quantity * item.unitPrice;
         });
+        const discount = data.discountAmount || 0;
+        const netSubtotal = Math.max(0, subtotal - discount);
+
         const taxRate = data.includeTax ? 0.14 : 0; // Egypt VAT 14%
-        const taxTotal = subtotal * taxRate;
-        const totalAmount = subtotal + taxTotal;
+        const taxTotal = netSubtotal * taxRate;
+        const totalAmount = netSubtotal + taxTotal;
 
         // Determine Payment Status
         let paymentStatus: 'paid' | 'unpaid' | 'partial' = 'unpaid';
         const paidAmount = data.initialPayment || 0;
-        if (paidAmount >= totalAmount) paymentStatus = 'paid';
+        if (paidAmount >= totalAmount - 0.01) paymentStatus = 'paid';
         else if (paidAmount > 0) paymentStatus = 'partial';
 
-        // 1. Create Invoice
-        // Fix for PG: Ensure date is YYYY-MM-DD
+        // 1. Prepare Data & Check Token Requirement
         const formattedDate = data.issueDate.includes('T') ? data.issueDate.split('T')[0] : data.issueDate;
         const formattedDueDate = data.dueDate ? (data.dueDate.includes('T') ? data.dueDate.split('T')[0] : data.dueDate) : undefined;
+
+        // Fetch involved products to check type and token requirement
+        const productIds = data.items.map(i => i.productId);
+        const involvedProducts = await db.select({
+            id: products.id,
+            type: products.type,
+            requiresToken: products.requiresToken,
+            categoryId: products.categoryId
+        })
+            .from(products)
+            .where(inArray(products.id, productIds));
+
+        // Calculate Token Number if needed
+        let tokenNumber: number | undefined = undefined;
+        const needsToken = involvedProducts.some(p => p.requiresToken);
+
+        if (needsToken) {
+            // Determine Category for Token
+            // If invoice has multiple items, we use the category of the first item that requires a token.
+            const tokenItem = involvedProducts.find(p => p.requiresToken);
+            const tokenCategoryId = tokenItem?.categoryId;
+
+            // Count existing tokens for today FOR THIS CATEGORY
+            // We join invoices -> invoiceItems -> products to filter by category
+            // We count invoices created today that have at least one item of this category
+
+            const result = await db.select({ count: sql<number>`count(distinct ${invoices.id})` })
+                .from(invoices)
+                .innerJoin(invoiceItems, eq(invoices.id, invoiceItems.invoiceId))
+                .innerJoin(products, eq(invoiceItems.productId, products.id))
+                .where(and(
+                    eq(invoices.tenantId, tenantId),
+                    eq(invoices.issueDate, formattedDate),
+                    isNotNull(invoices.tokenNumber),
+                    // If the item has a category, filter by it. If null, filter by null (general queue)
+                    tokenCategoryId ? eq(products.categoryId, tokenCategoryId) : sql`1=1` // Simplification: If no category, just count globally? Or we ideally should filter by "IsNull".
+                    // However, to be strict: If I am "Dental" (Cat=1), I only count invoices that are ALSO "Dental" (Cat=1).
+                ));
+
+            // Refined Logic if category exists:
+            if (tokenCategoryId) {
+                const countResult = await db.select({ count: sql<number>`count(distinct ${invoices.id})` })
+                    .from(invoices)
+                    .innerJoin(invoiceItems, eq(invoices.id, invoiceItems.invoiceId))
+                    .innerJoin(products, eq(invoiceItems.productId, products.id))
+                    .where(
+                        and(
+                            eq(invoices.tenantId, tenantId),
+                            eq(invoices.issueDate, formattedDate),
+                            isNotNull(invoices.tokenNumber),
+                            eq(products.categoryId, tokenCategoryId) // Only count invoices that contain products of this category
+                        )
+                    );
+                tokenNumber = (Number(countResult[0]?.count) || 0) + 1;
+            } else {
+                // Fallback: Global Count if no category assigned
+                const globalResult = await db.select({ count: sql<number>`count(*)` })
+                    .from(invoices)
+                    .where(and(
+                        eq(invoices.tenantId, tenantId),
+                        eq(invoices.issueDate, formattedDate),
+                        isNotNull(invoices.tokenNumber)
+                    ));
+                tokenNumber = (Number(globalResult[0]?.count) || 0) + 1;
+            }
+        }
 
         const session = await getSession();
         const [newInvoice] = await db.insert(invoices).values({
@@ -109,14 +181,18 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             exchangeRate: data.exchangeRate.toString(),
             subtotal: subtotal.toFixed(2),
             taxTotal: taxTotal.toFixed(2),
+            discountAmount: discount.toFixed(2),
+            paymentMethod: data.paymentMethod || "cash",
             totalAmount: totalAmount.toFixed(2),
             amountPaid: Number(paidAmount).toFixed(2),
             paymentStatus: paymentStatus,
             status: "issued",
+            tokenNumber: tokenNumber, // Add Token Number
             createdBy: session?.userId,
         }).returning();
 
         // 2. Create Invoice Items & Update Stock
+
         for (const item of data.items) {
             await db.insert(invoiceItems).values({
                 invoiceId: newInvoice.id,
@@ -127,12 +203,15 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 total: (item.quantity * item.unitPrice).toFixed(2),
             });
 
-            // Decrement Stock
-            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
-            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
-            await db.update(products)
-                .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
-                .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
+            // Decrement Stock ONLY for 'goods'
+            const pInfo = involvedProducts.find(p => p.id === item.productId);
+            if (pInfo?.type === 'goods') {
+                const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+                const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+                await db.update(products)
+                    .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
+                    .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
+            }
         }
 
         // 3. Auto-Create Journal Entry
@@ -194,6 +273,24 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             arAccount = newAR;
         }
 
+        let discountAccount = await db.query.accounts.findFirst({
+            where: (accounts, { like, and, eq, or }) => and(
+                eq(accounts.tenantId, tenantId),
+                or(like(accounts.name, '%خصم مسموح%'), like(accounts.name, '%Discount%'))
+            )
+        });
+        if (!discountAccount) {
+            const [newDisc] = await db.insert(accounts).values({
+                tenantId,
+                name: "الخصم المسموح به (تلقائي)",
+                code: `505-${Date.now().toString().slice(-4)}`,
+                type: 'expense',
+                currency: 'EGP',
+                balance: '0'
+            }).returning();
+            discountAccount = newDisc;
+        }
+
         if (salesAccount) {
             // Using static import logic
             const rate = data.exchangeRate || 1;
@@ -247,6 +344,16 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 }
             }
 
+            // Debit Discount (Accounting Assurance Fix)
+            if (discount > 0 && discountAccount) {
+                lines.push({
+                    accountId: discountAccount.id,
+                    debit: discount * rate,
+                    credit: 0,
+                    description: `خصم مسموح به - فاتورة ${newInvoice.invoiceNumber}`
+                });
+            }
+
             const totalDebit = lines.reduce((s, l) => s + l.debit, 0);
             const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
 
@@ -279,7 +386,8 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
         return {
             success: true as const,
             message: dict.Sales.Invoice.Success,
-            id: Number(newInvoice.id)
+            id: Number(newInvoice.id),
+            tokenNumber: tokenNumber
         };
 
     } catch (error: any) {
@@ -293,7 +401,6 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     }
 }
 
-import { desc } from "drizzle-orm";
 
 
 const recordPaymentSchema = z.object({
@@ -307,7 +414,7 @@ const recordPaymentSchema = z.object({
 export async function recordPayment(inputData: z.infer<typeof recordPaymentSchema>) {
     const dict = await getDictionary();
     const validation = recordPaymentSchema.safeParse(inputData);
-    if (!validation.success) return { success: false, message: "Invalid Data" };
+    if (!validation.success) return { success: false, message: dict.Common.Error };
 
     const data = validation.data;
 
@@ -327,7 +434,7 @@ export async function recordPayment(inputData: z.infer<typeof recordPaymentSchem
             const remaining = total - currentPaid;
 
             if (data.amount > remaining + 0.1) { // small buffer
-                return { success: false, message: "Amount exceeds remaining balance" };
+                return { success: false, message: dict.Sales.Invoice.Form.Errors.AmountExceeds };
             }
 
             const newPaid = currentPaid + data.amount;
@@ -378,37 +485,34 @@ export async function recordPayment(inputData: z.infer<typeof recordPaymentSchem
 
             revalidatePath("/dashboard/sales");
             revalidatePath("/dashboard/customers");
-            return { success: true, message: "تم تسجيل الدفعة بنجاح" };
+            return { success: true, message: dict.Common.Success };
         });
 
     } catch (e) {
         console.error("Error recording payment:", e);
-        return { success: false, message: "حدث خطأ أثناء تسجيل الدفع" };
+        return { success: false, message: dict.Common.Error };
     }
 }
 
 
 export async function deleteInvoice(id: number) {
+    const dict = await getDictionary();
     try {
         const { getSession } = await import("@/features/auth/actions");
         const session = await getSession();
-        if (!session || session.role !== 'admin') {
-            return { success: false, message: "Unauthorized: Admins only" };
+        if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
+            return { success: false, message: dict.Common.Error };
         }
-        const tenantId = await requireTenant(); // Strict Tenant Check
+        const tenantId = await requireTenant();
 
-        // 1. Check if invoice exists AND matches Tenant
         const invoice = await db.query.invoices.findFirst({
             where: (inv, { eq, and }) => and(eq(inv.id, id), eq(inv.tenantId, tenantId))
         });
 
-        if (!invoice) return { success: false, message: "Invoice not found" };
-
-        // 2. Reverse stock? Reverse Accounting? 
-        // ... (existing logic) ...
+        if (!invoice) return { success: false, message: dict.Common.Error };
 
         await db.transaction(async (tx) => {
-            // Restore Stock
+            // 1. Restore Stock
             const items = await tx.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
             const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
             const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
@@ -420,15 +524,34 @@ export async function deleteInvoice(id: number) {
                 }
             }
 
-            // Delete specific Invoice
+            // 2. Clear Related Journal Entries (Invoice JE + Payment JEs)
+            const relatedJEs = await tx.query.journalEntries.findMany({
+                where: and(
+                    eq(journalEntries.tenantId, tenantId),
+                    or(
+                        eq(journalEntries.reference, invoice.invoiceNumber),
+                        like(journalEntries.reference, `%${invoice.invoiceNumber}%`)
+                    )
+                )
+            });
+
+            const { deleteJournalEntry } = await import("@/features/accounting/actions");
+            for (const je of relatedJEs) {
+                await deleteJournalEntry(je.id, tx);
+            }
+
+            // 3. Delete Invoice (Items will be deleted if cascade is enabled, but let's be safe)
+            await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id));
             await tx.delete(invoices).where(eq(invoices.id, id));
         });
 
         revalidatePath("/dashboard/sales");
-        return { success: true, message: "Invoice deleted successfully" };
+        revalidatePath("/dashboard/journal");
+        revalidatePath("/dashboard/accounts");
+        return { success: true, message: dict.Common.Success };
     } catch (e) {
         console.error("Delete Invoice Error:", e);
-        return { success: false, message: "Error deleting invoice" };
+        return { success: false, message: dict.Common.Error };
     }
 }
 
@@ -637,11 +760,11 @@ export async function createReturnInvoice(inputData: z.infer<typeof createReturn
         revalidatePath("/dashboard/sales");
         revalidatePath("/dashboard/reports/income-statement");
 
-        return { success: true, message: "تم تسجيل المرتجع والقيد المحاسبي بنجاح", id: returnInvoice.id };
+        return { success: true, message: dict.Common.Success, id: returnInvoice.id };
 
     } catch (e: any) {
         console.error("Return Invoice Error:", e);
-        return { success: false, message: `Error: ${e.message}` };
+        return { success: false, message: dict.Common.Error };
     }
 }
 

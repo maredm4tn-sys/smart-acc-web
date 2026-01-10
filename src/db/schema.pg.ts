@@ -152,6 +152,23 @@ export const journalLinesRelations = relations(journalLines, ({ one }) => ({
     }),
 }));
 
+// --- Categories ---
+export const categories = pgTable('categories', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [categories.tenantId],
+        references: [tenants.id],
+    }),
+    products: many(products),
+}));
+
 // --- Products / Inventory ---
 export const products = pgTable('products', {
     id: serial('id').primaryKey(),
@@ -162,12 +179,25 @@ export const products = pgTable('products', {
     sellPrice: decimal('sell_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
     buyPrice: decimal('buy_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
     stockQuantity: decimal('stock_quantity', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    requiresToken: boolean('requires_token').default(false).notNull(),
+    categoryId: integer('category_id').references(() => categories.id),
     createdAt: timestamp('created_at').defaultNow(),
 }, (table) => {
     return {
         skuIdx: uniqueIndex('sku_idx').on(table.sku, table.tenantId),
     };
 });
+
+export const productsRelations = relations(products, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [products.tenantId],
+        references: [tenants.id],
+    }),
+    category: one(categories, {
+        fields: [products.categoryId],
+        references: [categories.id],
+    }),
+}));
 
 // --- Suppliers ---
 export const suppliers = pgTable('suppliers', {
@@ -225,6 +255,8 @@ export const invoices = pgTable('invoices', {
     subtotal: decimal('subtotal', { precision: 15, scale: 2 }).notNull(),
     taxTotal: decimal('tax_total', { precision: 15, scale: 2 }).default('0.00').notNull(),
     totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+    discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    paymentMethod: text('payment_method').default('cash').notNull(), // cash, card, other
 
     // --- AR Fields ---
     paymentStatus: text("payment_status").notNull().default("paid"), // paid, partial, unpaid
@@ -234,6 +266,7 @@ export const invoices = pgTable('invoices', {
     amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
 
     status: text('status', { enum: ['draft', 'issued', 'paid', 'cancelled'] }).default('draft').notNull(),
+    tokenNumber: integer('token_number'),
     qrCodeData: text('qr_code_data'),
     createdBy: uuid('created_by').references(() => users.id), // Add user tracking
     createdAt: timestamp('created_at').defaultNow(),

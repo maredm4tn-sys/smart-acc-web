@@ -159,6 +159,23 @@ export const journalLinesRelations = relations(journalLines, ({ one }) => ({
     }),
 }));
 
+// --- Categories ---
+export const categories = sqliteTable('categories', {
+    id: integer('id').primaryKey(),
+    tenantId: text('tenant_id').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
+});
+
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [categories.tenantId],
+        references: [tenants.id],
+    }),
+    products: many(products),
+}));
+
 // --- Products / Inventory ---
 export const products = sqliteTable('products', {
     id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
@@ -169,8 +186,21 @@ export const products = sqliteTable('products', {
     sellPrice: text('sell_price').default('0.00').notNull(),
     buyPrice: text('buy_price').default('0.00').notNull(),
     stockQuantity: text('stock_quantity').default('0.00').notNull(),
+    requiresToken: integer('requires_token', { mode: 'boolean' }).default(false).notNull(),
+    categoryId: integer('category_id').references(() => categories.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
+
+export const productsRelations = relations(products, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [products.tenantId],
+        references: [tenants.id],
+    }),
+    category: one(categories, {
+        fields: [products.categoryId],
+        references: [categories.id],
+    }),
+}));
 
 // --- Suppliers ---
 export const suppliers = sqliteTable('suppliers', {
@@ -229,6 +259,8 @@ export const invoices = sqliteTable('invoices', {
     subtotal: text('subtotal').notNull(),
     taxTotal: text('tax_total').default('0.00').notNull(),
     totalAmount: text('total_amount').notNull(),
+    discountAmount: text('discount_amount').default('0.00').notNull(),
+    paymentMethod: text('payment_method').default('cash').notNull(), // cash, card, other
 
     // --- AR Fields ---
     paymentStatus: text("payment_status").notNull().default("paid"), // paid, partial, unpaid
@@ -238,6 +270,7 @@ export const invoices = sqliteTable('invoices', {
     amountPaid: text('amount_paid').default('0.00').notNull(),
 
     status: text('status').default('draft').notNull(), // Enum simulated
+    tokenNumber: integer('token_number'),
     qrCodeData: text('qr_code_data'),
     createdBy: text('created_by').references(() => users.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
@@ -415,5 +448,6 @@ export const licensing = sqliteTable('licensing', {
     isActivated: integer('is_activated', { mode: 'boolean' }).default(false).notNull(),
     activationKey: text('activation_key'),
     machineId: text('machine_id'),
+    lastUsedDate: integer('last_used_date', { mode: 'timestamp' }),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });

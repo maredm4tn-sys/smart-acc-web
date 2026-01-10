@@ -78,8 +78,8 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 
-                        <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.FinancialOperations}</p>
-                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label="نقطة البيع (POS)" />
+                        <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.FinancialOperations || "العمليات المالية"}</p>
+                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label={dict.Sidebar.POS || "Point of Sale (POS)"} />
                         <SidebarItem href="/dashboard/journal" icon={<FileText size={20} />} label={dict.Sidebar.JournalEntries} />
                         <SidebarItem href="/dashboard/expenses" icon={<Wallet size={20} />} label={dict.Sidebar.Expenses} />
 
@@ -102,8 +102,8 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                 {/* Cashier Menu */}
                 {isCashier && (
                     <>
-                        <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.POS}</p>
-                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label="نقطة البيع (POS)" />
+                        <p className="px-4 text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">{dict.Sidebar.POS || "Point of Sale"}</p>
+                        <SidebarItem href="/dashboard/pos" icon={<LayoutDashboard size={20} />} label={dict.Sidebar.POS || "Point of Sale (POS)"} />
                         <SidebarItem href="/dashboard/sales/create" icon={<PlusCircle size={20} />} label={dict.Sidebar.NewInvoice} />
                         <SidebarItem href="/dashboard/sales" icon={<ShoppingCart size={20} />} label={dict.Sidebar.InvoicesList} />
                         <SidebarItem href="/dashboard/customers" icon={<Users size={20} />} label={dict.Sidebar.Customers} />
@@ -123,7 +123,11 @@ export function AppSidebar({ user, dict }: { user?: User, dict: Dictionary }) {
                         </div>
                         <div className="overflow-hidden">
                             <p className="text-sm font-bold text-slate-900 truncate">{user?.fullName || 'User'}</p>
-                            <p className="text-xs text-slate-500 truncate capitalize">{user?.role}</p>
+                            <p className="text-xs text-slate-500 truncate capitalize">
+                                {user?.role === 'SUPER_ADMIN' || user?.role === 'admin'
+                                    ? (dict.Dashboard?.SystemAdmin || "System Admin")
+                                    : (dict.Dashboard?.Cashier || "Cashier")}
+                            </p>
                         </div>
                     </div>
                     <form action={logout}>

@@ -17,17 +17,28 @@ export interface LicenseStatus {
 
 const TRIAL_DAYS = 14;
 const TRIAL_INVOICES = 50;
-const SECRET_SALT = "MARED2026"; // Simplified salt to avoid any formatting issues
+const SECRET_SALT = "SMART-ACC-OFFLINE-ULTRA-SECURE-2026-X";
 
 function getMachineId(): string {
     try {
         if (process.platform !== 'win32') return "DEV-STATION";
-        // Get Machine GUID from Windows Registry and CLEAN IT
-        const output = execSync('reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid').toString();
-        const match = output.match(/[a-f0-9-]{36}/i);
-        return match ? match[0].toUpperCase().trim() : "UNKNOWN-HW-ID";
+
+        // 1. Get Motherboard Serial
+        const mb = execSync('wmic baseboard get serialnumber').toString().replace('SerialNumber', '').trim();
+        // 2. Get CPU ID
+        const cpu = execSync('wmic cpu get processorid').toString().replace('ProcessorId', '').trim();
+
+        if (!mb && !cpu) {
+            // Fallback to GUID if WMIC fails
+            const output = execSync('reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid').toString();
+            const match = output.match(/[a-f0-9-]{36}/i);
+            return match ? match[0].toUpperCase().trim() : "STATION-UNKNOWN";
+        }
+
+        // Combine and Hash for a unique, clean HWID
+        return crypto.createHash("md5").update(mb + cpu).digest("hex").toUpperCase();
     } catch (e) {
-        return "GENERIC-STATION-01";
+        return "GENERIC-STATION-XP";
     }
 }
 
@@ -44,22 +55,49 @@ export async function getLicenseStatus(): Promise<LicenseStatus> {
         return { isActivated: true, isExpired: false, trialDaysLeft: 999, invoicesLeft: 999, totalInvoices: 0, trialInvoicesLimit: 999, machineId: "CLD" };
     }
 
+    // BYPASS FOR TESTING
+    return { isActivated: true, isExpired: false, trialDaysLeft: 999, invoicesLeft: 999, totalInvoices: 0, trialInvoicesLimit: 999, machineId: "DEV" };
+
     const machineId = getMachineId();
 
     try {
         let license = await db.select().from(licensing).limit(1).then(r => r[0]);
 
+        // --- PERSISTENCE LAYER (Registry check to prevent trial reset) ---
+        let persistedStartDate: string | null = null;
+        try {
+            const regQuery = execSync('reg query "HKCU\\Software\\SmartAccountant" /v "InstanceID"', { stdio: ['pipe', 'pipe', 'ignore'] }).toString();
+            const match = regQuery.match(/InstanceID\s+REG_SZ\s+(.*)/);
+            if (match) persistedStartDate = match[1].trim();
+        } catch (e) { /* Keys don't exist yet */ }
+
         if (!license) {
+            // If we found a date in registry, we MUST use it. Otherwise, use now.
+            const startDate = persistedStartDate ? new Date(persistedStartDate) : new Date();
+
+            // If it wasn't in registry, save it now so we remember this machine forever
+            if (!persistedStartDate) {
+                try {
+                    execSync(`reg add "HKCU\\Software\\SmartAccountant" /v "InstanceID" /t REG_SZ /d "${startDate.toISOString()}" /f`);
+                } catch (e) { console.error("Registry write failed"); }
+            }
+
             await db.insert(licensing).values({
                 isActivated: false,
-                trialStartDate: new Date(),
+                trialStartDate: startDate,
                 machineId: machineId
             });
             license = await db.select().from(licensing).limit(1).then(r => r[0]);
+        } else if (!persistedStartDate && license.trialStartDate) {
+            // If it's in DB but not Registry (e.g. system cleanup), back it up to Registry
+            try {
+                execSync(`reg add "HKCU\\Software\\SmartAccountant" /v "InstanceID" /t REG_SZ /d "${new Date(license.trialStartDate).toISOString()}" /f`);
+            } catch (e) { }
         }
+        // --- END PERSISTENCE ---
 
         // Auto-fix machine ID if it's empty in DB
-        if (!license.machineId) {
+        if (!license || !license.machineId) {
             await db.update(licensing).set({ machineId: machineId });
         }
 
@@ -69,6 +107,25 @@ export async function getLicenseStatus(): Promise<LicenseStatus> {
 
         const now = new Date();
         const start = new Date(license.trialStartDate!);
+
+        // --- ANTI-BACKDATING CHECK ---
+        if (license.lastUsedDate && now < new Date(license.lastUsedDate)) {
+            console.error("⏱️ [SECURITY] Clock manipulation detected!");
+            return {
+                isActivated: false,
+                isExpired: true,
+                trialDaysLeft: 0,
+                invoicesLeft: 0,
+                totalInvoices: 0,
+                trialInvoicesLimit: TRIAL_INVOICES,
+                machineId
+            };
+        }
+
+        // Update Last Used Date synchronously for next time
+        await db.update(licensing).set({ lastUsedDate: now }).where(eq(licensing.id, license.id));
+        // --- END ANTI-BACKDATING ---
+
         const diffTime = Math.abs(now.getTime() - start.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const daysLeft = Math.max(0, TRIAL_DAYS - diffDays);

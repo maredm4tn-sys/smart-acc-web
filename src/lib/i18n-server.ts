@@ -16,9 +16,14 @@ export async function getLocale(): Promise<Locale> {
     try {
         const cookieStore = await cookies();
         const lang = cookieStore.get("NEXT_LOCALE")?.value;
-        return (lang === "en" || lang === "ar") ? lang : "ar";
+
+        // If we have a stored preference, use it, otherwise DEFAULT TO 'ar'
+        if (lang === "en" || lang === "ar") return lang;
+
+        // Final fallback ALWAYS Arabic for the market
+        return "ar";
     } catch (e) {
-        return "ar"; // Fallback for scripts/tests
+        return "ar";
     }
 }
 

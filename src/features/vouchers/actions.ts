@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { vouchers, accounts, customers, suppliers } from "@/db/schema";
+import { vouchers, accounts, customers, suppliers, journalEntries } from "@/db/schema";
 import { eq, and, like, desc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
@@ -185,5 +185,36 @@ export async function getVouchers() {
         console.error("DEBUG: getVouchers Failed", e);
         // Return empty instead of crashing the Page
         return [];
+    }
+}
+
+export async function deleteVoucher(id: number) {
+    const tenantId = await requireTenant();
+    try {
+        const voucher = await db.query.vouchers.findFirst({
+            where: (v, { eq, and }) => and(eq(v.id, id), eq(v.tenantId, tenantId))
+        });
+
+        if (!voucher) throw new Error("Voucher not found");
+
+        await db.transaction(async (tx) => {
+            // Find and delete JE
+            const je = await tx.query.journalEntries.findFirst({
+                where: and(eq(journalEntries.tenantId, tenantId), eq(journalEntries.reference, voucher.voucherNumber))
+            });
+
+            if (je) {
+                const { deleteJournalEntry } = await import("@/features/accounting/actions");
+                await deleteJournalEntry(je.id, tx);
+            }
+
+            await tx.delete(vouchers).where(eq(vouchers.id, id));
+        });
+
+        revalidatePath('/dashboard/vouchers');
+        return { success: true };
+    } catch (e: any) {
+        console.error("Delete Voucher Error:", e);
+        return { success: false, error: e.message };
     }
 }

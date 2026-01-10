@@ -12,9 +12,11 @@ import { getCustomerStatement, getAccountStatement, StatementEntry } from "@/fea
 import { useReactToPrint } from "react-to-print";
 import { Loader2, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 // Simple Internal Entity Select Component
 function EntitySelect({ type, value, onChange }: { type: string, value: number | null, onChange: (val: number) => void }) {
+    const { dict } = useTranslation();
     const [list, setList] = useState<{ id: number; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -48,7 +50,7 @@ function EntitySelect({ type, value, onChange }: { type: string, value: number |
     return (
         <Select value={value?.toString()} onValueChange={(v) => onChange(Number(v))}>
             <SelectTrigger>
-                <SelectValue placeholder={loading ? "جاري التحميل..." : "اختر الحساب/الجهة..."} />
+                <SelectValue placeholder={loading ? dict.Reports.GeneralStatement.Loading : dict.Reports.GeneralStatement.SelectPlaceholder} />
             </SelectTrigger>
             <SelectContent>
                 {list.map((item) => (
@@ -57,7 +59,7 @@ function EntitySelect({ type, value, onChange }: { type: string, value: number |
                     </SelectItem>
                 ))}
                 {!loading && list.length === 0 && (
-                    <div className="p-2 text-sm text-gray-500 text-center">لا توجد بيانات</div>
+                    <div className="p-2 text-sm text-gray-500 text-center">{dict.Reports.GeneralStatement.NoData}</div>
                 )}
             </SelectContent>
         </Select>
@@ -65,10 +67,15 @@ function EntitySelect({ type, value, onChange }: { type: string, value: number |
 }
 
 export default function StatementPage() {
+    const { dict, lang } = useTranslation() as any;
     const [type, setType] = useState<string>('customer');
     const [selectedId, setSelectedId] = useState<number | null>(null);
-    const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const [startDate, setStartDate] = useState<string>(`${currentYear}-01-01`);
+    const [endDate, setEndDate] = useState<string>(lastDayOfMonth.toISOString().split('T')[0]);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<{ statement: StatementEntry[], entity: any, openingBalance: number, closingBalance: number } | null>(null);
 
@@ -80,7 +87,7 @@ export default function StatementPage() {
 
     const handleSearch = async () => {
         if (!selectedId) {
-            toast.error("الرجاء اختيار الحساب");
+            toast.error(dict.Reports.GeneralStatement.Errors.SelectAccount);
             return;
         }
         setLoading(true);
@@ -94,7 +101,7 @@ export default function StatementPage() {
             setData(result);
         } catch (e: any) {
             console.error(e);
-            toast.error("فشل في جلب كشف الحساب: " + e.message);
+            toast.error(dict.Reports.GeneralStatement.Errors.FetchFailed + ": " + e.message);
         } finally {
             setLoading(false);
         }
@@ -126,6 +133,7 @@ function StatementContent({
     type, setType, selectedId, setSelectedId, startDate, setStartDate, endDate, setEndDate,
     loading, data, setData, handleSearch, handlePrint, printRef
 }: any) {
+    const { dict, lang } = useTranslation();
     const searchParams = useSearchParams();
 
     useEffect(() => {
@@ -141,56 +149,57 @@ function StatementContent({
     }, [searchParams, setType, setSelectedId, setData]);
 
     const getReportTitle = () => {
+        const titles = dict.Reports.GeneralStatement.ReportTitles;
         switch (type) {
-            case 'customer': return 'كشف حساب عميل';
-            case 'supplier': return 'كشف حساب مورد';
-            case 'treasury': return 'كشف حركة نقدية/بنك';
-            case 'expense': return 'تحليل مصروفات';
-            default: return 'كشف حساب عام';
+            case 'customer': return titles.Customer;
+            case 'supplier': return titles.Supplier;
+            case 'treasury': return titles.Treasury;
+            case 'expense': return titles.Expense;
+            default: return titles.General;
         }
     };
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">كشف حساب تفصيلي</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{dict.Reports.GeneralStatement.Title}</h1>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>خيارات التقرير</CardTitle>
+                    <CardTitle>{dict.Reports.GeneralStatement.Options}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div className="space-y-2">
-                            <Label>نوع التقرير</Label>
+                            <Label>{dict.Reports.GeneralStatement.Type}</Label>
                             <Select value={type} onValueChange={(v: string) => { setType(v); setSelectedId(null); setData(null); }}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="customer">العملاء</SelectItem>
-                                    <SelectItem value="supplier">الموردين</SelectItem>
-                                    <SelectItem value="treasury">الخزينة والبنوك</SelectItem>
-                                    <SelectItem value="expense">المصروفات</SelectItem>
-                                    <SelectItem value="revenue">الإيرادات الأخرى</SelectItem>
-                                    <SelectItem value="equity">رأس المال وحقوق الملكية</SelectItem>
+                                    <SelectItem value="customer">{dict.Reports.GeneralStatement.Types.Customer}</SelectItem>
+                                    <SelectItem value="supplier">{dict.Reports.GeneralStatement.Types.Supplier}</SelectItem>
+                                    <SelectItem value="treasury">{dict.Reports.GeneralStatement.Types.Treasury}</SelectItem>
+                                    <SelectItem value="expense">{dict.Reports.GeneralStatement.Types.Expense}</SelectItem>
+                                    <SelectItem value="revenue">{dict.Reports.GeneralStatement.Types.Revenue}</SelectItem>
+                                    <SelectItem value="equity">{dict.Reports.GeneralStatement.Types.Equity}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>اختر الحساب</Label>
+                            <Label>{dict.Reports.GeneralStatement.Account}</Label>
                             <EntitySelect type={type} value={selectedId} onChange={setSelectedId} />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>من تاريخ</Label>
+                            <Label>{dict.Reports.GeneralStatement.FromDate}</Label>
                             <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                         </div>
 
                         <div className="space-y-2">
-                            <Label>إلى تاريخ</Label>
+                            <Label>{dict.Reports.GeneralStatement.ToDate}</Label>
                             <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
                         </div>
                     </div>
@@ -199,7 +208,7 @@ function StatementContent({
                         <Button onClick={handleSearch} disabled={loading || !selectedId}>
                             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             <Search className="w-4 h-4 ml-2" />
-                            عرض التقرير
+                            {dict.Reports.GeneralStatement.ShowReport}
                         </Button>
                     </div>
                 </CardContent>
@@ -210,7 +219,7 @@ function StatementContent({
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={handlePrint}>
                             <Printer className="w-4 h-4 ml-2" />
-                            طباعة الكشف
+                            {dict.Reports.GeneralStatement.Print}
                         </Button>
                     </div>
 
@@ -220,56 +229,58 @@ function StatementContent({
                             <h2 className="text-2xl font-bold mb-2">{getReportTitle()}</h2>
                             <h3 className="text-xl text-blue-600 font-semibold">{data.entity?.name} <span className="text-sm text-gray-400">({data.entity?.code || '-'})</span></h3>
                             <p className="text-gray-500 mt-2">
-                                الفترة من {startDate} إلى {endDate}
+                                {lang === 'ar' ? `الفترة من ${startDate} إلى ${endDate}` : `Period from ${startDate} to ${endDate}`}
                             </p>
                         </div>
 
                         {/* Summary Cards */}
                         <div className="grid grid-cols-3 gap-4 mb-8 text-center">
                             <div className="bg-gray-50 p-4 rounded border">
-                                <div className="text-sm text-gray-500">الرصيد الافتتاحي</div>
+                                <div className="text-sm text-gray-500">{dict.Reports.GeneralStatement.OpeningBalance}</div>
                                 <div className="text-lg font-bold">{data.openingBalance.toFixed(2)}</div>
                             </div>
                             <div className="bg-gray-50 p-4 rounded border">
-                                <div className="text-sm text-gray-500">حركة الفترة (صافي)</div>
+                                <div className="text-sm text-gray-500">{dict.Reports.GeneralStatement.PeriodMotion}</div>
                                 <div className={`text-lg font-bold ${data.closingBalance - data.openingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {(data.closingBalance - data.openingBalance).toFixed(2)}
                                 </div>
                             </div>
                             <div className="bg-blue-50 p-4 rounded border border-blue-100">
-                                <div className="text-sm text-blue-600">الرصيد الختامي</div>
+                                <div className="text-sm text-blue-600">{dict.Reports.GeneralStatement.ClosingBalance}</div>
                                 <div className="text-2xl font-bold text-blue-700 dir-ltr text-center">{data.closingBalance.toFixed(2)}</div>
                             </div>
                         </div>
 
                         {/* Statement Table */}
-                        <table className="w-full text-sm text-right border-collapse">
+                        <table className="w-full text-sm border-collapse">
                             <thead>
                                 <tr className="bg-gray-100 border-b border-gray-200">
-                                    <th className="py-3 px-2 border">التاريخ</th>
-                                    <th className="py-3 px-2 border">البيان / الوصف</th>
-                                    <th className="py-3 px-2 border">رقم المرجع</th>
-                                    <th className="py-3 px-2 border">مدين</th>
-                                    <th className="py-3 px-2 border">دائن</th>
-                                    <th className="py-3 px-2 border bg-gray-50">الرصيد</th>
+                                    <th className="py-3 px-2 border text-start">{dict.Reports.GeneralStatement.Table.Date}</th>
+                                    <th className="py-3 px-2 border text-start">{dict.Reports.GeneralStatement.Table.Description}</th>
+                                    <th className="py-3 px-2 border text-start">{dict.Reports.GeneralStatement.Table.Reference}</th>
+                                    <th className="py-3 px-2 border text-end">{dict.Reports.GeneralStatement.Table.Debit}</th>
+                                    <th className="py-3 px-2 border text-end">{dict.Reports.GeneralStatement.Table.Credit}</th>
+                                    <th className="py-3 px-2 border bg-gray-50 text-end">{dict.Reports.GeneralStatement.Table.Balance}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.statement.map((row: any, idx: number) => (
                                     <tr key={idx} className={`border-b border-gray-100 ${row.type === 'OPENING' ? 'bg-yellow-50 font-medium' : 'hover:bg-gray-50'}`}>
-                                        <td className="py-2 px-2 border whitespace-nowrap">
-                                            {new Date(row.date).toLocaleDateString('en-GB')}
+                                        <td className="py-2 px-2 border text-start whitespace-nowrap">
+                                            {new Date(row.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB')}
                                         </td>
-                                        <td className="py-2 px-2 border">{row.description}</td>
-                                        <td className="py-2 px-2 border font-mono text-xs">{row.reference || '-'}</td>
-                                        <td className="py-2 px-2 border text-gray-600">
-                                            {row.debit > 0 ? row.debit.toFixed(2) : '-'}
+                                        <td className="py-2 px-2 border text-start font-medium">
+                                            {row.description}
                                         </td>
-                                        <td className="py-2 px-2 border text-gray-600">
-                                            {row.credit > 0 ? row.credit.toFixed(2) : '-'}
+                                        <td className="py-2 px-2 border text-start font-mono text-xs">{row.reference || '-'}</td>
+                                        <td className="py-2 px-2 border text-end text-gray-800 font-bold dir-ltr">
+                                            {row.debit > 0 ? row.debit.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 }) : '-'}
                                         </td>
-                                        <td className="py-2 px-2 border bg-gray-50 font-semibold dir-ltr text-left">
-                                            {row.balance.toFixed(2)}
+                                        <td className="py-2 px-2 border text-end text-gray-800 font-bold dir-ltr">
+                                            {row.credit > 0 ? row.credit.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 }) : '-'}
+                                        </td>
+                                        <td className={`py-2 px-2 border bg-gray-50 font-bold text-end dir-ltr ${row.balance < 0 ? 'text-red-700' : 'text-blue-700'}`}>
+                                            {row.balance.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 })}
                                         </td>
                                     </tr>
                                 ))}
@@ -277,7 +288,7 @@ function StatementContent({
                         </table>
 
                         <div className="mt-8 text-xs text-center text-gray-400">
-                            تم استخراج هذا التقرير من نظام المحاسب الذكي بتاريخ {new Date().toLocaleString('ar-EG')}
+                            {dict.Reports.GeneralStatement.Footer.replace('{date}', new Date().toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US'))}
                         </div>
                     </div>
                 </div>
@@ -285,3 +296,4 @@ function StatementContent({
         </div>
     );
 }
+

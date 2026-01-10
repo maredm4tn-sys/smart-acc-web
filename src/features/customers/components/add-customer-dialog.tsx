@@ -67,15 +67,15 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
                         {dict.Dialogs.AddCustomer.Description}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit, (e) => toast.error("Please fill required fields"))} className="space-y-4 py-4">
+                <form onSubmit={handleSubmit(onSubmit, (e) => toast.error(dict.Users.Dialog.Errors.AllFieldsRequired))} className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label>{dict.Dialogs.AddCustomer.Name}</Label>
                         <Input {...register("name")} placeholder={dict.Dialogs.AddCustomer.Name} />
                         {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
                     </div>
                     <div className="space-y-2">
-                        <Label>اسم الشركة (Company)</Label>
-                        <Input {...register("companyName")} placeholder="اسم الشركة" />
+                        <Label>{dict.Customers.Table.Company}</Label>
+                        <Input {...register("companyName")} placeholder={dict.Customers.Table.Company} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

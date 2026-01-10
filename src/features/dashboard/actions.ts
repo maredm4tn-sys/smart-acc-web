@@ -89,7 +89,28 @@ export async function getDashboardStats() {
                     quantity: p.stockQuantity
                 })),
                 overdueInvoices,
-                duePurchases
+                duePurchases,
+                // Top Selling Units (Top 5)
+                topProducts: await db.select({
+                    name: products.name,
+                    sold: sql<number>`SUM(${castNum(sql`invoice_items.quantity`)})`
+                })
+                    .from(products)
+                    .innerJoin(sql`invoice_items`, sql`invoice_items.product_id = products.id`)
+                    .innerJoin(invoices, sql`invoice_items.invoice_id = invoices.id`)
+                    .where(and(eq(products.tenantId, tenantId), eq(invoices.type, 'sale')))
+                    .groupBy(products.id)
+                    .orderBy(desc(sql`SUM(${castNum(sql`invoice_items.quantity`)})`))
+                    .limit(5),
+                // Inventory Value & Liquidity
+                inventoryValue: await db.select({
+                    total: sql`SUM(${castNum(products.buyPrice)} * ${castNum(products.stockQuantity)})`
+                }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]?.total || 0),
+                cashLiquidity: await db.select({
+                    total: sql`SUM(${castNum(journalLines.debit)} - ${castNum(journalLines.credit)})`
+                }).from(journalLines)
+                    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+                    .where(and(eq(accounts.tenantId, tenantId), eq(accounts.type, 'asset'))).then(res => res[0]?.total || 0)
             }
         };
     } catch (e) {

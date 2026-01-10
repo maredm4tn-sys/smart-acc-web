@@ -5,6 +5,7 @@ import { FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/i18n-provider";
 
 interface ExcelExportButtonProps {
     getData: () => Promise<any[]>;
@@ -22,17 +23,18 @@ export function ExcelExportButton({
     className
 }: ExcelExportButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const { dict } = useTranslation();
 
     const handleExport = async () => {
         try {
             setIsLoading(true);
-            toast.info("جاري تحضير الملف...", { id: "export-loading" });
+            toast.info(dict.Common.Export.Preparing, { id: "export-loading" });
 
             const data = await getData();
 
             if (!data || data.length === 0) {
                 toast.dismiss("export-loading");
-                toast.warning("لا توجد بيانات للتصدير");
+                toast.warning(dict.Common.Export.NoData);
                 return;
             }
 
@@ -51,12 +53,12 @@ export function ExcelExportButton({
             // Download
             XLSX.writeFile(workbook, `${fileName}.xlsx`);
             toast.dismiss("export-loading");
-            toast.success("تم تصدير الملف بنجاح");
+            toast.success(dict.Common.Export.Success);
 
         } catch (error) {
             console.error("Export Error:", error);
             toast.dismiss("export-loading");
-            toast.error("حدث خطأ أثناء التصدير");
+            toast.error(dict.Common.Export.Error);
         } finally {
             setIsLoading(false);
         }
@@ -70,7 +72,7 @@ export function ExcelExportButton({
             disabled={isLoading}
         >
             <FileSpreadsheet className="h-4 w-4 text-green-600" />
-            {isLoading ? "جاري التحميل..." : label}
+            {isLoading ? dict.Common.Loading : label}
         </Button>
     );
 }

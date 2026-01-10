@@ -49,7 +49,7 @@ export function VouchersTable({ vouchers }: { vouchers: any[] }) {
                                     <TableCell>{Number(v.amount).toLocaleString()} EGP</TableCell>
                                     <TableCell>
                                         <Badge variant="outline">
-                                            {v.status === 'posted' ? 'مُرحّل' : v.status}
+                                            {v.status === 'posted' ? dict.Vouchers.Table.StatusLabels.Posted : v.status}
                                         </Badge>
                                     </TableCell>
                                 </TableRow>

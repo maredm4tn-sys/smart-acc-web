@@ -30,15 +30,12 @@ export function CustomerImport() {
             });
 
             if (response.ok) {
-                toast.success("File uploaded successfully");
-                console.log("File uploaded successfully");
+                toast.success(dict.Customers.Messages.FileUploaded);
             } else {
-                console.error("Upload failed");
-                toast.error("Upload failed");
+                toast.error(dict.Common.Error);
             }
         } catch (error) {
-            console.error("Error uploading file:", error);
-            toast.error("Error uploading file");
+            toast.error(dict.Common.Error);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {

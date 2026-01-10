@@ -67,7 +67,7 @@ export function InvoicesTable({ initialInvoices }: { initialInvoices: any[] }) {
                             <TableHead>{dict.Sales.Table.Date}</TableHead>
                             <TableHead>{dict.Sales.Table.Type}</TableHead>
                             <TableHead>{dict.Sales.Table.Status}</TableHead>
-                            <TableHead>{dict.Sales.Table.Total}</TableHead>
+                            <TableHead className="text-center">{dict.Sales.Table.Total}</TableHead>
                             <TableHead className="text-end">{dict.Sales.Table.Actions}</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -104,7 +104,7 @@ export function InvoicesTable({ initialInvoices }: { initialInvoices: any[] }) {
                                     <TableCell>
                                         <StatusBadge status={inv.status} dict={dict} />
                                     </TableCell>
-                                    <TableCell className={`font-bold dir-ltr text-start ${inv.type === 'return' ? 'text-orange-600' : ''}`}>
+                                    <TableCell className={`font-bold dir-ltr text-center ${inv.type === 'return' ? 'text-orange-600' : ''}`}>
                                         {Number(inv.totalAmount).toLocaleString()} EGP
                                     </TableCell>
                                     <TableCell className="text-end">

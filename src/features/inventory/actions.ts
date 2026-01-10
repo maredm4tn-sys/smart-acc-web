@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
+import { categories } from "@/db/schema";
 
 // Re-declaring for external usage compatibility if needed, though usually inferred from schema
 type CreateProductInput = {
@@ -15,6 +16,8 @@ type CreateProductInput = {
     sellPrice: number;
     buyPrice: number;
     stockQuantity: number;
+    requiresToken?: boolean;
+    categoryId?: number;
     tenantId: string;
 };
 
@@ -25,6 +28,8 @@ const createProductSchema = z.object({
     sellPrice: z.number().nonnegative(),
     buyPrice: z.number().nonnegative(),
     stockQuantity: z.number().int(),
+    requiresToken: z.boolean().optional().default(false),
+    categoryId: z.number().int().optional(),
     tenantId: z.string().optional()
 });
 
@@ -38,7 +43,7 @@ export async function createProduct(inputData: CreateProductInput) {
 
     const validation = createProductSchema.safeParse(inputData);
     if (!validation.success) {
-        return { success: false, message: "Invalid Data", errors: validation.error.flatten() };
+        return { success: false, message: dict.Common.Error, errors: validation.error.flatten() };
     }
     const data = validation.data;
 
@@ -65,6 +70,8 @@ export async function createProduct(inputData: CreateProductInput) {
             sellPrice: data.sellPrice.toString(),
             buyPrice: data.buyPrice.toString(),
             stockQuantity: data.stockQuantity.toString(),
+            requiresToken: data.requiresToken || false,
+            categoryId: data.categoryId,
         });
 
         try {
@@ -73,9 +80,9 @@ export async function createProduct(inputData: CreateProductInput) {
         } catch (error) { }
 
         return { success: true, message: dict.Dialogs.AddProduct.Success };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating product:", error);
-        return { success: false, message: dict.Dialogs.AddProduct.Error };
+        return { success: false, message: `Error: ${error.message || dict.Dialogs.AddProduct.Error}` };
     }
 }
 
@@ -88,6 +95,8 @@ type UpdateProductInput = {
     sellPrice: number;
     buyPrice: number;
     stockQuantity: number;
+    requiresToken?: boolean;
+    categoryId?: number;
 };
 
 export async function updateProduct(data: UpdateProductInput) {
@@ -109,6 +118,8 @@ export async function updateProduct(data: UpdateProductInput) {
                 sellPrice: data.sellPrice.toString(),
                 buyPrice: data.buyPrice.toString(),
                 stockQuantity: data.stockQuantity.toString(),
+                requiresToken: data.requiresToken !== undefined ? data.requiresToken : undefined,
+                categoryId: data.categoryId,
             })
             .where(and(eq(products.id, data.id), eq(products.tenantId, tenantId)));
 
@@ -126,20 +137,20 @@ export async function updateProduct(data: UpdateProductInput) {
 }
 
 export async function bulkImportProducts(productsList: { name: string; sku?: string; sellPrice: number; buyPrice: number; stockQuantity: number; tenantId?: string }[]) {
+    const dict = await getDictionary();
     try {
         const { getSession } = await import("@/features/auth/actions");
         const session = await getSession();
         if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
-            return { success: false, message: "Unauthorized: Admins only" };
+            return { success: false, message: dict.Common.Error };
         }
 
-        // STRICT SECURITY: Use session tenant only. Do not fallback to default.
         const tenantId = session.tenantId;
         if (!tenantId) {
-            return { success: false, message: "Security Error: No active tenant found for user." };
+            return { success: false, message: dict.Common.Error };
         }
 
-        if (!productsList || productsList.length === 0) return { success: false, message: "Empty list" };
+        if (!productsList || productsList.length === 0) return { success: false, message: dict.Common.Error };
 
         let successCount = 0;
         let errors = [];
@@ -181,13 +192,14 @@ export async function bulkImportProducts(productsList: { name: string; sku?: str
         revalidatePath("/dashboard/inventory");
         return {
             success: true,
-            message: `Imported ${successCount} products.`,
+            message: dict.Inventory.ImportDialog.ImportedCount.replace("{count}", successCount.toString()),
             details: errors.length > 0 ? `${errors.length} skipped/failed.` : undefined
         };
 
     } catch (e) {
         console.error("Bulk Import Error:", e);
-        return { success: false, message: "Server Error during import" };
+        const dict = await getDictionary();
+        return { success: false, message: dict.Common.Error };
     }
 }
 
@@ -217,6 +229,45 @@ export async function getInventoryExport() {
         }));
     } catch (e) {
         console.error("Export Error", e);
+        return [];
+    }
+}
+
+// --- Category Actions ---
+
+export async function createCategory(name: string) {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    try {
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = session.tenantId || await getActiveTenantId();
+
+        await db.insert(categories).values({
+            tenantId,
+            name,
+        });
+
+        revalidatePath("/dashboard/inventory");
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, message: e.message };
+    }
+}
+
+export async function getCategories() {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = session.tenantId || await getActiveTenantId();
+
+        const data = await db.select().from(categories).where(eq(categories.tenantId, tenantId));
+        return data;
+    } catch (e) {
         return [];
     }
 }

@@ -89,10 +89,12 @@ export async function getAccountStatement(
     let runningBalance = openingBalance;
     const finalStatement: StatementEntry[] = [];
 
+    const { dict } = (await require("@/lib/i18n-server").getDictionary()) as any;
+
     finalStatement.push({
         date: startDate,
         type: 'OPENING',
-        description: 'الرصيد الافتتاحي (Opening)',
+        description: dict.Reports.GeneralStatement?.OpeningBalance || "Opening Balance",
         debit: 0,
         credit: 0,
         balance: runningBalance

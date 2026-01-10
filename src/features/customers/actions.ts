@@ -21,30 +21,44 @@ const createCustomerSchema = z.object({
 type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
 export async function deleteCustomer(id: number) {
+    const dict = await getDictionary();
     const session = await getSession();
     const tenantId = session?.tenantId;
-    if (!tenantId) return { success: false, message: "Unauthorized" };
+    if (!tenantId) return { success: false, message: dict.Common.Error };
 
     try {
+        // Find customer and check for invoices by name (as per the code's pattern)
+        const customer = await db.query.customers.findFirst({
+            where: and(eq(customers.id, id), eq(customers.tenantId, tenantId))
+        });
+
+        if (!customer) return { success: false, message: dict.Common.Error };
+
+        const existing = await db.select({ id: invoices.id }).from(invoices).where(eq(invoices.customerName, customer.name)).limit(1);
+        if (existing.length > 0) {
+            return { success: false, message: dict.Common?.Error || "Cannot delete customer with existing invoices" };
+        }
+
         await db.delete(customers).where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)));
         revalidatePath("/dashboard/customers");
-        return { success: true, message: "Deleted" };
+        return { success: true, message: dict.Common.Success };
     } catch (e) {
-        return { success: false, message: "Error deleting" };
+        return { success: false, message: dict.Common.Error };
     }
 }
 
 export async function updateCustomer(id: number, data: Partial<CreateCustomerInput>) {
+    const dict = await getDictionary();
     const session = await getSession();
     const tenantId = session?.tenantId;
-    if (!tenantId) return { success: false, message: "Unauthorized" };
+    if (!tenantId) return { success: false, message: dict.Common.Error };
 
     try {
         await db.update(customers).set(data).where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)));
         revalidatePath("/dashboard/customers");
-        return { success: true, message: "Updated" };
+        return { success: true, message: dict.Common.Success };
     } catch (e) {
-        return { success: false, message: "Error updating" };
+        return { success: false, message: dict.Common.Error };
     }
 }
 

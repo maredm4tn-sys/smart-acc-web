@@ -25,7 +25,7 @@ export default async function VouchersPage() {
                     <Link href="/dashboard/vouchers/create">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" />
-                            {(dict as any).Common?.CreateNew || "إضافة جديد +"}
+                            {dict.Common.CreateNew || "إضافة جديد"}
                         </Button>
                     </Link>
                 </div>

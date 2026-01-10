@@ -23,20 +23,20 @@ export default function IncomeStatementPage() {
 
     // Format currency helper
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', {
             style: 'currency',
             currency: 'EGP',
             minimumFractionDigits: 2
-        }).format(amount);
+        }).format(amount).replace('EGP', dict.Common.EGP).replace('ج.م.‏', dict.Common.EGP);
     };
 
-    // Default to current month
+    // Default to current year starting Jan 1st and end of current month
     const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const currentYear = today.getFullYear();
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    const [startDate, setStartDate] = useState<string>(firstDay.toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState<string>(lastDay.toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState<string>(`${currentYear}-01-01`);
+    const [endDate, setEndDate] = useState<string>(lastDayOfMonth.toISOString().split('T')[0]);
 
     // Interface for detail items
     interface DetailItem {
@@ -121,7 +121,7 @@ export default function IncomeStatementPage() {
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    aria-label="From Date"
+                                    aria-label={dict.Reports.IncomeStatement.FromDate}
                                     className="w-full sm:w-[200px] pr-10 pl-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
                                 />
                             </div>
@@ -134,7 +134,7 @@ export default function IncomeStatementPage() {
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    aria-label="To Date"
+                                    aria-label={dict.Reports.IncomeStatement.ToDate}
                                     className="w-full sm:w-[200px] pr-10 pl-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
                                 />
                             </div>
@@ -207,10 +207,10 @@ export default function IncomeStatementPage() {
                                 <Table>
                                     <TableHeader className="bg-emerald-50/50 sticky top-0 z-10">
                                         <TableRow>
-                                            <TableHead className="text-right font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
-                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
-                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
-                                            <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
+                                            <TableHead className="text-end font-bold text-gray-600 w-[120px]">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -230,9 +230,9 @@ export default function IncomeStatementPage() {
                                                             })()}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="font-medium text-gray-700 text-sm align-top">{item.name}</TableCell>
-                                                    <TableCell className="text-xs text-slate-500 align-top">{item.accountName}</TableCell>
-                                                    <TableCell className="text-left font-bold text-gray-900 dir-ltr align-top">{formatCurrency(item.value)}</TableCell>
+                                                    <TableCell className="font-medium text-gray-700 text-sm align-top text-start">{item.name}</TableCell>
+                                                    <TableCell className="text-xs text-slate-500 align-top text-start">{item.accountName}</TableCell>
+                                                    <TableCell className="text-end font-bold text-gray-900 align-top">{formatCurrency(item.value)}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
@@ -259,10 +259,10 @@ export default function IncomeStatementPage() {
                                 <Table>
                                     <TableHeader className="bg-red-50/50 sticky top-0 z-10">
                                         <TableRow>
-                                            <TableHead className="text-right font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
-                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
-                                            <TableHead className="text-right font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
-                                            <TableHead className="text-left font-bold text-gray-900">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600 w-[80px]">{dict.Reports.IncomeStatement.Table.Date}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Item}</TableHead>
+                                            <TableHead className="text-start font-bold text-gray-600">{dict.Reports.IncomeStatement.Table.Category}</TableHead>
+                                            <TableHead className="text-end font-bold text-gray-600 w-[120px]">{dict.Reports.IncomeStatement.Table.Value}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -282,9 +282,9 @@ export default function IncomeStatementPage() {
                                                             })()}
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="font-medium text-gray-700 text-sm align-top">{item.name}</TableCell>
-                                                    <TableCell className="text-xs text-slate-500 align-top">{item.accountName}</TableCell>
-                                                    <TableCell className="text-left font-bold text-gray-900 dir-ltr align-top">{formatCurrency(item.value)}</TableCell>
+                                                    <TableCell className="font-medium text-gray-700 text-sm align-top text-start">{item.name}</TableCell>
+                                                    <TableCell className="text-xs text-slate-500 align-top text-start">{item.accountName}</TableCell>
+                                                    <TableCell className="text-end font-bold text-gray-900 align-top">{formatCurrency(item.value)}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (

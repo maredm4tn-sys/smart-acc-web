@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { accounts, journalEntries, journalLines, tenants, invoices, products, purchaseInvoices, customers, suppliers } from "@/db/schema";
+import { accounts, journalEntries, journalLines, tenants, invoices, products, purchaseInvoices, customers, suppliers, categories, invoiceItems } from "@/db/schema";
 import { and, eq, gte, lte, sql, or, desc, like } from "drizzle-orm";
 import { getSession } from "@/features/auth/actions";
 import { getActiveTenantId } from "@/lib/actions-utils";
@@ -160,6 +160,8 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
 }
 
 export async function getProfitExport() {
+    const { getDictionary } = await import("@/lib/i18n-server");
+    const dict = await getDictionary();
     const { getSession } = await import("@/features/auth/actions");
     const session = await getSession();
     if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
@@ -176,39 +178,39 @@ export async function getProfitExport() {
 
         // Flatten for Excel
         const rows = [
-            { "البند": "إجمالي الإيرادات", "القيمة": Number(data.totalRevenue.toFixed(2)) },
-            { "البند": "إجمالي المصروفات", "القيمة": Number(data.totalExpenses.toFixed(2)) },
-            { "البند": "صافي الربح / الخسارة", "القيمة": Number(data.netProfit.toFixed(2)) },
-            { "البند": "", "القيمة": "" }, // Spacer
-            { "البند": "تفاصيل الإيرادات:", "القيمة": "" },
+            { [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.TotalRevenue, [dict.Reports.IncomeStatement.Table.Value]: Number(data.totalRevenue.toFixed(2)) },
+            { [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.TotalExpenses, [dict.Reports.IncomeStatement.Table.Value]: Number(data.totalExpenses.toFixed(2)) },
+            { [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.NetProfit, [dict.Reports.IncomeStatement.Table.Value]: Number(data.netProfit.toFixed(2)) },
+            { [dict.Reports.IncomeStatement.Table.Item]: "", [dict.Reports.IncomeStatement.Table.Value]: "" }, // Spacer
+            { [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.RevenueDetails + ":", [dict.Reports.IncomeStatement.Table.Value]: "" },
         ];
 
         // Add Revenue Details
         if (data.revenueDetails && data.revenueDetails.length > 0) {
             data.revenueDetails.forEach(rev => {
                 rows.push({
-                    "البند": rev.name,
-                    "القيمة": Number(rev.value.toFixed(2))
+                    [dict.Reports.IncomeStatement.Table.Item]: rev.name,
+                    [dict.Reports.IncomeStatement.Table.Value]: Number(rev.value.toFixed(2))
                 });
             });
         } else {
-            rows.push({ "البند": "لا توجد إيرادات", "القيمة": 0 });
+            rows.push({ [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.Table.NoRevenues, [dict.Reports.IncomeStatement.Table.Value]: 0 });
         }
 
 
-        rows.push({ "البند": "", "القيمة": "" }); // Spacer
-        rows.push({ "البند": "تفاصيل المصروفات:", "القيمة": "" });
+        rows.push({ [dict.Reports.IncomeStatement.Table.Item]: "", [dict.Reports.IncomeStatement.Table.Value]: "" }); // Spacer
+        rows.push({ [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.ExpenseDetails + ":", [dict.Reports.IncomeStatement.Table.Value]: "" });
 
         // Add Expense Details
         if (data.expenseDetails && data.expenseDetails.length > 0) {
             data.expenseDetails.forEach(exp => {
                 rows.push({
-                    "البند": exp.name,
-                    "القيمة": Number(exp.value.toFixed(2))
+                    [dict.Reports.IncomeStatement.Table.Item]: exp.name,
+                    [dict.Reports.IncomeStatement.Table.Value]: Number(exp.value.toFixed(2))
                 });
             });
         } else {
-            rows.push({ "البند": "لا توجد مصروفات", "القيمة": 0 });
+            rows.push({ [dict.Reports.IncomeStatement.Table.Item]: dict.Reports.IncomeStatement.Table.NoExpenses, [dict.Reports.IncomeStatement.Table.Value]: 0 });
         }
 
 
@@ -364,3 +366,44 @@ export async function getInventoryReport() {
     };
 }
 
+export async function getCategorySales(startDate: Date, endDate: Date) {
+    const { getDictionary } = await import("@/lib/i18n-server");
+    const dict = await getDictionary();
+    const session = await getSession();
+    const tenantId = session?.tenantId || await getActiveTenantId();
+    if (!tenantId) return [];
+
+    const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+    const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
+    try {
+        const data = await db
+            .select({
+                categoryName: categories.name,
+                totalAmount: sql<number>`sum(${castNum(invoiceItems.unitPrice)} * ${castNum(invoiceItems.quantity)})`,
+                count: sql<number>`count(${invoiceItems.id})`,
+            })
+            .from(invoiceItems)
+            .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+            .innerJoin(products, eq(invoiceItems.productId, products.id))
+            .leftJoin(categories, eq(products.categoryId, categories.id))
+            .where(
+                and(
+                    eq(invoices.tenantId, tenantId),
+                    gte(invoices.issueDate, startDate.toISOString().split('T')[0]),
+                    lte(invoices.issueDate, endDate.toISOString().split('T')[0])
+                )
+            )
+            .groupBy(categories.id, categories.name)
+            .orderBy(desc(sql`sum(${castNum(invoiceItems.unitPrice)} * ${castNum(invoiceItems.quantity)})`));
+
+        return data.map(item => ({
+            name: item.categoryName || dict.Common?.Uncategorized || "General / عام",
+            value: Number(item.totalAmount) || 0,
+            count: Number(item.count) || 0
+        }));
+    } catch (e) {
+        console.error("Category Report Error", e);
+        return [];
+    }
+}

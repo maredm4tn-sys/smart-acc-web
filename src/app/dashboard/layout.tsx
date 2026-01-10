@@ -2,7 +2,7 @@ import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { getSession } from "@/features/auth/actions";
 import { redirect } from "next/navigation";
-import { getDictionary } from "@/lib/i18n-server";
+import { getDictionary, getLocale } from "@/lib/i18n-server";
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +16,11 @@ export default async function DashboardLayout({
     const session = await getSession();
     if (!session) redirect("/login");
     const dict = await getDictionary();
+    const locale = await getLocale();
+    const isRtl = locale === 'ar';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 flex font-sans relative">
+        <div className="min-h-screen bg-gray-50/50 flex font-sans relative text-right" dir={isRtl ? "rtl" : "ltr"}>
             <AppSidebar user={session} dict={dict} />
 
             {/* Main Content */}

@@ -147,9 +147,63 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                 <CardWrapper icon={<Activity className="h-5 w-5" />} color="emerald" title={dict.Dashboard.FinancialAccounts} value={stats.totalAccounts} suffix={dict.Dashboard.Account} />
             </div>
 
-            {/* Charts & Actions */}
+            {/* Replacement for Analytics (Functional Stats) */}
             <div className="grid gap-6 md:grid-cols-7">
-                <AnalyticsCharts />
+                <div className="col-span-4 space-y-6">
+                    {/* Top Selling Products */}
+                    <Card className="border-none shadow-sm bg-white overflow-hidden">
+                        <CardHeader className="border-b border-gray-50 bg-slate-50/30">
+                            <CardTitle className="flex items-center gap-2 text-base text-slate-800">
+                                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                                {dict.Dashboard.TopSelling || "أكثر الأصناف مبيعاً"}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="divide-y divide-slate-50">
+                                {stats.topProducts && stats.topProducts.length > 0 ? (
+                                    stats.topProducts.map((p: any, idx: number) => (
+                                        <div key={idx} className="flex items-center justify-between p-4 hover:bg-slate-50/80 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                                                    #{idx + 1}
+                                                </div>
+                                                <span className="font-bold text-slate-700">{p.name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-400">{dict.Dashboard.InvoicesCount}</span>
+                                                <span className="font-black text-slate-900">{p.sold}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center text-slate-400 italic text-sm">
+                                        لا توجد بيانات مبيعات كافية حالياً
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Financial Summary Quick View */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-100">
+                            <h4 className="text-xs font-bold text-blue-100 uppercase tracking-wider mb-2">{dict.Reports.TotalCash || "إجمالي السيولة النقدية"}</h4>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black">{Number(stats.cashLiquidity || 0).toLocaleString()}</span>
+                                <span className="text-[10px] font-bold opacity-70">EGP</span>
+                            </div>
+                            <p className="text-[10px] text-blue-100/60 mt-2">{dict.Reports.TotalCashDesc || "السيولة المتاحة حالياً بالخزائن"}</p>
+                        </div>
+                        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{dict.Reports.InventoryValue || "قيمة المخزون"}</h4>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-slate-900">{Number(stats.inventoryValue || 0).toLocaleString()}</span>
+                                <span className="text-[10px] font-bold text-slate-400">EGP</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2">{dict.Reports.InventoryValueDesc || "قيمة البضاعة بسعر الشراء"}</p>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="col-span-3 flex flex-col gap-6">
                     <Card className="border-none shadow-sm bg-white overflow-hidden">

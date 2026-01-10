@@ -59,7 +59,7 @@ export function BulkUploadDialog() {
             }).filter(Boolean); // Remove nulls
 
             if (productsToImport.length === 0) {
-                toast.error("لم يتم العثور على بيانات صالحة في الملف. تأكد من عناوين الأعمدة: اسم الصنف، سعر الشراء، سعر البيع، الرصيد");
+                toast.error(dict.Inventory.ImportDialog.NoValidRows);
                 setIsLoading(false);
                 return;
             }
@@ -76,7 +76,7 @@ export function BulkUploadDialog() {
 
         } catch (error) {
             console.error("Upload Error:", error);
-            toast.error("حدث خطأ أثناء قراءة الملف");
+            toast.error(dict.Inventory.ImportDialog.ProcessingError);
         } finally {
             setIsLoading(false);
             // Reset input

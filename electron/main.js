@@ -7,7 +7,19 @@ const fs = require('fs');
 let mainWindow;
 let serverProcess;
 const PORT = 3002;
-const DB_FILENAME = 'smart-acc-offline.db'; // Unified constant for DB filename
+const DB_FILENAME = 'smart-acc-offline.db';
+
+// --- Error Logging ---
+const logFile = path.join(app.getPath('userData'), 'crash.log');
+function log(msg) {
+    console.log(msg);
+    fs.appendFileSync(logFile, `${new Date().toISOString()} - ${msg}\n`);
+}
+
+process.on('uncaughtException', (error) => {
+    log(`Uncaught Exception: ${error.stack}`);
+    dialog.showErrorBox('Critical Error', error.stack || error.message);
+});
 
 // --- 0. Startup Restore Check (CRITICAL) ---
 function performPendingRestore() {
@@ -106,8 +118,9 @@ function startServer() {
     const serverPath = path.join(process.resourcesPath, 'app-server', 'server.js');
     const dbPath = path.join(userDataPath, DB_FILENAME);
 
-    console.log("Starting Next.js Server from:", serverPath);
+    log("Starting Next.js Server from: " + serverPath);
 
+    // CRITICAL: We use Electron's own executable as a Node.js runtime
     serverProcess = spawn(process.execPath, [serverPath], {
         cwd: path.dirname(serverPath),
         env: {
@@ -117,7 +130,7 @@ function startServer() {
             NEXT_PUBLIC_APP_MODE: 'desktop',
             DATABASE_PATH: dbPath,
             NODE_ENV: 'production',
-            ELECTRON_RUN_AS_NODE: '1'
+            ELECTRON_RUN_AS_NODE: '1' // Force Electron to behave like Node.js
         },
         stdio: ['ignore', logFd, logFd],
         windowsHide: true,
@@ -131,24 +144,33 @@ function startServer() {
 }
 
 function createWindow() {
+    // Unified icon path logic
     let iconPath;
     if (app.isPackaged) {
-        iconPath = path.join(process.resourcesPath, 'app-server', 'public', 'icon.png');
+        iconPath = path.join(process.resourcesPath, 'build', 'icon.ico');
+        if (!fs.existsSync(iconPath)) {
+            iconPath = path.join(process.resourcesPath, 'icon.ico');
+        }
     } else {
-        iconPath = path.join(__dirname, '../public/icon.png');
+        iconPath = path.join(__dirname, '..', 'build', 'icon.ico');
     }
 
     mainWindow = new BrowserWindow({
-        width: 1280,
+        width: 1200,
         height: 800,
         title: "Smart Accountant - Offline",
         icon: iconPath,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false, // Security: keep false
-            contextIsolation: true, // Security: keep true
+            nodeIntegration: false,
+            contextIsolation: true,
         },
         autoHideMenuBar: true,
+        show: false, // Don't show immediately to avoid white flash
+    });
+
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
     });
 
     const startUrl = `http://localhost:${PORT}`;

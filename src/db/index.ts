@@ -14,103 +14,90 @@ dotenv.config();
 // Determine App Mode
 const mode = process.env.NEXT_PUBLIC_APP_MODE || 'web';
 
-let dbInstance: any;
+let _dbInstance: any;
 
-if (mode === 'desktop') {
-    console.log("[DB] Initializing DESKTOP (OFFLINE) Mode with better-sqlite3...");
-
-    const dbPath = process.env.DATABASE_PATH || 'smart-acc-offline.db';
-    console.log(`[DB] Storage Path: ${dbPath}`);
-
-    const dir = path.dirname(dbPath);
-    try {
-        if (!fs.existsSync(dir) && dir !== '.') fs.mkdirSync(dir, { recursive: true });
-    } catch (e) { console.error("Could not create DB dir:", e); }
-
-    const sqlite = new Database(dbPath);
-    sqlite.pragma('journal_mode = WAL');
-
-    dbInstance = drizzle(sqlite, { schema });
+function initDb() {
+    if (_dbInstance) return _dbInstance;
 
     try {
-        // Resolve migrations folder.
-        let migrationFolder = path.join(process.cwd(), 'drizzle', 'sqlite');
+        if (mode === 'desktop') {
+            console.log("[DB] Initializing DESKTOP (OFFLINE) Mode with better-sqlite3...");
 
-        // Development fallback
-        if (!fs.existsSync(migrationFolder)) {
-            migrationFolder = path.join(process.cwd(), '.next', 'server', 'drizzle', 'sqlite');
-        }
-        if (!fs.existsSync(migrationFolder)) {
-            migrationFolder = path.resolve('drizzle', 'sqlite');
-        }
+            const dbPath = process.env.DATABASE_PATH || 'smart-acc-offline.db';
+            console.log(`[DB] Storage Path: ${dbPath}`);
 
-        console.log(`[DB] Migrations Path: ${migrationFolder}`);
+            const dir = path.dirname(dbPath);
+            try {
+                if (!fs.existsSync(dir) && dir !== '.') fs.mkdirSync(dir, { recursive: true });
+            } catch (e) { console.error("Could not create DB dir:", e); }
 
-        if (fs.existsSync(migrationFolder)) {
-            migrate(dbInstance, { migrationsFolder: migrationFolder });
-            console.log("✅ [DB] Migrations applied!");
+            const sqlite = new Database(dbPath);
+            sqlite.pragma('journal_mode = WAL');
+
+            _dbInstance = drizzle(sqlite, { schema });
+
+            try {
+                let migrationFolder = path.join(process.cwd(), 'drizzle', 'sqlite');
+                if (!fs.existsSync(migrationFolder)) {
+                    migrationFolder = path.join(process.cwd(), '.next', 'server', 'drizzle', 'sqlite');
+                }
+                if (!fs.existsSync(migrationFolder)) {
+                    migrationFolder = path.resolve('drizzle', 'sqlite');
+                }
+                console.log(`[DB] Migrations Path: ${migrationFolder}`);
+
+                if (fs.existsSync(migrationFolder)) {
+                    migrate(_dbInstance, { migrationsFolder: migrationFolder });
+                    console.log("✅ [DB] Migrations applied!");
+                }
+            } catch (err) {
+                console.error("❌ [DB] Migration failed:", err);
+            }
+        } else if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
+            console.log("[DB] Initializing CLOUD Mode with Postgres...");
+            const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+            const pool = new pg.Pool({ connectionString });
+            _dbInstance = drizzlePg(pool, { schema });
+
+            (async () => {
+                try {
+                    const paths = [
+                        path.join(process.cwd(), 'drizzle', 'pg'),
+                        path.join(process.cwd(), '.next', 'server', 'drizzle', 'pg'),
+                        path.join(__dirname, '..', '..', 'drizzle', 'pg'),
+                        path.join('/var/task', 'drizzle', 'pg')
+                    ];
+                    let migrationFolder = paths[0];
+                    for (const p of paths) {
+                        if (fs.existsSync(p)) { migrationFolder = p; break; }
+                    }
+                    await migratePg(_dbInstance, { migrationsFolder: migrationFolder });
+                } catch (e: any) { }
+            })();
         } else {
-            console.warn("⚠️ [DB] Migrations folder missing. Creating base tables manually?");
+            console.log("[DB] Initializing Dev Mode with local SQLite...");
+            const sqlite = new Database('smart-acc-dev.db');
+            sqlite.pragma('journal_mode = WAL');
+            _dbInstance = drizzle(sqlite, { schema });
         }
-    } catch (err) {
-        console.error("❌ [DB] Migration failed:", err);
+    } catch (e: any) {
+        console.error("CRITICAL: DB initialization failed:", e);
+        // Return a dummy object to prevent immediate crash during build extraction
+        return {} as any;
     }
 
-
-} else if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
-    console.log("[DB] Initializing CLOUD (See Vercel) Mode with Postgres...");
-    console.log("🚀 Triggering Vercel Deployment with Database Connection...");
-
-    // Choose the available connection string
-    const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-
-    const pool = new pg.Pool({
-        connectionString: connectionString,
-    });
-    dbInstance = drizzlePg(pool, { schema });
-
-    // Auto-Migrate for Vercel
-    (async () => {
-        try {
-            console.log("Running PG Migrations...");
-
-            // Try different paths for Vercel standalone output
-            const paths = [
-                path.join(process.cwd(), 'drizzle', 'pg'),
-                path.join(process.cwd(), '.next', 'server', 'drizzle', 'pg'),
-                path.join(__dirname, '..', '..', 'drizzle', 'pg'), // Relative to current file
-                path.join('/var/task', 'drizzle', 'pg')
-            ];
-
-            let migrationFolder = paths[0];
-            for (const p of paths) {
-                if (fs.existsSync(p)) {
-                    migrationFolder = p;
-                    console.log(`[DB] Found migrations at: ${p}`);
-                    break;
-                }
-            }
-
-            console.log(`[DB] Attempting migration from: ${migrationFolder}`);
-            await migratePg(dbInstance, { migrationsFolder: migrationFolder });
-            console.log("✅ [DB] PG Migrations applied!");
-        } catch (e: any) {
-            if (e.code === '42P07') {
-                console.log("✅ [DB] PG Migrations skipped (already applied).");
-            } else {
-                console.error("❌ [DB] PG Migration failed:", e.message, e.stack);
-            }
-        }
-    })();
-
-} else {
-    // Local Web Dev or fallback
-    console.log("[DB] Initializing Dev Mode with local SQLite...");
-    // Only verify file exists if we are strictly LOCAL dev, on Vercel this might fail if not careful.
-    // For now we assume local dev.
-    const sqlite = new Database('smart-acc-dev.db');
-    sqlite.pragma('journal_mode = WAL');
-    dbInstance = drizzle(sqlite, { schema });
+    return _dbInstance;
 }
 
-export const db = dbInstance;
+// Export a proxy that initializes the DB on first access
+export const db = new Proxy({} as any, {
+    get: (target, prop) => {
+        const instance = initDb();
+        return instance[prop];
+    },
+    apply: (target, thisArg, argumentsList) => {
+        const instance = initDb();
+        return Reflect.apply(instance, thisArg, argumentsList);
+    }
+});
+

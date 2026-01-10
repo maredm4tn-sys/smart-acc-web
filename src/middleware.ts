@@ -12,8 +12,6 @@ export async function middleware(request: NextRequest) {
     const token = request.cookies.get("session_token")?.value;
     const { pathname } = request.nextUrl;
 
-
-
     // 1. Check if trying to access dashboard
     if (pathname.startsWith("/dashboard")) {
         if (!token) {

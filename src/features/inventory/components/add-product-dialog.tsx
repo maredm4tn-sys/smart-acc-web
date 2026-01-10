@@ -24,14 +24,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useState } from "react";
-import { createProduct } from "../actions";
-import { PlusCircle, Package } from "lucide-react";
+import { createProduct, getCategories } from "../actions";
+import { PlusCircle, Package, RefreshCw } from "lucide-react";
+import { CategoryManagerDialog } from "./category-manager-dialog";
+import { useEffect } from "react";
 
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
     const [open, setOpen] = useState(false);
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
     const { dict } = useTranslation();
+
+    const fetchCategories = async () => {
+        const cats = await getCategories();
+        setCategories(cats);
+    };
+
+    useEffect(() => {
+        if (open) {
+            fetchCategories();
+        }
+    }, [open]);
 
     const productSchema = z.object({
         name: z.string().min(2, dict.Dialogs.AddProduct.Errors.NameRequired),
@@ -40,6 +54,8 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
         sellPrice: z.coerce.number().min(0, dict.Dialogs.AddProduct.Errors.PricePositive),
         buyPrice: z.coerce.number().min(0).default(0),
         stockQuantity: z.coerce.number().min(0).default(0),
+        requiresToken: z.boolean().default(false),
+        categoryId: z.number().optional(),
     });
 
     type ProductFormValues = z.infer<typeof productSchema>;
@@ -58,6 +74,7 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
             sellPrice: 0,
             buyPrice: 0,
             stockQuantity: 0,
+            requiresToken: false,
         },
     });
 
@@ -127,6 +144,37 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
                         </div>
                     </div>
 
+                    <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-2 rounded-md border border-dashed">
+                        <input
+                            type="checkbox"
+                            id="requiresToken"
+                            {...register("requiresToken")}
+                            className="w-4 h-4 accent-blue-600"
+                        />
+                        <Label htmlFor="requiresToken" className="cursor-pointer text-xs">
+                            {dict.Inventory.Table.RequiresToken || "إصدار رقم دور لهذا الصنف تلقائياً"}
+                        </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="category">{dict.Dialogs.AddProduct.Category || "Category"}</Label>
+                            <CategoryManagerDialog onCategoryAdded={fetchCategories} trigger={<Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-blue-600"><PlusCircle className="mr-1 h-3 w-3" /> {dict.Dialogs.AddProduct.New || "New"}</Button>} />
+                        </div>
+                        <Select onValueChange={(val) => setValue("categoryId", Number(val))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder={dict.Dialogs.AddProduct.SelectCategory || "Select Category..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                        {c.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="name">{dict.Dialogs.AddProduct.Name}</Label>
                         <Input id="name" placeholder={dict.Dialogs.AddProduct.Name} {...register("name")} />
@@ -176,6 +224,6 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

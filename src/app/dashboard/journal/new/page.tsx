@@ -8,7 +8,12 @@ import { getSession } from "@/features/auth/actions";
 import { getActiveTenantId } from "@/lib/actions-utils";
 import { eq } from "drizzle-orm";
 
+import { getDictionary } from "@/lib/i18n-server";
+
 export default async function NewJournalPage() {
+    const rawDict = await getDictionary();
+    const dict = rawDict as any;
+
     const session = await getSession();
     const tenantId = session?.tenantId || await getActiveTenantId();
 
@@ -36,12 +41,12 @@ export default async function NewJournalPage() {
         <div className="space-y-6 max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">قيد يومية جديد</h1>
-                    <p className="text-muted-foreground">إنشاء حركة مالية يدوية في دفتر اليومية العامة.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{dict.Journal.NewEntry}</h1>
+                    <p className="text-muted-foreground">{dict.Journal.Description}</p>
                 </div>
                 <Link href="/dashboard/journal">
                     <Button variant="outline">
-                        العودة للقائمة
+                        {dict.Sales.Invoice.BackToList}
                     </Button>
                 </Link>
             </div>

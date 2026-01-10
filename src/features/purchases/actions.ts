@@ -418,9 +418,8 @@ export async function updatePurchaseInvoice(id: number, data: any) {
                 where: and(eq(journalEntries.tenantId, session.tenantId), eq(journalEntries.reference, oldInvoice.invoiceNumber || ""))
             });
             if (oldJE) {
-                // Delete lines first (cascade should handle it but let's be safe)
-                await db.delete(journalLines).where(eq(journalLines.journalEntryId, oldJE.id));
-                await db.delete(journalEntries).where(eq(journalEntries.id, oldJE.id));
+                const { deleteJournalEntry } = await import("@/features/accounting/actions");
+                await deleteJournalEntry(oldJE.id, db); // Use db here as we are inside a logic block but createPurchaseInvoice uses global db? Wait.
             }
 
             // Create New JE (Re-using logic from createPurchaseInvoice)
@@ -487,5 +486,65 @@ export async function updatePurchaseInvoice(id: number, data: any) {
     } catch (error: any) {
         console.error("updatePurchaseInvoice failed:", error);
         return { success: false, error: error.message || "Unknown error" };
+    }
+}
+
+export async function deletePurchaseInvoice(id: number) {
+    const { getDictionary } = await import("@/lib/i18n-server");
+    const dict = await getDictionary();
+    const session = await getSession();
+    if (!session || (session.role !== 'admin' && session.role !== 'SUPER_ADMIN')) {
+        return { success: false, error: dict.Common.Error };
+    }
+
+    try {
+        const invoice = await db.query.purchaseInvoices.findFirst({
+            where: (inv, { eq, and }) => and(eq(inv.id, id), eq(inv.tenantId, session.tenantId)),
+            with: { items: true }
+        });
+
+        if (!invoice) return { success: false, error: dict.Common.Error };
+
+        await db.transaction(async (tx) => {
+            // 1. Revert Stock
+            const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+            const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+            for (const item of invoice.items) {
+                if (item.productId) {
+                    await tx.update(products)
+                        .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
+                        .where(eq(products.id, item.productId));
+                }
+            }
+
+            // 2. Clear Journal Entries
+            const relatedJEs = await tx.query.journalEntries.findMany({
+                where: and(
+                    eq(journalEntries.tenantId, session.tenantId),
+                    or(
+                        eq(journalEntries.reference, invoice.invoiceNumber),
+                        like(journalEntries.reference, `%${invoice.invoiceNumber}%`)
+                    )
+                )
+            });
+
+            const { deleteJournalEntry } = await import("@/features/accounting/actions");
+            for (const je of relatedJEs) {
+                await deleteJournalEntry(je.id, tx);
+            }
+
+            // 3. Delete Invoice
+            await tx.delete(purchaseInvoiceItems).where(eq(purchaseInvoiceItems.purchaseInvoiceId, id));
+            await tx.delete(purchaseInvoices).where(eq(purchaseInvoices.id, id));
+        });
+
+        revalidatePath("/dashboard/purchases");
+        revalidatePath("/dashboard/inventory");
+        revalidatePath("/dashboard/journal");
+
+        return { success: true, message: dict.Common.Success };
+    } catch (e: any) {
+        console.error("Delete Purchase Error:", e);
+        return { success: false, error: dict.Common.Error };
     }
 }

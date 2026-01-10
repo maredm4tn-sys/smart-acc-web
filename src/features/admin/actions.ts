@@ -35,45 +35,41 @@ export async function resetSubscriberData(tenantId: string) {
         const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
         if (!tenant) return { error: "Tenant not found" };
 
-        // Transactional delete in correct order for PostgreSQL
-        await db.transaction(async (tx) => {
-            // Level 4: Details/Items (Avoid complex subqueries)
-            const tenantInvoices = await tx.select({ id: invoices.id }).from(invoices).where(eq(invoices.tenantId, tenantId));
+        const isDesktop = process.env.NEXT_PUBLIC_APP_MODE === 'desktop';
+
+        if (isDesktop) {
+            // On SQLite (Desktop), we perform operations sequentially to avoid transaction async issues
+            // Level 4: Details
+            const tenantInvoices = await db.select({ id: invoices.id }).from(invoices).where(eq(invoices.tenantId, tenantId));
             const invoiceIds = tenantInvoices.map(i => i.id);
 
-            const tenantPurchases = await tx.select({ id: purchaseInvoices.id }).from(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+            const tenantPurchases = await db.select({ id: purchaseInvoices.id }).from(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
             const purchaseIds = tenantPurchases.map(p => p.id);
 
-            const tenantJournalEntries = await tx.select({ id: journalEntries.id }).from(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+            const tenantJournalEntries = await db.select({ id: journalEntries.id }).from(journalEntries).where(eq(journalEntries.tenantId, tenantId));
             const jeIds = tenantJournalEntries.map(je => je.id);
 
-            // Conditional deletion to avoid empty IN clauses
             if (jeIds.length > 0) {
-                await tx.delete(journalLines).where(sql`journal_entry_id IN (${sql.join(jeIds, sql`, `)})`);
+                await db.delete(journalLines).where(sql`journal_entry_id IN (${sql.join(jeIds, sql`, `)})`);
             }
             if (invoiceIds.length > 0) {
-                await tx.delete(invoiceItems).where(sql`invoice_id IN (${sql.join(invoiceIds, sql`, `)})`);
+                await db.delete(invoiceItems).where(sql`invoice_id IN (${sql.join(invoiceIds, sql`, `)})`);
             }
             if (purchaseIds.length > 0) {
-                await tx.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (${sql.join(purchaseIds, sql`, `)})`);
+                await db.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (${sql.join(purchaseIds, sql`, `)})`);
             }
 
-            // Level 3: Headers
-            await tx.delete(invoices).where(eq(invoices.tenantId, tenantId));
-            await tx.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
-            await tx.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
-            await tx.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+            // Level 3 & 2 & 1
+            await db.delete(invoices).where(eq(invoices.tenantId, tenantId));
+            await db.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+            await db.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
+            await db.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+            await db.delete(products).where(eq(products.tenantId, tenantId));
+            await db.delete(customers).where(eq(customers.tenantId, tenantId));
+            await db.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
+            await db.update(accounts).set({ balance: "0" }).where(eq(accounts.tenantId, tenantId));
 
-            // Level 2: Master Data
-            await tx.delete(products).where(eq(products.tenantId, tenantId));
-            await tx.delete(customers).where(eq(customers.tenantId, tenantId));
-            await tx.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
-
-            // Level 1: Accounts Reset
-            await tx.update(accounts).set({ balance: "0" }).where(eq(accounts.tenantId, tenantId));
-
-            // Audit
-            await tx.insert(auditLogs).values({
+            await db.insert(auditLogs).values({
                 tenantId: tenantId,
                 userId: session.userId,
                 action: "FACTORY_RESET",
@@ -82,7 +78,48 @@ export async function resetSubscriberData(tenantId: string) {
                 details: `Factory reset performed for tenant ${tenant.name}`,
                 createdAt: new Date(),
             });
-        });
+        } else {
+            // Standard Transaction for Postgres
+            await db.transaction(async (tx) => {
+                const tenantInvoices = await tx.select({ id: invoices.id }).from(invoices).where(eq(invoices.tenantId, tenantId));
+                const invoiceIds = tenantInvoices.map(i => i.id);
+
+                const tenantPurchases = await tx.select({ id: purchaseInvoices.id }).from(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+                const purchaseIds = tenantPurchases.map(p => p.id);
+
+                const tenantJournalEntries = await tx.select({ id: journalEntries.id }).from(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+                const jeIds = tenantJournalEntries.map(je => je.id);
+
+                if (jeIds.length > 0) {
+                    await tx.delete(journalLines).where(sql`journal_entry_id IN (${sql.join(jeIds, sql`, `)})`);
+                }
+                if (invoiceIds.length > 0) {
+                    await tx.delete(invoiceItems).where(sql`invoice_id IN (${sql.join(invoiceIds, sql`, `)})`);
+                }
+                if (purchaseIds.length > 0) {
+                    await tx.delete(purchaseInvoiceItems).where(sql`purchase_invoice_id IN (${sql.join(purchaseIds, sql`, `)})`);
+                }
+
+                await tx.delete(invoices).where(eq(invoices.tenantId, tenantId));
+                await tx.delete(purchaseInvoices).where(eq(purchaseInvoices.tenantId, tenantId));
+                await tx.delete(vouchers).where(eq(vouchers.tenantId, tenantId));
+                await tx.delete(journalEntries).where(eq(journalEntries.tenantId, tenantId));
+                await tx.delete(products).where(eq(products.tenantId, tenantId));
+                await tx.delete(customers).where(eq(customers.tenantId, tenantId));
+                await tx.delete(suppliers).where(eq(suppliers.tenantId, tenantId));
+                await tx.update(accounts).set({ balance: "0" }).where(eq(accounts.tenantId, tenantId));
+
+                await tx.insert(auditLogs).values({
+                    tenantId: tenantId,
+                    userId: session.userId,
+                    action: "FACTORY_RESET",
+                    entity: "SYSTEM",
+                    entityId: tenantId,
+                    details: `Factory reset performed for tenant ${tenant.name}`,
+                    createdAt: new Date(),
+                });
+            });
+        }
 
         revalidatePath("/dashboard");
         revalidatePath("/dashboard/settings");

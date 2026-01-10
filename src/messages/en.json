@@ -20,7 +20,17 @@
         "TrialVersion": "Trial Version",
         "DaysLeft": "Days Left",
         "InvoicesLeft": "Invoices Left",
-        "ActivateNow": "Activate Full Version"
+        "ActivateNow": "Activate Full Version",
+        "CreateNew": "Add New",
+        "Loading": "Loading...",
+        "EGP": "EGP",
+        "Uncategorized": "Uncategorized",
+        "Export": {
+            "NoData": "No data to export",
+            "Preparing": "Preparing file...",
+            "Success": "File exported successfully",
+            "Error": "Error during export"
+        }
     },
     "Sidebar": {
         "MainMenu": "Main Menu",
@@ -144,7 +154,8 @@
             "Actions": "Actions",
             "NoItems": "No products found. Start by adding a new item.",
             "Goods": "Goods",
-            "Service": "Service"
+            "Service": "Service",
+            "RequiresToken": "Auto-issue token for this item"
         },
         "ImportDialog": {
             "Title": "Import Products from Excel",
@@ -152,7 +163,10 @@
             "FileLabel": "Select File",
             "Processing": "Processing...",
             "Success": "Products imported successfully",
-            "Error": "Failed to import products"
+            "Error": "Failed to import products",
+            "ImportedCount": "Imported {count} products successfully",
+            "NoValidRows": "No valid data found in file. Check column headers: Name, Buy Price, SellPrice, Stock",
+            "ProcessingError": "Error processing file"
         }
     },
     "Customers": {
@@ -265,6 +279,9 @@
             "Error": "Failed to save product",
             "Goods": "Goods (Stock)",
             "Service": "Service",
+            "Category": "Department / Category",
+            "SelectCategory": "Select Category...",
+            "New": "New",
             "Errors": {
                 "NameRequired": "Item name is required",
                 "SKURequired": "SKU is required",
@@ -421,7 +438,8 @@
                     "ProductRequired": "Product is required",
                     "QtyMin": "Qty must be at least 1",
                     "PriceMin": "Price cannot be negative",
-                    "OneItem": "At least one item is required"
+                    "OneItem": "At least one item is required",
+                    "AmountExceeds": "Amount paid exceeds the remaining balance"
                 }
             },
             "Print": {
@@ -438,7 +456,8 @@
                 "Subtotal": "Subtotal",
                 "Tax": "VAT (14%)",
                 "GrandTotal": "Grand Total",
-                "Footer": "Thank you for your business."
+                "Footer": "Thank you for your business.",
+                "Token": "Queue No"
             }
         },
         "Table": {
@@ -494,6 +513,7 @@
         "FiscalYearTotal": "Fiscal Year Total",
         "Syncing": "Updating...",
         "SyncButton": "Update & Sync Data",
+        "SyncResult": "Sync completed: Fixed {fixed} invoices, skipped {skipped} existing ones.",
         "Statements": {
             "Customers": "Customer Account Statement",
             "Suppliers": "Supplier Account Statement",
@@ -502,7 +522,11 @@
             "Expenses": "Expense Account Statement",
             "Receipts": "Receipt Vouchers",
             "Payments": "Payment Vouchers",
-            "ProfitAndLoss": "Profit and Loss"
+            "ProfitAndLoss": "Profit and Loss",
+            "StatusLabels": {
+                "Posted": "Posted",
+                "Draft": "Draft"
+            }
         },
         "TaxDashboard": {
             "Title": "VAT Returns (Tax Dashboard)",
@@ -556,6 +580,70 @@
                 "NoExpenses": "No expenses recorded in this period.",
                 "NoRevenues": "No revenue recorded in this period."
             }
+        },
+        "DepartmentSalesPage": {
+            "Title": "Department Sales Report",
+            "Description": "Detailed view of sales distributed by different departments",
+            "Options": "Report Options",
+            "FromDate": "From Date",
+            "ToDate": "To Date",
+            "ShowReport": "Show Report",
+            "TotalRevenue": "Total Revenue (Selected Period)",
+            "FromCategories": "From {count} departments/categories",
+            "DetailsTitle": "Department Details",
+            "DetailsDesc": "List of revenue per department and number of transactions.",
+            "Table": {
+                "Hash": "#",
+                "Category": "Department",
+                "Count": "Transactions Count",
+                "Revenue": "Total Revenue",
+                "Percentage": "Percentage",
+                "NoData": "No data found for this period."
+            }
+        },
+        "GeneralStatement": {
+            "Title": "Detailed Account Statement",
+            "Options": "Report Options",
+            "Type": "Report Type",
+            "Account": "Select Account",
+            "FromDate": "From Date",
+            "ToDate": "To Date",
+            "ShowReport": "Show Report",
+            "Print": "Print Statement",
+            "OpeningBalance": "Opening Balance",
+            "PeriodMotion": "Period Motion (Net)",
+            "ClosingBalance": "Closing Balance",
+            "Table": {
+                "Date": "Date",
+                "Description": "Description",
+                "Reference": "Reference No.",
+                "Debit": "Debit",
+                "Credit": "Credit",
+                "Balance": "Balance"
+            },
+            "Types": {
+                "Customer": "Customers",
+                "Supplier": "Suppliers",
+                "Treasury": "Cash & Banks",
+                "Expense": "Expenses",
+                "Revenue": "Other Revenues",
+                "Equity": "Equity"
+            },
+            "ReportTitles": {
+                "Customer": "Customer Account Statement",
+                "Supplier": "Supplier Account Statement",
+                "Treasury": "Cash/Bank Motion Statement",
+                "Expense": "Expense Analysis",
+                "General": "General Account Statement"
+            },
+            "Footer": "This report was exported from Smart Accountant on {date}",
+            "Errors": {
+                "SelectAccount": "Please select an account",
+                "FetchFailed": "Failed to fetch account statement"
+            },
+            "Loading": "Loading...",
+            "SelectPlaceholder": "Select account/entity...",
+            "NoData": "No data available"
         }
     },
     "Users": {
@@ -836,12 +924,33 @@
         "EmptyCart": "Cart is Empty",
         "Subtotal": "Subtotal",
         "Tax": "Tax (14%)",
+        "TaxToggle": "Enable Tax (14%)",
         "Total": "Total",
         "AutoPrint": "Auto-print Invoice",
         "PayCash": "Cash Payment (Cash)",
         "SearchPlaceholder": "Search product (Name or Barcode)...",
         "NoProducts": "No matching products",
         "PrintAgain": "Print Invoice Again",
-        "PaymentSuccess": "Payment successful! Invoice #"
+        "PaymentSuccess": "Payment successful! Invoice #",
+        "Discount": "Discount",
+        "PaymentMethod": "Payment Method",
+        "Cash": "Cash",
+        "Card": "Card",
+        "Bank": "Bank Transfer",
+        "ShiftReport": "Shift Report",
+        "ShiftSummary": "Today's Sales Summary",
+        "TodaySales": "Today's Sales",
+        "InvoicesCount": "Invoices Count",
+        "Stock": "Stock",
+        "ReceiptWelcome": "Welcome",
+        "ReceiptTime": "Time",
+        "QueueNo": "Queue No",
+        "ReceiptFooter1": "Thank you for shopping with us!",
+        "ReceiptFooter2": "Please come again.",
+        "PoweredBy": "Powered by Smart Acc",
+        "AddToCart": "Add to Cart",
+        "DecreaseQty": "Decrease Qty",
+        "IncreaseQty": "Increase Qty",
+        "RemoveFromCart": "Remove from Cart"
     }
 }

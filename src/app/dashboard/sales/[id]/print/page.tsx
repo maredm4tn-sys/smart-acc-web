@@ -80,6 +80,15 @@ export default async function InvoicePrintPage(props: { params: Promise<{ id: st
                             <p className="text-gray-500 mt-1 uppercase tracking-wider text-xs">
                                 {Number(invoice.taxTotal) > 0 ? "Tax Invoice" : "Invoice"}
                             </p>
+                            {/* Token / Queue Number Display */}
+                            {invoice.tokenNumber && (
+                                <div className="mt-4 inline-block">
+                                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-800 p-2 px-6 rounded-lg bg-gray-50 print:bg-white">
+                                        <span className="text-xs font-bold uppercase text-gray-500 tracking-widest">{dict.Sales.Invoice.Print.Token || "Queue No"}</span>
+                                        <span className="text-4xl font-black text-gray-900 leading-none mt-1">{invoice.tokenNumber}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="text-left rtl:text-left">

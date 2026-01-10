@@ -141,10 +141,10 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                         quantity: 1
                     });
                 }
-                toast.success("Added: " + product.name);
+                toast.success(dict.Common.Success + ": " + product.name);
                 e.currentTarget.value = ""; // Clear
             } else {
-                toast.error("Product not found");
+                toast.error(dict.Common.Error);
             }
         }
     };
@@ -178,7 +178,7 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
             // Improved Success Check: Check for success flag explicitly
             if (res && res.success) {
-                toast.success(res.message || "Invoice Created Successfully");
+                toast.success(res.message || dict.Common.Success);
 
                 // CRITICAL: Set ID immediately for print button
                 if (res.id) {
@@ -217,11 +217,11 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                 <CardContent className="p-4 flex items-center gap-4">
                     <div className="flex-1">
                         <label className="text-sm font-semibold text-blue-700 mb-1 block">
-                            🔍 Scan Barcode / Search (Press Enter)
+                            🔍 {dict.Sales.Invoice.Form.Table.Item} (Enter)
                         </label>
                         <Input
                             autoFocus
-                            placeholder="Scan product barcode..."
+                            placeholder={dict.Sales.Invoice.Form.SelectProduct}
                             onKeyDown={handleBarcodeScan}
                             className="bg-white"
                         />

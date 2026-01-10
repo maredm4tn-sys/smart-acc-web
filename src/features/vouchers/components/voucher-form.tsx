@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 
 // Helper Select Component for Accounts
 function AccountInternalSelect({ value, onChange, filterType }: { value?: number, onChange: (val: number) => void, filterType?: string }) {
+    const { dict } = useTranslation();
     const [list, setList] = useState<{ id: number; name: string, code: string }[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -52,7 +53,7 @@ function AccountInternalSelect({ value, onChange, filterType }: { value?: number
     return (
         <Select value={value?.toString()} onValueChange={(v) => onChange(Number(v))}>
             <SelectTrigger>
-                <SelectValue placeholder={loading ? "جاري تحميل الحسابات..." : "اختر الحساب الفرعي..."} />
+                <SelectValue placeholder={loading ? (dict.Common?.Loading || "...") : (dict.Vouchers?.Form?.SelectParty || "...")} />
             </SelectTrigger>
             <SelectContent>
                 {list.length > 0 ? list.map((item) => (
@@ -60,7 +61,7 @@ function AccountInternalSelect({ value, onChange, filterType }: { value?: number
                         {item.name} <span className="text-xs text-gray-400">({item.code})</span>
                     </SelectItem>
                 )) : (
-                    <div className="p-2 text-sm text-gray-500 text-center">لا يوجد حسابات فرعية متاحة</div>
+                    <div className="p-2 text-sm text-gray-500 text-center">{dict.Common?.NA || "N/A"}</div>
                 )}
             </SelectContent>
         </Select>
@@ -108,7 +109,7 @@ export function VoucherForm({ customers, suppliers }: { customers: any[], suppli
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         if (values.partyType !== 'other' && !values.partyId) {
-            toast.error("Please select a party");
+            toast.error(dict.Vouchers?.Form?.SelectParty || "Please select a party");
             return;
         }
 
@@ -206,14 +207,14 @@ export function VoucherForm({ customers, suppliers }: { customers: any[], suppli
                 {/* Account Selector (For Other) */}
                 {partyType === 'other' && (
                     <div className="space-y-2">
-                        <Label>الحساب الفرعي (شجرة الحسابات)</Label>
+                        <Label>{dict.Vouchers?.Form?.Account || "Account"}</Label>
                         <AccountInternalSelect
                             value={watch('accountId') as number}
                             onChange={(val) => setValue('accountId', val)}
                             // Expand search to all account types to allow equity (3000s), liabilities (2000s), etc.
                             filterType="asset,liability,equity,revenue,expense"
                         />
-                        {errors.accountId && <p className="text-sm text-red-500">مطلوب اختيار الحساب من الشجرة</p>}
+                        {errors.accountId && <p className="text-sm text-red-500">{dict.Common?.Error || "Error"}</p>}
                     </div>
                 )}
             </div>

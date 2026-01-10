@@ -62,11 +62,11 @@ export default async function ExpensesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-gray-50">
-                                    <TableHead className="w-[120px]">{dict.Expenses.Table.Date}</TableHead>
-                                    <TableHead>{dict.Expenses.Table.Account}</TableHead>
-                                    <TableHead>{dict.Expenses.Table.Description}</TableHead>
-                                    <TableHead>{dict.Expenses.Table.Amount}</TableHead>
-                                    <TableHead className="w-[100px]">{dict.Expenses.Table.EntryNo}</TableHead>
+                                    <TableHead className="w-[120px] text-center">{dict.Expenses.Table.Date}</TableHead>
+                                    <TableHead className="text-start">{dict.Expenses.Table.Account}</TableHead>
+                                    <TableHead className="text-start">{dict.Expenses.Table.Description}</TableHead>
+                                    <TableHead className="text-end">{dict.Expenses.Table.Amount}</TableHead>
+                                    <TableHead className="w-[150px] text-end">{dict.Expenses.Table.EntryNo}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -79,19 +79,19 @@ export default async function ExpensesPage() {
                                 ) : (
                                     data.expenses.map((expense) => (
                                         <TableRow key={expense.id}>
-                                            <TableCell className="font-medium text-gray-600">
+                                            <TableCell className="font-medium text-gray-600 text-center">
                                                 {new Date(expense.date).toLocaleDateString('en-GB')}
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="text-start">
                                                 <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                                                     {expense.accountName}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-gray-500">{expense.description}</TableCell>
-                                            <TableCell className="font-bold text-red-600">
+                                            <TableCell className="text-gray-500 text-start">{expense.description}</TableCell>
+                                            <TableCell className="font-bold text-red-600 text-end">
                                                 {formatCurrency(expense.amount)}
                                             </TableCell>
-                                            <TableCell className="text-xs text-gray-400 font-mono">
+                                            <TableCell className="text-xs text-gray-400 font-mono text-end">
                                                 {expense.entryNumber}
                                             </TableCell>
                                         </TableRow>

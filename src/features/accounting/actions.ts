@@ -103,6 +103,7 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
                 .where(eq(accounts.id, line.accountId));
         }
 
+        /*
         try {
             // Revalidation should normally happen outside tx if possible, but safe here
             if (!tx) {
@@ -110,11 +111,56 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
                 revalidatePath("/dashboard/accounts");
             }
         } catch (e) { }
+        */
 
         return { success: true, message: "تم ترحيل القيد بنجاح" };
     } catch (error) {
         console.error("Error creating journal:", error);
         return { success: false, message: `حدث خطأ: ${(error as Error).message}` };
+    }
+}
+
+export async function deleteJournalEntry(id: number, tx?: any): Promise<MyJournalResult> {
+    const queryDb = tx || db;
+    try {
+        const tenantId = await requireTenant();
+
+        // 1. Get Entry and Lines for reversal
+        const entry = await queryDb.query.journalEntries.findFirst({
+            where: and(eq(journalEntries.id, id), eq(journalEntries.tenantId, tenantId)),
+            with: { lines: true }
+        });
+
+        if (!entry) return { success: false, message: "القيد غير موجود" };
+
+        const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
+        const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
+
+        // 2. Revert Balance for each line
+        for (const line of entry.lines) {
+            await queryDb.update(accounts)
+                .set({
+                    // Reverse: -debit +credit
+                    balance: sql`${castNum(accounts.balance)} - ${line.debit} + ${line.credit}`
+                })
+                .where(eq(accounts.id, line.accountId));
+        }
+
+        // 3. Delete Lines & Header
+        await queryDb.delete(journalLines).where(eq(journalLines.journalEntryId, id));
+        await queryDb.delete(journalEntries).where(eq(journalEntries.id, id));
+
+        /*
+        if (!tx) {
+            revalidatePath("/dashboard/journal");
+            revalidatePath("/dashboard/accounts");
+        }
+        */
+
+        return { success: true, message: "تم حذف القيد وتعديل الأرصدة" };
+    } catch (error) {
+        console.error("Error deleting journal:", error);
+        return { success: false, message: "فشل حذف القيد" };
     }
 }
 

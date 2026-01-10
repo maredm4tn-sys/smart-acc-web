@@ -31,12 +31,14 @@ export default async function SettingsPage() {
             <Tabs defaultValue="facility" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="facility">{dict.Settings.Tabs.Facility}</TabsTrigger>
-                    {isDesktop && <TabsTrigger value="backup">{dict.Settings.Tabs.Backup}</TabsTrigger>}
-                    {isSuperAdmin && (
+                    {isDesktop && (
                         <>
-                            <TabsTrigger value="subscribers">{dict.Settings.Tabs.Subscribers}</TabsTrigger>
+                            <TabsTrigger value="backup">{dict.Settings.Tabs.Backup}</TabsTrigger>
                             <TabsTrigger value="danger">{dict.Settings.Tabs.Danger}</TabsTrigger>
                         </>
+                    )}
+                    {isSuperAdmin && (
+                        <TabsTrigger value="subscribers">{dict.Settings.Tabs.Subscribers}</TabsTrigger>
                     )}
                 </TabsList>
 
@@ -45,20 +47,20 @@ export default async function SettingsPage() {
                 </TabsContent>
 
                 {isDesktop && (
-                    <TabsContent value="backup" className="space-y-4">
-                        <BackupManager />
-                    </TabsContent>
-                )}
-
-                {isSuperAdmin && (
                     <>
-                        <TabsContent value="subscribers" className="space-y-4">
-                            <UserList users={users} />
+                        <TabsContent value="backup" className="space-y-4">
+                            <BackupManager />
                         </TabsContent>
                         <TabsContent value="danger" className="space-y-4">
                             <DangerZone />
                         </TabsContent>
                     </>
+                )}
+
+                {isSuperAdmin && (
+                    <TabsContent value="subscribers" className="space-y-4">
+                        <UserList users={users} />
+                    </TabsContent>
                 )}
             </Tabs>
 

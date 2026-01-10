@@ -20,7 +20,17 @@
         "TrialVersion": "نسخة تجريبية",
         "DaysLeft": "أيام متبقية",
         "InvoicesLeft": "فواتير متبقية",
-        "ActivateNow": "تفعيل النسخة الكاملة"
+        "ActivateNow": "تفعيل النسخة الكاملة",
+        "CreateNew": "إضافة جديد",
+        "Loading": "جاري التحميل...",
+        "EGP": "ج.م",
+        "Uncategorized": "غير مصنف",
+        "Export": {
+            "NoData": "لا توجد بيانات للتصدير",
+            "Preparing": "جاري تحضير الملف...",
+            "Success": "تم تصدير الملف بنجاح",
+            "Error": "حدث خطأ أثناء التصدير"
+        }
     },
     "Sidebar": {
         "MainMenu": "القائمة الرئيسية",
@@ -124,6 +134,20 @@
             "equity": "حقوق الملكية",
             "revenue": "الإيرادات",
             "expense": "المصروفات"
+        },
+        "Messages": {
+            "CreateSuccess": "تم إنشاء الحساب بنجاح",
+            "ImportSuccess": "تم استيراد الدليل الافتراضي بنجاح",
+            "ImportError": "حدث خطأ أثناء استيراد الدليل",
+            "CashNotFound": "لم يتم العثور على حساب خزينة (نقدية) للصرف منه"
+        },
+        "Errors": {
+            "InvalidData": "بيانات الحساب غير صالحة",
+            "CodeExists": "رقم الحساب مستخدم من قبل",
+            "DeleteChildError": "لا يمكن حذف حساب رئيسي يحتوي على حسابات فرعية",
+            "DeleteTxError": "لا يمكن حذف هذا الحساب لوجود عمليات مالية مرتبطة به",
+            "DeleteSuccess": "تم حذف الحساب بنجاح",
+            "DeleteError": "فشل حذف الحساب"
         }
     },
     "Inventory": {
@@ -144,7 +168,8 @@
             "Actions": "الإجراءات",
             "NoItems": "لا توجد منتجات. ابدأ بإضافة صنف جديد.",
             "Goods": "مخزني",
-            "Service": "خدمة"
+            "Service": "خدمة",
+            "RequiresToken": "إصدار رقم دور لهذا الصنف تلقائياً"
         },
         "ImportDialog": {
             "Title": "استيراد منتجات من Excel",
@@ -152,7 +177,10 @@
             "FileLabel": "اختيار الملف",
             "Processing": "جاري المعالجة...",
             "Success": "تم استيراد المنتجات بنجاح",
-            "Error": "فشل استيراد المنتجات"
+            "Error": "فشل استيراد المنتجات",
+            "ImportedCount": "تم استيراد {count} صنف بنجاح",
+            "NoValidRows": "لم يتم العثور على بيانات صالحة في الملف. تأكد من عناوين الأعمدة: اسم الصنف، سعر الشراء، سعر البيع، الرصيد",
+            "ProcessingError": "حدث خطأ أثناء قراءة الملف"
         }
     },
     "Customers": {
@@ -172,6 +200,11 @@
             "TotalDebt": "إجمالي الديون",
             "Actions": "إجراءات",
             "NoCustomers": "لا يوجد عملاء مسجلين حالياً."
+        },
+        "Messages": {
+            "ImportSuccess": "تم استيراد العملاء بنجاح",
+            "ImportedCount": "تم استيراد {count} عملاء بنجاح. الأخطاء: {errors}",
+            "FileUploaded": "تم رفع الملف بنجاح"
         }
     },
     "Suppliers": {
@@ -265,6 +298,9 @@
             "Error": "فشل حفظ الصنف",
             "Goods": "منتج مخزني (Goods)",
             "Service": "خدمة (Service)",
+            "Category": "القسم",
+            "SelectCategory": "اختار القسم...",
+            "New": "جديد",
             "Errors": {
                 "NameRequired": "اسم الصنف مطلوب",
                 "SKURequired": "SKU مطلوب",
@@ -358,7 +394,13 @@
             }
         },
         "Errors": {
-            "NotBalanced": "القيد غير متوازن"
+            "NotBalanced": "القيد غير متوازن",
+            "InvalidData": "بيانات القيد غير صالحة",
+            "FiscalYearError": "لم يتم العثور على سنة مالية مفتوحة أو فشل إنشاؤها",
+            "PostError": "حدث خطأ أثناء ترحيل القيد",
+            "EntryNotFound": "القيد غير موجود",
+            "DeleteSuccess": "تم حذف القيد وتعديل الأرصدة بنجاح",
+            "DeleteError": "فشل حذف القيد"
         },
         "Table": {
             "EntryNumber": "رقم القيد",
@@ -421,7 +463,8 @@
                     "ProductRequired": "المنتج مطلوب",
                     "QtyMin": "الكمية يجب أن تكون 1 على الأقل",
                     "PriceMin": "السعر لا يمكن أن يكون سالباً",
-                    "OneItem": "يجب إضافة منتج واحد على الأقل"
+                    "OneItem": "يجب إضافة منتج واحد على الأقل",
+                    "AmountExceeds": "المبلغ المدفوع يتجاوز الرصيد المتبقي"
                 }
             },
             "Print": {
@@ -438,7 +481,8 @@
                 "Subtotal": "الإجمالي الفرعي",
                 "Tax": "ضريبة القيمة المضافة (14%)",
                 "GrandTotal": "الإجمالي الكلي",
-                "Footer": "شكراً لتعاملكم معنا."
+                "Footer": "شكراً لتعاملكم معنا.",
+                "Token": "رقم الدور"
             }
         },
         "Table": {
@@ -494,6 +538,7 @@
         "FiscalYearTotal": "إجمالي العام المالي",
         "Syncing": "جاري التحديث...",
         "SyncButton": "تحديث ومزامنة البيانات",
+        "SyncResult": "تمت المزامنة بنجاح: تم إصلاح {fixed} فواتير، وتخطي {skipped} موجودة مسبقاً.",
         "Statements": {
             "Customers": "كشف حساب العملاء",
             "Suppliers": "كشف حساب الموردين",
@@ -502,7 +547,8 @@
             "Expenses": "كشف حساب المصروفات",
             "Receipts": "سندات القبض",
             "Payments": "سندات الصرف",
-            "ProfitAndLoss": "الأرباح والخسائر"
+            "ProfitAndLoss": "الأرباح والخسائر",
+            "DepartmentSales": "تقرير إيرادات الأقسام"
         },
         "TaxDashboard": {
             "Title": "إقرارات القيمة المضافة (Tax Dashboard)",
@@ -556,6 +602,70 @@
                 "NoExpenses": "لا توجد مصروفات مسجلة في هذه الفترة.",
                 "NoRevenues": "لا توجد إيرادات مسجلة."
             }
+        },
+        "DepartmentSalesPage": {
+            "Title": "تقرير الإيرادات حسب القسم",
+            "Description": "عرض تفصيلي للمبيعات موزعة على الأقسام المختلفة",
+            "Options": "خيارات التقرير",
+            "FromDate": "من تاريخ",
+            "ToDate": "إلى تاريخ",
+            "ShowReport": "عرض التقرير",
+            "TotalRevenue": "إجمالي الإيرادات (للفترة المحددة)",
+            "FromCategories": "من {count} قسم/تصنيف",
+            "DetailsTitle": "تفاصيل الأقسام",
+            "DetailsDesc": "قائمة بإيرادات كل قسم وعدد العمليات التي تمت به.",
+            "Table": {
+                "Hash": "#",
+                "Category": "القسم",
+                "Count": "عدد العمليات / الفواتير",
+                "Revenue": "إجمالي الإيراد",
+                "Percentage": "النسبة",
+                "NoData": "لا توجد بيانات لهذه الفترة."
+            }
+        },
+        "GeneralStatement": {
+            "Title": "كشف حساب تفصيلي",
+            "Options": "خيارات التقرير",
+            "Type": "نوع التقرير",
+            "Account": "اختر الحساب",
+            "FromDate": "من تاريخ",
+            "ToDate": "إلى تاريخ",
+            "ShowReport": "عرض التقرير",
+            "Print": "طباعة الكشف",
+            "OpeningBalance": "الرصيد الافتتاحي",
+            "PeriodMotion": "حركة الفترة (صافي)",
+            "ClosingBalance": "الرصيد الختامي",
+            "Table": {
+                "Date": "التاريخ",
+                "Description": "البيان / الوصف",
+                "Reference": "رقم المرجع",
+                "Debit": "مدين",
+                "Credit": "دائن",
+                "Balance": "الرصيد"
+            },
+            "Types": {
+                "Customer": "العملاء",
+                "Supplier": "الموردين",
+                "Treasury": "الخزينة والبنوك",
+                "Expense": "المصروفات",
+                "Revenue": "الإيرادات الأخرى",
+                "Equity": "رأس المال وحقوق الملكية"
+            },
+            "ReportTitles": {
+                "Customer": "كشف حساب عميل",
+                "Supplier": "كشف حساب مورد",
+                "Treasury": "كشف حركة نقدية/بنك",
+                "Expense": "تحليل مصروفات",
+                "General": "كشف حساب عام"
+            },
+            "Footer": "تم استخراج هذا التقرير من نظام المحاسب الذكي بتاريخ {date}",
+            "Errors": {
+                "SelectAccount": "الرجاء اختيار الحساب",
+                "FetchFailed": "فشل في جلب كشف الحساب"
+            },
+            "Loading": "جاري التحميل...",
+            "SelectPlaceholder": "اختر الحساب/الجهة...",
+            "NoData": "لا توجد بيانات"
         }
     },
     "Users": {
@@ -589,10 +699,14 @@
             "Save": "حفظ",
             "Cancel": "إلغاء",
             "Placeholders": {
-                "Name": "مثال: محمد أحمد",
-                "Username": "cashier1",
-                "Phone": "مثال: 01xxxxxxxxx",
-                "Address": "العنوان..."
+                "FullName": "الاسم الكامل مطلوب",
+                "Username": "اسم المستخدم مطلوب"
+            },
+            "Errors": {
+                "AllFieldsRequired": "جميع الحقول مطلوبة",
+                "UsernameExists": "اسم المستخدم مسجل مسبقاً",
+                "Unauthorized": "غير مصرح لك بالقيام بهذا الإجراء",
+                "CreateError": "حدث خطأ أثناء إنشاء المستخدم"
             }
         }
     },
@@ -807,7 +921,11 @@
             "Party": "الجهة / الحساب",
             "Amount": "المبلغ",
             "Status": "الحالة",
-            "NoVouchers": "لا توجد سندات"
+            "NoVouchers": "لا توجد سندات",
+            "StatusLabels": {
+                "Posted": "مُرحّل",
+                "Draft": "مسودة"
+            }
         },
         "Form": {
             "Type": "نوع السند",
@@ -836,12 +954,33 @@
         "EmptyCart": "السلة فارغة",
         "Subtotal": "المجموع الفرعي",
         "Tax": "الضريبة (14%)",
+        "TaxToggle": "تفعيل الضريبة (14%)",
         "Total": "الإجمالي",
         "AutoPrint": "طباعة الفاتورة تلقائياً",
         "PayCash": "دفع نقدي (Cash)",
         "SearchPlaceholder": "بحث عن منتج (الاسم أو الباركود)...",
         "NoProducts": "لا توجد منتجات مطابقة",
         "PrintAgain": "طباعة الفاتورة مرة أخرى",
-        "PaymentSuccess": "تم الدفع بنجاح! فاتورة #"
+        "PaymentSuccess": "تم الدفع بنجاح! فاتورة #",
+        "Discount": "الخصم",
+        "PaymentMethod": "طريقة الدفع",
+        "Cash": "نقدي",
+        "Card": "فيزا / كارت",
+        "Bank": "تحويل بنكي",
+        "ShiftReport": "تقرير الوردية",
+        "ShiftSummary": "ملخص مبيعات اليوم",
+        "TodaySales": "مبيعات اليوم",
+        "InvoicesCount": "عدد الفواتير",
+        "Stock": "المخزون",
+        "ReceiptWelcome": "أهلاً بك",
+        "ReceiptTime": "الوقت",
+        "QueueNo": "رقم الدور (Queue)",
+        "ReceiptFooter1": "شكراً لزيارتكم!",
+        "ReceiptFooter2": "نتمنى رؤيتكم مرة أخرى.",
+        "PoweredBy": "بواسطة المحاسب الذكي",
+        "AddToCart": "إضافة للسلة",
+        "DecreaseQty": "تقليل الكمية",
+        "IncreaseQty": "زيادة الكمية",
+        "RemoveFromCart": "حذف من السلة"
     }
 }

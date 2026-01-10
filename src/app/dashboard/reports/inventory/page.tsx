@@ -7,15 +7,16 @@ import { getDictionary } from "@/lib/i18n-server";
 
 export default async function InventoryReportPage() {
     const data = await getInventoryReport();
-    const dict = (await getDictionary()) as any;
+    const { dict, lang } = (await getDictionary()) as any;
 
-    if (!data) return <div>Loading...</div>;
+    if (!data) return <div className="p-8 text-center">{dict?.Common?.Loading || "Loading..."}</div>;
 
     const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', {
             style: 'currency',
-            currency: 'EGP'
-        }).format(val);
+            currency: 'EGP',
+            currencyDisplay: 'narrowSymbol'
+        }).format(val).replace('EGP', dict.Common.EGP).replace('ج.م.‏', dict.Common.EGP);
     };
 
     return (
@@ -33,7 +34,7 @@ export default async function InventoryReportPage() {
                         <Package className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data.totalItems}</div>
+                        <div className="text-2xl font-bold">{data.totalItems.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</div>
                         <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.Goods}</p>
                     </CardContent>
                 </Card>
@@ -44,7 +45,7 @@ export default async function InventoryReportPage() {
                         <DollarSign className="h-4 w-4 text-blue-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-700">{formatCurrency(data.totalCostValue)}</div>
+                        <div className="text-2xl font-bold text-blue-700 dir-ltr text-start">{formatCurrency(data.totalCostValue)}</div>
                         <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.Capital}</p>
                     </CardContent>
                 </Card>
@@ -55,7 +56,7 @@ export default async function InventoryReportPage() {
                         <DollarSign className="h-4 w-4 text-emerald-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-700">{formatCurrency(data.totalSalesValue)}</div>
+                        <div className="text-2xl font-bold text-emerald-700 dir-ltr text-start">{formatCurrency(data.totalSalesValue)}</div>
                         <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.PotentialRevenue}</p>
                     </CardContent>
                 </Card>
@@ -66,7 +67,7 @@ export default async function InventoryReportPage() {
                         <TrendingUp className="h-4 w-4 text-purple-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-purple-700">{formatCurrency(data.potentialProfit)}</div>
+                        <div className="text-2xl font-bold text-purple-700 dir-ltr text-start">{formatCurrency(data.potentialProfit)}</div>
                         <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.ProfitMargin}</p>
                     </CardContent>
                 </Card>
@@ -84,11 +85,11 @@ export default async function InventoryReportPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.ProductName}</TableHead>
-                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.SKU}</TableHead>
+                                <TableHead className="text-start">{dict.Reports.InventoryReport.Table.ProductName}</TableHead>
+                                <TableHead className="text-start">{dict.Reports.InventoryReport.Table.SKU}</TableHead>
                                 <TableHead className="text-center">{dict.Reports.InventoryReport.Table.CurrentStock}</TableHead>
-                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.BuyPrice}</TableHead>
-                                <TableHead className="text-right">{dict.Reports.InventoryReport.Table.Action}</TableHead>
+                                <TableHead className="text-end">{dict.Reports.InventoryReport.Table.BuyPrice}</TableHead>
+                                <TableHead className="text-end">{dict.Reports.InventoryReport.Table.Action}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -101,16 +102,16 @@ export default async function InventoryReportPage() {
                             ) : (
                                 data.lowStockItems.map(item => (
                                     <TableRow key={item.id} className="hover:bg-red-50/30">
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell className="text-gray-500 text-xs font-mono">{item.sku}</TableCell>
+                                        <TableCell className="font-medium text-start">{item.name}</TableCell>
+                                        <TableCell className="text-gray-500 text-xs font-mono text-start">{item.sku}</TableCell>
                                         <TableCell className="text-center">
                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${Number(item.stockQuantity) === 0 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
                                                 }`}>
                                                 {item.stockQuantity}
                                             </span>
                                         </TableCell>
-                                        <TableCell>{formatCurrency(Number(item.buyPrice))}</TableCell>
-                                        <TableCell>
+                                        <TableCell className="text-end font-bold text-slate-700 dir-ltr">{formatCurrency(Number(item.buyPrice))}</TableCell>
+                                        <TableCell className="text-end">
                                             <Link
                                                 href={`/dashboard/purchases/create?productId=${item.id}`}
                                                 className="text-xs text-blue-600 hover:underline font-bold"

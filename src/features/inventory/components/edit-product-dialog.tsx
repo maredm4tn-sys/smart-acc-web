@@ -24,14 +24,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useState } from "react";
-import { updateProduct } from "../actions";
-import { Pencil } from "lucide-react";
+import { updateProduct, getCategories } from "../actions";
+import { Pencil, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
 
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export function EditProductDialog({ product }: { product: any }) {
     const [open, setOpen] = useState(false);
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
     const { dict } = useTranslation();
+
+    useEffect(() => {
+        if (open) {
+            getCategories().then(setCategories);
+        }
+    }, [open]);
 
     const productSchema = z.object({
         name: z.string().min(2, dict.Dialogs.AddProduct.Errors.NameRequired),
@@ -40,6 +48,8 @@ export function EditProductDialog({ product }: { product: any }) {
         sellPrice: z.coerce.number().min(0, dict.Dialogs.AddProduct.Errors.PricePositive),
         buyPrice: z.coerce.number().min(0).default(0),
         stockQuantity: z.coerce.number().min(0).default(0),
+        requiresToken: z.boolean().default(false),
+        categoryId: z.number().optional(),
     });
 
     type ProductFormValues = z.infer<typeof productSchema>;
@@ -58,6 +68,8 @@ export function EditProductDialog({ product }: { product: any }) {
             sellPrice: Number(product.sellPrice),
             buyPrice: Number(product.buyPrice),
             stockQuantity: Number(product.stockQuantity),
+            requiresToken: Boolean(product.requiresToken),
+            categoryId: product.categoryId,
         },
     });
 
@@ -111,6 +123,22 @@ export function EditProductDialog({ product }: { product: any }) {
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="category">{dict.Dialogs.AddProduct.Category || "Category"}</Label>
+                        <Select onValueChange={(val) => setValue("categoryId", Number(val))} defaultValue={product.categoryId?.toString()}>
+                            <SelectTrigger>
+                                <SelectValue placeholder={dict.Dialogs.AddProduct.SelectCategory || "Select Category..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                        {c.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-2">

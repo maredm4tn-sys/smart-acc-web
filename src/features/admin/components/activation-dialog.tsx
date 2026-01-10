@@ -53,14 +53,14 @@ export function ActivationDialog({ dict }: { dict: any }) {
             {process.env.NEXT_PUBLIC_APP_MODE === 'desktop' && !license.isActivated && (
                 <div
                     onClick={() => setOpen(true)}
-                    className={`fixed bottom-4 right-4 z-[100] cursor-pointer group flex items-center gap-3 p-3 rounded-2xl shadow-2xl border-2 transition-all hover:scale-105 ${license.isExpired ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}
+                    className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] cursor-pointer group flex items-center gap-2 p-1.5 px-4 rounded-full shadow-lg border transition-all hover:bg-white hover:scale-105 backdrop-blur-md ${license.isExpired ? "bg-red-50 border-red-200" : "bg-white/90 border-amber-200"}`}
                 >
-                    <div className={`p-2 rounded-xl ${license.isExpired ? "bg-red-500 text-white" : "bg-amber-500 text-white"}`}>
-                        <ShieldCheck className="w-5 h-5 animate-pulse" />
+                    <div className={`p-1 rounded-full ${license.isExpired ? "bg-red-500 text-white" : "bg-amber-500 text-white"}`}>
+                        <ShieldCheck className="w-4 h-4 animate-pulse" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{dict?.Common?.TrialVersion}</p>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter leading-none">{dict?.Common?.TrialVersion}</p>
+                        <p className="text-[11px] font-bold text-slate-900 leading-tight">
                             {license.isExpired ? dict?.Common?.TrialExpired : `${license.trialDaysLeft} ${dict?.Common?.DaysLeft} | ${license.invoicesLeft} ${dict?.Common?.InvoicesLeft}`}
                         </p>
                     </div>

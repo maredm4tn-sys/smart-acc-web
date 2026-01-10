@@ -100,23 +100,6 @@ export function BackupManager() {
         }
     };
 
-    const handleFactoryReset = async () => {
-        setLoading(true);
-        try {
-            const result = await factoryReset();
-            if (result.success) {
-                toast.success(dict.Settings.FactoryReset?.Success || "Factory reset successful");
-                // Optional: Force reload or logout?
-                window.location.reload();
-            } else {
-                toast.error(dict.Settings.FactoryReset?.Error || "Factory reset failed", { description: result.error });
-            }
-        } catch (error) {
-            toast.error("Error during reset");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <Card className="border-green-600/20">
@@ -159,41 +142,6 @@ export function BackupManager() {
                     </Button>
                 </div>
 
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-slate-200 dark:border-slate-700" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                            {dict.Settings.FactoryReset?.Button || "Danger Zone"}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="flex justify-center">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="w-full sm:w-auto min-w-[200px]" disabled={loading}>
-                                <Trash2 className="ml-2 h-4 w-4" />
-                                {dict.Settings.FactoryReset?.Button || "Factory Reset"}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>{dict.Settings.FactoryReset?.SecurityCheck || "Are you sure?"}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    {dict.Settings.FactoryReset?.SecurityCheckDesc || "This will wipe all data."}
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>{dict.Common.Cancel || "Cancel"}</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleFactoryReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    {dict.Settings.FactoryReset?.ConfirmButton || "Yes, Delete Everything"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
             </CardContent>
         </Card>
     );

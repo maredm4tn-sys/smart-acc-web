@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Imported ${successCount} customers. Errors: ${errorCount}`
+            message: `Imported ${successCount} customers.` // We'll keep the API simple, but frontend will show localized
         });
 
     } catch (error) {

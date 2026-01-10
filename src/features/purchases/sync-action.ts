@@ -97,7 +97,7 @@ export async function syncAllPurchasesToLedger() {
         }
 
         revalidatePath("/dashboard/reports/statement");
-        return { success: true, message: `تمت المزامنة بنجاح: تم إصلاح ${fixedCount} فواتير، وتخطي ${skippedCount} موجودة مسبقاً.` };
+        return { success: true, fixedCount, skippedCount };
     } catch (e: any) {
         console.error("Sync Error:", e);
         return { success: false, error: e.message };
