@@ -134,6 +134,8 @@ export function UserList({ users }: UserListProps) {
                             <TableHead className="text-start">{t.Table.Organization}</TableHead>
                             <TableHead className="text-start">{t.Table.User}</TableHead>
                             <TableHead className="text-start">{t.Table.Role}</TableHead>
+                            <TableHead className="text-center">فواتير (شهر)</TableHead>
+                            <TableHead className="text-center">كاشير</TableHead>
                             <TableHead className="text-start">{t.Table.Status}</TableHead>
                             <TableHead className="text-start">{t.Table.Active}</TableHead>
                             <TableHead className="text-center">{t.Table.Actions}</TableHead>
@@ -152,6 +154,16 @@ export function UserList({ users }: UserListProps) {
                                 </TableCell>
                                 <TableCell className="text-start">
                                     <Badge variant="outline">{user.role}</Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1 font-medium">
+                                        📄 {user.invoiceCount || 0}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1 font-medium">
+                                        👤 {user.cashierCount || 0}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-start">
                                     <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>

@@ -251,6 +251,10 @@ export async function deleteSubscriber(userId: string) {
 export async function getAllUsers() {
     try {
         await checkSuperAdmin();
+
+        const now = new Date();
+        const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString().split('T')[0];
+
         // Join with tenants to get organization name
         return await db.select({
             id: users.id,
@@ -261,12 +265,23 @@ export async function getAllUsers() {
             status: users.status,
             isActive: users.isActive,
             createdAt: users.createdAt,
-            organizationName: tenants.name
+            organizationName: tenants.name,
+            invoiceCount: sql<number>`(
+                SELECT COUNT(*) FROM ${invoices} 
+                WHERE ${invoices.tenantId} = ${users.tenantId} 
+                AND ${invoices.issueDate} >= ${startOfMonth}
+            )`,
+            cashierCount: sql<number>`(
+                SELECT COUNT(*) FROM ${users} AS u2
+                WHERE u2.tenant_id = ${users.tenantId}
+                AND u2.role = 'cashier'
+            )`
         })
             .from(users)
             .leftJoin(tenants, eq(users.tenantId, tenants.id))
             .orderBy(desc(users.createdAt));
     } catch (error) {
+        console.error("Get All Users Error:", error);
         return [];
     }
 }
