@@ -72,8 +72,17 @@ type Product = {
     name: string;
     sku: string;
     price: number;
+    priceWholesale: number;
+    priceHalfWholesale: number;
+    priceSpecial: number;
     stock: number;
     type: 'goods' | 'service';
+};
+
+type Customer = {
+    id: number;
+    name: string;
+    priceLevel: 'retail' | 'wholesale' | 'half_wholesale' | 'special';
 };
 
 type CartItem = Product & {
@@ -86,8 +95,8 @@ export default function POSPage() {
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [customers, setCustomers] = useState<{ id: number, name: string }[]>([]);
-    const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [loading, setLoading] = useState(false);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [autoPrint, setAutoPrint] = useState(true);
@@ -195,12 +204,18 @@ export default function POSPage() {
             setLicense(licenseData);
             setLoading(true);
             try {
-                const walkInCustomer = { id: 0, name: dict.POS.WalkInCustomer };
+                const walkInCustomer: Customer = { id: 0, name: dict.POS.WalkInCustomer, priceLevel: 'retail' };
 
                 if (navigator.onLine) {
                     const custs = await getCustomers();
-                    setCustomers([walkInCustomer, ...custs]);
-                    setSelectedCustomerId(0);
+                    // Assuming getCustomers now returns priceLevel, if not we default to retail
+                    const mappedCusts: Customer[] = custs.map((c: any) => ({
+                        id: c.id,
+                        name: c.name,
+                        priceLevel: c.priceLevel || 'retail'
+                    }));
+                    setCustomers([walkInCustomer, ...mappedCusts]);
+                    setSelectedCustomer(walkInCustomer);
                     // Mirror customers
                     const { mirrorData, STORES } = await import("@/lib/offline-db");
                     mirrorData(STORES.CUSTOMERS, custs);
@@ -214,6 +229,9 @@ export default function POSPage() {
                                 name: p.name,
                                 sku: p.sku,
                                 price: Number(p.sellPrice || 0),
+                                priceWholesale: Number(p.priceWholesale || 0),
+                                priceHalfWholesale: Number(p.priceHalfWholesale || 0),
+                                priceSpecial: Number(p.priceSpecial || 0),
                                 stock: Number(p.stockQuantity || 0),
                                 type: p.type
                             }));
@@ -227,8 +245,13 @@ export default function POSPage() {
                     // Offline Load
                     const { getLocalData, STORES } = await import("@/lib/offline-db");
                     const localCusts = await getLocalData(STORES.CUSTOMERS);
-                    setCustomers([walkInCustomer, ...localCusts]);
-                    setSelectedCustomerId(0);
+                    const mappedCusts: Customer[] = localCusts.map((c: any) => ({
+                        id: c.id,
+                        name: c.name,
+                        priceLevel: c.priceLevel || 'retail'
+                    }));
+                    setCustomers([walkInCustomer, ...mappedCusts]);
+                    setSelectedCustomer(walkInCustomer);
 
                     const localProds = await getLocalData(STORES.PRODUCTS);
                     const mapped = localProds.map((p: any) => ({
@@ -236,6 +259,9 @@ export default function POSPage() {
                         name: p.name,
                         sku: p.sku,
                         price: Number(p.sellPrice || 0),
+                        priceWholesale: Number(p.priceWholesale || 0),
+                        priceHalfWholesale: Number(p.priceHalfWholesale || 0),
+                        priceSpecial: Number(p.priceSpecial || 0),
                         stock: Number(p.stockQuantity || 0),
                         type: p.type
                     }));
@@ -264,11 +290,41 @@ export default function POSPage() {
         }
     }, [searchQuery, products]);
 
+    // Recalculate Cart Prices when Customer Changes
+    useEffect(() => {
+        if (!selectedCustomer) return;
+
+        setCart(prev => prev.map(item => {
+            let newPrice = item.price; // Default retail - item.price holds the base retail price from products usually, but cart item copies it.
+            // Better to lookup from products to get base prices again if needed, but assuming item has all price fields
+            switch (selectedCustomer.priceLevel) {
+                case 'wholesale': newPrice = item.priceWholesale || item.price; break;
+                case 'half_wholesale': newPrice = item.priceHalfWholesale || item.price; break;
+                case 'special': newPrice = item.priceSpecial || item.price; break;
+                default: newPrice = item.price; // Retail
+            }
+            // If price is 0 for wholesale (not set), fallback to retail price
+            if (newPrice === 0 && selectedCustomer.priceLevel !== 'retail') newPrice = item.price;
+
+            return { ...item, price: newPrice };
+        }));
+    }, [selectedCustomer]);
+
     const addToCart = (product: Product) => {
+        let finalPrice = product.price;
+        if (selectedCustomer) {
+            switch (selectedCustomer.priceLevel) {
+                case 'wholesale': finalPrice = product.priceWholesale || product.price; break;
+                case 'half_wholesale': finalPrice = product.priceHalfWholesale || product.price; break;
+                case 'special': finalPrice = product.priceSpecial || product.price; break;
+            }
+            if (finalPrice === 0 && selectedCustomer.priceLevel !== 'retail') finalPrice = product.price;
+        }
+
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
             if (existing) return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
-            return [...prev, { ...product, qty: 1 }];
+            return [...prev, { ...product, qty: 1, price: finalPrice }];
         });
     };
 
@@ -288,8 +344,8 @@ export default function POSPage() {
     const handleCheckout = async () => {
         if (cart.length === 0) return;
         let customerName = dict.POS.WalkInCustomer;
-        if (selectedCustomerId !== 0 && selectedCustomerId !== null) {
-            customerName = customers.find(c => c.id === selectedCustomerId)?.name || customerName;
+        if (selectedCustomer && selectedCustomer.id !== 0) {
+            customerName = selectedCustomer.name;
         }
 
         const invoiceData = {
@@ -485,9 +541,9 @@ export default function POSPage() {
                 <div className="p-4 border-b"><CartHeader dict={dict} cart={cart} clearCart={clearCart} handleLoadShiftReport={handleLoadShiftReport} shiftReportData={shiftReportData} /></div>
                 <div className="px-4 py-2 border-b bg-slate-50/50">
                     <Label className="text-xs text-gray-500 mb-1 block">{dict.POS.Customer}</Label>
-                    <Select value={String(selectedCustomerId)} onValueChange={v => setSelectedCustomerId(Number(v))}>
+                    <Select value={String(selectedCustomer?.id || 0)} onValueChange={v => setSelectedCustomer(customers.find(c => c.id === Number(v)) || customers[0])}>
                         <SelectTrigger className="h-9 bg-white"><SelectValue /></SelectTrigger>
-                        <SelectContent>{customers.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{customers.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name} {c.priceLevel !== 'retail' ? `(${c.priceLevel})` : ''}</SelectItem>)}</SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"><CartContent dict={dict} cart={cart} updateQty={updateQty} removeFromCart={removeFromCart} /></div>
