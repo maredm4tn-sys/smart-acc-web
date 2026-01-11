@@ -25,7 +25,7 @@ export function DashboardShell({ children, user, dict, isRtl }: DashboardShellPr
             />
 
             <div className={`fixed inset-y-0 ${isRtl ? 'right-0' : 'left-0'} z-50 transform lg:relative lg:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : isRtl ? "translate-x-full" : "-translate-x-full"}`}>
-                <AppSidebar user={user} dict={dict} />
+                <AppSidebar user={user} dict={dict} onClose={() => setIsSidebarOpen(false)} />
             </div>
 
             {/* Main Content */}
