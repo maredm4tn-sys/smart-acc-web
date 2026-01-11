@@ -184,6 +184,9 @@ export const products = sqliteTable('products', {
     sku: text('sku').notNull(),
     type: text('type').default('goods').notNull(), // Enum simulated
     sellPrice: text('sell_price').default('0.00').notNull(),
+    priceWholesale: text('price_wholesale').default('0.00'), // Wholesale Price (جملة)
+    priceHalfWholesale: text('price_half_wholesale').default('0.00'), // Half Wholesale (نصف جملة)
+    priceSpecial: text('price_special').default('0.00'), // Special Price (خاص)
     buyPrice: text('buy_price').default('0.00').notNull(),
     stockQuantity: text('stock_quantity').default('0.00').notNull(),
     requiresToken: integer('requires_token', { mode: 'boolean' }).default(false).notNull(),
@@ -233,6 +236,7 @@ export const customers = sqliteTable('customers', {
     phone: text('phone'),
     address: text('address'),
     taxId: text('tax_id'),
+    priceLevel: text('price_level').default('retail').notNull(), // retail, wholesale, half_wholesale, special
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`),
 });
 

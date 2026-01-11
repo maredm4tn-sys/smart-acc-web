@@ -52,6 +52,9 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
         sku: z.string().min(1, dict.Dialogs.AddProduct.Errors.SKURequired),
         type: z.enum(["goods", "service"]),
         sellPrice: z.coerce.number().min(0, dict.Dialogs.AddProduct.Errors.PricePositive),
+        priceWholesale: z.coerce.number().min(0).default(0),
+        priceHalfWholesale: z.coerce.number().min(0).default(0),
+        priceSpecial: z.coerce.number().min(0).default(0),
         buyPrice: z.coerce.number().min(0).default(0),
         stockQuantity: z.coerce.number().min(0).default(0),
         requiresToken: z.boolean().default(false),
@@ -72,6 +75,9 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
         defaultValues: {
             type: "goods",
             sellPrice: 0,
+            priceWholesale: 0,
+            priceHalfWholesale: 0,
+            priceSpecial: 0,
             buyPrice: 0,
             stockQuantity: 0,
             requiresToken: false,
@@ -234,6 +240,42 @@ export function AddProductDialog({ triggerLabel }: { triggerLabel?: string }) {
                                 className="text-left dir-ltr"
                             />
                             {errors.stockQuantity && <p className="text-sm text-red-500">{errors.stockQuantity.message}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 border-t pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="priceWholesale" className="text-blue-600">سعر الجملة</Label>
+                            <Input
+                                id="priceWholesale"
+                                type="number"
+                                step="0.01"
+                                {...register("priceWholesale", { valueAsNumber: true })}
+                                className="text-left dir-ltr border-blue-200"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="priceHalfWholesale" className="text-blue-600">نصف جملة</Label>
+                            <Input
+                                id="priceHalfWholesale"
+                                type="number"
+                                step="0.01"
+                                {...register("priceHalfWholesale", { valueAsNumber: true })}
+                                className="text-left dir-ltr border-blue-200"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="priceSpecial" className="text-amber-600">سعر خاص</Label>
+                            <Input
+                                id="priceSpecial"
+                                type="number"
+                                step="0.01"
+                                {...register("priceSpecial", { valueAsNumber: true })}
+                                className="text-left dir-ltr border-amber-200"
+                                placeholder="0.00"
+                            />
                         </div>
                     </div>
 

@@ -19,6 +19,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { createCustomer } from "../actions";
 import { Plus } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 import { useTranslation } from "@/components/providers/i18n-provider";
 
@@ -33,12 +40,16 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
         email: z.string().optional(),
         address: z.string().optional(),
         taxId: z.string().optional(),
+        priceLevel: z.enum(['retail', 'wholesale', 'half_wholesale', 'special']),
     });
 
     type CustomerFormValues = z.infer<typeof customerSchema>;
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CustomerFormValues>({
-        resolver: zodResolver(customerSchema)
+    const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm({
+        resolver: zodResolver(customerSchema),
+        defaultValues: {
+            priceLevel: 'retail' as 'retail' | 'wholesale' | 'half_wholesale' | 'special'
+        }
     });
 
     const onSubmit = async (data: CustomerFormValues) => {
@@ -109,6 +120,20 @@ export function AddCustomerDialog({ triggerLabel }: { triggerLabel?: string }) {
                     <div className="space-y-2">
                         <Label>{dict.Dialogs.AddCustomer.TaxId}</Label>
                         <Input {...register("taxId")} className="dir-ltr text-left" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>مستوى التسعير (Pricing Level)</Label>
+                        <Select onValueChange={(val: any) => setValue("priceLevel", val)} defaultValue="retail">
+                            <SelectTrigger>
+                                <SelectValue placeholder="اختر مستوى السعر" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="retail">قطاعي (سعر المستهلك)</SelectItem>
+                                <SelectItem value="wholesale">جملة</SelectItem>
+                                <SelectItem value="half_wholesale">نصف جملة</SelectItem>
+                                <SelectItem value="special">سعر خاص</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={isSubmitting}>
