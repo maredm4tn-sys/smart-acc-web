@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Truck, CloudOff } from "lucide-react";
 import { SupplierActions } from "@/features/suppliers/components/supplier-actions";
 import { mirrorData, getLocalData, STORES } from "@/lib/offline-db";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function SuppliersClient({ initialSuppliers, dict }: { initialSuppliers: any[], dict: any }) {
     const [suppliers, setSuppliers] = useState(initialSuppliers);
@@ -55,43 +56,45 @@ export function SuppliersClient({ initialSuppliers, dict }: { initialSuppliers: 
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 sm:p-6">
-                    <div className="rt-table-container">
-                        <table className="rt-table">
-                            <thead>
-                                <tr>
-                                    <th className="text-center">{dict.Suppliers.Table.Name}</th>
-                                    <th className="text-center">{dict.Suppliers.Table.Company}</th>
-                                    <th className="text-center">{dict.Suppliers.Table.Address}</th>
-                                    <th className="text-center">{dict.Suppliers.Table.Phone}</th>
-                                    <th className="text-center">{dict.Suppliers.Table.TaxId}</th>
-                                    <th className="text-center w-[100px]">{dict.Suppliers.Table.Actions}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <div className="rounded-md border overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-center">{dict.Suppliers.Table.Name}</TableHead>
+                                    <TableHead className="text-center">{dict.Suppliers.Table.Company}</TableHead>
+                                    <TableHead className="text-center">{dict.Suppliers.Table.Address}</TableHead>
+                                    <TableHead className="text-center">{dict.Suppliers.Table.Phone}</TableHead>
+                                    <TableHead className="text-center">{dict.Suppliers.Table.TaxId}</TableHead>
+                                    <TableHead className="text-center w-[100px]">{dict.Suppliers.Table.Actions}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {suppliers.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center h-24 text-gray-500">
                                             {dict.Suppliers.Table.NoSuppliers}
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
                                     suppliers.map((s) => (
-                                        <tr key={s.id}>
-                                            <td data-label={dict.Suppliers.Table.Name} className="text-center font-medium">{s.name}</td>
-                                            <td data-label={dict.Suppliers.Table.Company} className="text-center">{s.companyName || "-"}</td>
-                                            <td data-label={dict.Suppliers.Table.Address} className="text-center">{s.address || "-"}</td>
-                                            <td data-label={dict.Suppliers.Table.Phone} className="text-center font-mono text-xs">{s.phone || "-"}</td>
-                                            <td data-label={dict.Suppliers.Table.TaxId} className="text-center font-mono text-xs">{s.taxId || "-"}</td>
-                                            <td data-label={dict.Suppliers.Table.Actions} className="text-center">
+                                        <TableRow key={s.id}>
+                                            <TableCell className="text-center font-medium">{s.name}</TableCell>
+                                            <TableCell className="text-center">{s.companyName || "-"}</TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="truncate max-w-[200px] mx-auto" title={s.address || ""}>{s.address || "-"}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center font-mono text-xs">{s.phone || "-"}</TableCell>
+                                            <TableCell className="text-center font-mono text-xs">{s.taxId || "-"}</TableCell>
+                                            <TableCell className="text-center">
                                                 <div className="flex justify-center">
                                                     <SupplierActions supplier={s} />
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ))
                                 )}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </div>
                 </CardContent>
             </Card>

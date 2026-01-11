@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, CloudOff } from "lucide-react";
 import { CustomerActions } from "@/features/customers/components/customer-actions";
 import { mirrorData, getLocalData, STORES } from "@/lib/offline-db";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function CustomersClient({ initialCustomers, dict, session }: { initialCustomers: any[], dict: any, session: any }) {
     const [customers, setCustomers] = useState(initialCustomers);
@@ -56,57 +57,57 @@ export function CustomersClient({ initialCustomers, dict, session }: { initialCu
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6">
-                        <div className="rt-table-container">
-                            <table className="rt-table">
-                                <thead>
-                                    <tr>
-                                        <th className="text-center">{dict.Customers.Table.Name}</th>
-                                        <th className="text-center">{dict.Customers.Table.Company}</th>
-                                        <th className="text-center">{dict.Customers.Table.Address}</th>
-                                        <th className="text-center">{dict.Customers.Table.Phone}</th>
-                                        <th className="text-center">{dict.Customers.Table.Email}</th>
-                                        <th className="text-center">{dict.Customers.Table.TotalDebt}</th>
-                                        <th className="text-center w-[80px]">{dict.Customers.Table.Actions}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="text-center">{dict.Customers.Table.Name}</TableHead>
+                                        <TableHead className="text-center">{dict.Customers.Table.Company}</TableHead>
+                                        <TableHead className="text-center">{dict.Customers.Table.Address}</TableHead>
+                                        <TableHead className="text-center">{dict.Customers.Table.Phone}</TableHead>
+                                        <TableHead className="text-center">{dict.Customers.Table.Email}</TableHead>
+                                        <TableHead className="text-center">{dict.Customers.Table.TotalDebt}</TableHead>
+                                        <TableHead className="text-center w-[80px]">{dict.Customers.Table.Actions}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {customers.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="text-center py-8 text-gray-500">
+                                        <TableRow>
+                                            <TableCell colSpan={7} className="text-center h-24 text-gray-500">
                                                 {dict.Customers.Table.NoCustomers}
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     ) : (
                                         customers.map((c) => (
-                                            <tr key={c.id}>
-                                                <td data-label={dict.Customers.Table.Name} className="text-center">
-                                                    <div className="truncate max-w-[150px] mx-auto" title={c.name}>{c.name}</div>
-                                                </td>
-                                                <td data-label={dict.Customers.Table.Company} className="text-center">
+                                            <TableRow key={c.id}>
+                                                <TableCell className="text-center">
+                                                    <div className="truncate max-w-[150px] mx-auto font-medium" title={c.name}>{c.name}</div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
                                                     <div className="truncate max-w-[120px] mx-auto" title={c.companyName || ""}>{c.companyName || "-"}</div>
-                                                </td>
-                                                <td data-label={dict.Customers.Table.Address} className="text-center">
+                                                </TableCell>
+                                                <TableCell className="text-center">
                                                     <div className="truncate max-w-[150px] mx-auto" title={c.address || ""}>{c.address || "-"}</div>
-                                                </td>
-                                                <td data-label={dict.Customers.Table.Phone} className="text-center font-mono text-xs">
+                                                </TableCell>
+                                                <TableCell className="text-center font-mono text-xs">
                                                     {c.phone || "-"}
-                                                </td>
-                                                <td data-label={dict.Customers.Table.Email} className="text-center text-xs">
-                                                    <div className="truncate max-w-[150px] mx-auto" title={c.email || ""}>{c.email || "-"}</div>
-                                                </td>
-                                                <td data-label={dict.Customers.Table.TotalDebt} className={`text-center font-bold ${c.totalDebt > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                </TableCell>
+                                                <TableCell className="text-center text-xs">
+                                                    <div className="truncate max-w-[150px] mx-auto font-mono" title={c.email || ""}>{c.email || "-"}</div>
+                                                </TableCell>
+                                                <TableCell className={`text-center font-bold ${Number(c.totalDebt) > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                     {Number(c.totalDebt || 0).toFixed(2)}
-                                                </td>
-                                                <td data-label={dict.Customers.Table.Actions} className="text-center">
+                                                </TableCell>
+                                                <TableCell className="text-center">
                                                     <div className="flex justify-center">
                                                         <CustomerActions customer={c} currentRole={session?.role} />
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </TableCell>
+                                            </TableRow>
                                         ))
                                     )}
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                 </Card>
@@ -132,7 +133,7 @@ export function CustomersClient({ initialCustomers, dict, session }: { initialCu
                                     {c.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict.Customers.Table.Phone}:</span> <span className="font-mono">{c.phone}</span></div>}
                                     <div className="flex justify-between font-bold pt-1">
                                         <span>{dict.Customers.Table.TotalDebt}:</span>
-                                        <span className={c.totalDebt > 0 ? 'text-red-600' : 'text-green-600'}>
+                                        <span className={Number(c.totalDebt) > 0 ? 'text-red-600' : 'text-green-600'}>
                                             {Number(c.totalDebt || 0).toFixed(2)}
                                         </span>
                                     </div>
