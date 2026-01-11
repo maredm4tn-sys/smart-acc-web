@@ -6,7 +6,8 @@ export const STORES = {
     PRODUCTS: 'local_products',
     CUSTOMERS: 'local_customers',
     SUPPLIERS: 'local_suppliers',
-    SYNC_QUEUE: 'action_queue'
+    SYNC_QUEUE: 'action_queue',
+    DASHBOARD: 'local_dashboard'
 };
 
 export async function openDB(): Promise<IDBDatabase> {

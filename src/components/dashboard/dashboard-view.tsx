@@ -7,6 +7,10 @@ import Link from "next/link";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { getDashboardStats } from "@/features/dashboard/actions";
+import { useEffect, useState } from "react";
+import { mirrorData, getLocalData, STORES } from "@/lib/offline-db";
+import { CloudOff } from "lucide-react";
+import { toast } from "sonner";
 
 
 interface DashboardStats {
@@ -23,20 +27,63 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
     const { dict, lang } = useTranslation();
     const localeForDate = lang === 'ar' ? 'ar-EG' : 'en-US';
 
+    const [isOffline, setIsOffline] = useState(false);
+    const [localStats, setLocalStats] = useState<DashboardStats | null>(null);
+
     // Use SWR to fetch updates. Pass initialData to render immediately.
     const { data: statsData } = useSWR('dashboard-stats', getDashboardStats, {
         fallbackData: initialData,
         refreshInterval: 30000, // Auto refresh every 30s
     });
 
-    const role = statsData?.role || session.role || 'cashier';
-    const data = statsData?.data || {};
+    useEffect(() => {
+        // Mirror data to local DB when online
+        if (navigator.onLine && statsData) {
+            mirrorData(STORES.DASHBOARD, [statsData]);
+        }
+
+        const handleOffline = async () => {
+            setIsOffline(true);
+            const local = await getLocalData(STORES.DASHBOARD);
+            if (local && local.length > 0) {
+                setLocalStats(local[0]);
+                toast.info((dict as any).Common?.Offline?.WorkingOffline || "تعمل أوفلاين");
+            }
+        };
+
+        const handleOnline = () => {
+            setIsOffline(false);
+            window.location.reload();
+        };
+
+        window.addEventListener('offline', handleOffline);
+        window.addEventListener('online', handleOnline);
+
+        if (!navigator.onLine) handleOffline();
+
+        return () => {
+            window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('online', handleOnline);
+        };
+    }, [statsData, dict]);
+
+    const activeStats = isOffline && localStats ? localStats : statsData;
+    const role = activeStats?.role || session.role || 'cashier';
+    const data = activeStats?.data || {};
 
     // --- CASHIER VIEW ---
     if (role === 'cashier') {
         const cashierStats: any = data;
         return (
             <div className="space-y-8 animate-in fade-in duration-500">
+                {/* Offline Indicator */}
+                {isOffline && (
+                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm mb-4">
+                        <CloudOff size={18} />
+                        <span>{(dict as any).Common?.Offline?.NoConnection || "تعمل الآن في وضع عدم الاتصال (بيانات مخزنة)"}</span>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
@@ -88,7 +135,7 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-8">
-                        <div className="grid grid-cols-2 gap-8 divide-x divide-x-reverse">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:divide-x sm:divide-x-reverse">
                             <div className="text-center space-y-2">
                                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{dict.Dashboard.InvoicesCount}</p>
                                 <p className="text-4xl font-bold text-gray-900">{cashierStats.todayCount}</p>
@@ -109,6 +156,14 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Offline Indicator */}
+            {isOffline && (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm mb-4">
+                    <CloudOff size={18} />
+                    <span>{(dict as any).Common?.Offline?.NoConnection || "تعمل الآن في وضع عدم الاتصال (بيانات مخزنة)"}</span>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>

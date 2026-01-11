@@ -1,6 +1,7 @@
 const CACHE_NAME = 'smart-acc-v2'; // Version bump
 const ASSETS_TO_CACHE = [
     '/',
+    '/dashboard',
     '/manifest.json',
     '/logo.png',
     '/globals.css',
