@@ -22,8 +22,10 @@ export async function factoryReset() {
         await db.delete(schema.products);
         await db.delete(schema.customers);
         await db.delete(schema.suppliers);
+        await db.delete(schema.accounts); // Add Accounts Wipe
 
-        // 4. Logs
+        // 4. Reset Tokens & Logs
+        try { await db.delete(schema.dailyTokens); } catch (e) { } // If exists
         await db.delete(schema.auditLogs);
 
         try {
