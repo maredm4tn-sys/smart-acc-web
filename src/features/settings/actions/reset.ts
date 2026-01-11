@@ -25,7 +25,6 @@ export async function factoryReset() {
         await db.delete(schema.accounts); // Add Accounts Wipe
 
         // 4. Reset Tokens & Logs
-        try { await db.delete(schema.dailyTokens); } catch (e) { } // If exists
         await db.delete(schema.auditLogs);
 
         try {
