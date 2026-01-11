@@ -40,8 +40,7 @@ function SyncModal({ dict, count, progress }: { dict: any, count: number, progre
                 <div className="relative w-24 h-24 mx-auto">
                     <div className="absolute inset-0 rounded-full border-4 border-blue-100"></div>
                     <div
-                        className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"
-                        style={{ animationDuration: '1.5s' }}
+                        className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin duration-[1500ms]"
                     ></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Loader2 className="w-8 h-8 text-blue-600 animate-pulse" />
@@ -59,8 +58,8 @@ function SyncModal({ dict, count, progress }: { dict: any, count: number, progre
                         style={{ width: `${progress}%` }}
                     ></div>
                 </div>
-            </Card>
-        </div>
+            </Card >
+        </div >
     );
 }
 
