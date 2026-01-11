@@ -10,6 +10,20 @@ export function PWARegister() {
                     .register("/sw.js")
                     .then((registration) => {
                         console.log("SW registered:", registration.scope);
+
+                        // Pre-fetch main routes for offline use as soon as we're online
+                        if (navigator.onLine) {
+                            const routes = [
+                                '/dashboard',
+                                '/dashboard/pos',
+                                '/dashboard/inventory',
+                                '/dashboard/customers',
+                                '/dashboard/suppliers'
+                            ];
+                            routes.forEach(route => {
+                                fetch(route).catch(() => { });
+                            });
+                        }
                     })
                     .catch((error) => {
                         console.error("SW registration failed:", error);

@@ -1,11 +1,7 @@
-const CACHE_NAME = 'smart-acc-v3';
+const CACHE_NAME = 'smart-acc-v4'; // New version
 const ASSETS_TO_CACHE = [
     '/',
     '/dashboard',
-    '/dashboard/pos',
-    '/dashboard/inventory',
-    '/dashboard/customers',
-    '/dashboard/suppliers',
     '/manifest.json',
     '/logo.png',
     '/globals.css',
@@ -15,7 +11,6 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('Pre-caching offline shell');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -43,43 +38,38 @@ self.addEventListener('fetch', (event) => {
     // Skip chrome extensions and analytics
     if (url.protocol === 'chrome-extension:' || url.hostname.includes('google-analytics')) return;
 
-    // For navigation requests (opening pages)
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    // Update cache with the latest version of the page
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-                    return response;
-                })
-                .catch(() => {
-                    // If network fails, try to find a match in cache or return the default dashboard
-                    return caches.match(event.request).then((cached) => {
-                        return cached || caches.match('/dashboard') || caches.match('/');
-                    });
-                })
-        );
-        return;
-    }
-
-    // For other assets (JS, CSS, Images, API results)
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
+            // 1. If in cache, return it (Fastest experience)
             if (cachedResponse) return cachedResponse;
 
+            // 2. Otherwise fetch from network
             return fetch(event.request).then((networkResponse) => {
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                    return networkResponse;
+                // If it's a valid response, cache a copy
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // 3. OFFLINE FALLBACK
+                // For navigation (opening pages)
+                if (event.request.mode === 'navigate') {
+                    return caches.match('/dashboard') || caches.match('/');
                 }
 
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
+                // For Next.js data requests (_next/data)
+                if (url.pathname.includes('_next/data')) {
+                    // Try to find any cached version of this data or similar
+                    return new Response(JSON.stringify({ offline: true }), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
 
-                return networkResponse;
-            }).catch(() => null);
+                return null;
+            });
         })
     );
 });
