@@ -6,45 +6,53 @@ import { revalidatePath } from "next/cache";
 
 export async function factoryReset() {
     try {
-        const { eq } = await import("drizzle-orm");
+        const { eq, inArray } = await import("drizzle-orm");
         const { requireTenant } = await import("@/lib/tenant-security");
         const tenantId = await requireTenant();
 
-        // Order matters due to foreign key constraints.
-        // 1. Transactional Lines - Filtered by Header (implicitly) or Join?
-        // Actually, straightforward way is to rely on Cascade Delete from Headers if set up,
-        // BUT `journalLines` doesn't have tenantId directly, it relies on `journalEntry`.
-        // However, `invoiceItems` relies on `invoice`.
-        // If we delete headers (Invoices, Journals), the lines should cascade if DB supports it.
-        // But if DB is SQLite without foreign_keys=PRAGMA ON, we must delete manually.
+        // 1. Fetch IDs for Deletion (To Manually Cascade)
+        // We do this to ensure lines are deleted even if DB Foreign Keys / Cascades are not active (common in SQLite).
 
-        // Safe Approach: Delete referencing tables first using subqueries OR just delete headers if cascade is trusted.
-        // Drizzle + SQLite usually needs manual deletion if foreign key constraints aren't strictly enforced by the driver connection.
+        // A. Journal Entries
+        const journalEntriesList = await db.select({ id: schema.journalEntries.id }).from(schema.journalEntries).where(eq(schema.journalEntries.tenantId, tenantId));
+        const journalIds = journalEntriesList.map(j => j.id);
 
-        // To be safe and tenant-scoped:
-        // Delete Lines where Header.tenantId = currentTenant
-        // For simplicity in this specific "Reset" action, we can fetch IDs or just delete headers and hope for cascade?
-        // NO, we should be explicit.
+        // B. Invoices
+        const invoicesList = await db.select({ id: schema.invoices.id }).from(schema.invoices).where(eq(schema.invoices.tenantId, tenantId));
+        const invoiceIds = invoicesList.map(i => i.id);
 
-        // 1. Transaction Headers (Cascade should handle items/lines if configured, but let's be explicit where possible or rely on headers)
-        // Since `journalLines` etc don't have `tenantId`, we can't easily `delete from journalLines where tenantId=...`.
-        // We MUST delete headers.
+        // C. Purchase Invoices
+        const purchasesList = await db.select({ id: schema.purchaseInvoices.id }).from(schema.purchaseInvoices).where(eq(schema.purchaseInvoices.tenantId, tenantId));
+        const purchaseIds = purchasesList.map(p => p.id);
 
-        // However, `schema.ts` says: `journalEntryId: integer('...').references(() => journalEntries.id, { onDelete: 'cascade' })`
-        // So deleting JournalEntries IS enough.
+        // 2. Delete Child Tables (Lines/Items)
+        if (journalIds.length > 0) {
+            await db.delete(schema.journalLines).where(inArray(schema.journalLines.journalEntryId, journalIds));
+        }
+        if (invoiceIds.length > 0) {
+            await db.delete(schema.invoiceItems).where(inArray(schema.invoiceItems.invoiceId, invoiceIds));
+        }
+        if (purchaseIds.length > 0) {
+            await db.delete(schema.purchaseInvoiceItems).where(inArray(schema.purchaseInvoiceItems.purchaseInvoiceId, purchaseIds));
+        }
 
+        // 3. Delete Headers
         await db.delete(schema.journalEntries).where(eq(schema.journalEntries.tenantId, tenantId));
         await db.delete(schema.invoices).where(eq(schema.invoices.tenantId, tenantId));
         await db.delete(schema.purchaseInvoices).where(eq(schema.purchaseInvoices.tenantId, tenantId));
         await db.delete(schema.vouchers).where(eq(schema.vouchers.tenantId, tenantId));
 
-        // 3. Master Data (Variable)
+        // 4. Delete Master Data
         await db.delete(schema.products).where(eq(schema.products.tenantId, tenantId));
         await db.delete(schema.customers).where(eq(schema.customers.tenantId, tenantId));
         await db.delete(schema.suppliers).where(eq(schema.suppliers.tenantId, tenantId));
+
+        // 5. Delete Accounts (Now safe as JournalLines are gone)
+        // We might need to handle parent/child constraints here too? 
+        // Assuming accounts don't have strict self-ref FKs or Drizzle handles it.
         await db.delete(schema.accounts).where(eq(schema.accounts.tenantId, tenantId));
 
-        // 4. Logs
+        // 6. Logs
         await db.delete(schema.auditLogs).where(eq(schema.auditLogs.tenantId, tenantId));
 
         try {

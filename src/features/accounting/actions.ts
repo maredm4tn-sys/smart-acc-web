@@ -100,7 +100,10 @@ export async function createJournalEntry(inputData: JournalEntryInput, tx?: any)
                 .set({
                     balance: sql`${castNum(accounts.balance)} + ${line.debit} - ${line.credit}`
                 })
-                .where(eq(accounts.id, line.accountId));
+                .where(and(
+                    eq(accounts.id, line.accountId),
+                    eq(accounts.tenantId, tenantId)
+                ));
         }
 
         /*
@@ -143,7 +146,10 @@ export async function deleteJournalEntry(id: number, tx?: any): Promise<MyJourna
                     // Reverse: -debit +credit
                     balance: sql`${castNum(accounts.balance)} - ${line.debit} + ${line.credit}`
                 })
-                .where(eq(accounts.id, line.accountId));
+                .where(and(
+                    eq(accounts.id, line.accountId),
+                    eq(accounts.tenantId, tenantId)
+                ));
         }
 
         // 3. Delete Lines & Header
@@ -262,20 +268,38 @@ export async function getJournalEntries(limit = 50) {
 
 export async function deleteAccount(accountId: number) {
     try {
-        // 1. Check for children
-        const children = await db.select().from(accounts).where(sql`${accounts.parentId} = ${accountId}`);
+        const tenantId = await requireTenant();
+
+        // 1. Check for children (Scoped)
+        const children = await db.select().from(accounts).where(and(
+            eq(accounts.parentId, accountId),
+            eq(accounts.tenantId, tenantId)
+        ));
         if (children.length > 0) {
             return { success: false, message: "لا يمكن حذف حساب رئيسي يحتوي على حسابات فرعية" };
         }
 
-        // 2. Check for journal entries (transactions)
+        // 2. Check for journal entries (transactions) - Indirect check via Journal Lines
+        // Journal Lines don't have tenantId but Accounts do.
+        // We verify the account belongs to tenant first.
+
+        const [account] = await db.select().from(accounts).where(and(
+            eq(accounts.id, accountId),
+            eq(accounts.tenantId, tenantId)
+        ));
+
+        if (!account) return { success: false, message: "Account not found or unauthorized" };
+
         const entries = await db.select().from(journalLines).where(sql`${journalLines.accountId} = ${accountId}`).limit(1);
         if (entries.length > 0) {
             return { success: false, message: "لا يمكن حذف هذا الحساب لوجود عمليات مالية مرتبطة به" };
         }
 
         // 3. Delete
-        await db.delete(accounts).where(sql`${accounts.id} = ${accountId}`);
+        await db.delete(accounts).where(and(
+            eq(accounts.id, accountId),
+            eq(accounts.tenantId, tenantId)
+        ));
 
         try {
             revalidatePath("/dashboard/accounts");

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { users, tenants } from "@/db/schema";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
@@ -80,7 +80,7 @@ const updateUserSchema = z.object({
 export async function updateUser(rawData: z.infer<typeof updateUserSchema>) {
     try {
         const session = await getSession();
-        if (session?.role !== 'admin') return { error: "Unauthorized" };
+        if (!session?.tenantId) return { error: "Unauthorized" };
 
         const updateData: any = {
             fullName: rawData.fullName,
@@ -94,7 +94,13 @@ export async function updateUser(rawData: z.infer<typeof updateUserSchema>) {
             updateData.passwordHash = await bcrypt.hash(rawData.password, 10);
         }
 
-        await db.update(users).set(updateData).where(eq(users.id, rawData.id));
+        // Security Patch: Ensure update is scoped to current tenant
+        await db.update(users)
+            .set(updateData)
+            .where(and(
+                eq(users.id, rawData.id),
+                eq(users.tenantId, session.tenantId)
+            ));
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (e) {
@@ -105,11 +111,15 @@ export async function updateUser(rawData: z.infer<typeof updateUserSchema>) {
 export async function deleteUser(userId: string) {
     try {
         const session = await getSession();
-        if (session?.role !== 'admin') return { error: "Unauthorized" };
+        if (session?.role !== 'admin' || !session.tenantId) return { error: "Unauthorized" };
 
         if (session.userId === userId) return { error: "لا يمكنك حذف نفسك" };
 
-        await db.delete(users).where(eq(users.id, userId));
+        // Security Patch: Ensure deletion is scoped to current tenant
+        await db.delete(users).where(and(
+            eq(users.id, userId),
+            eq(users.tenantId, session.tenantId)
+        ));
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (e) {
