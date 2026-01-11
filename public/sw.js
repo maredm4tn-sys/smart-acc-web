@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-acc-v6';
+const CACHE_NAME = 'smart-acc-v7';
 const PRE_CACHE_ASSETS = [
     '/',
     '/dashboard',
@@ -15,7 +15,7 @@ const PRE_CACHE_ASSETS = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('Pre-caching assets V6');
+            console.log('Pre-caching assets V7');
             return cache.addAll(PRE_CACHE_ASSETS);
         })
     );
@@ -40,10 +40,10 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
 
-    // Skip non-app origins (chrome extensions, analytics, etc)
+    // Skip non-app origins
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
-    // Strategy for Next.js Data Requests: NetworkFirst, fallback to App Shell
+    // INTERCEPT NEXT.JS DATA REQUESTS
     if (url.pathname.includes('/_next/data/')) {
         event.respondWith(
             fetch(event.request)
@@ -58,8 +58,8 @@ self.addEventListener('fetch', (event) => {
                     return networkResponse;
                 })
                 .catch(async () => {
-                    // CRITICAL FIX: Return HTML Shell instead of failing JSON request
-                    // This forces Next.js to perform a hard reload and use cached HTML
+                    // CRITICAL FIX: Instead of failing JSON, return the HTML Shell
+                    // This prevents Next.js from crashing and forces a hard navigation to the cached page
                     const cache = await caches.open(CACHE_NAME);
                     return (await cache.match('/dashboard')) || (await cache.match('/'));
                 })
@@ -67,19 +67,23 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Default strategy: Stale-While-Revalidate for other assets
+    // DEFAULT STRATEGY: Stale-While-Revalidate
     event.respondWith(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.match(event.request).then((cachedResponse) => {
+            // Use ignoreSearch to handle Next.js query params during offline
+            return cache.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
                 const fetchPromise = fetch(event.request).then((networkResponse) => {
                     if (networkResponse && networkResponse.status === 200) {
                         cache.put(event.request, networkResponse.clone());
                     }
                     return networkResponse;
                 }).catch((error) => {
-                    // Offline navigation fallback
+                    // Navigation fallback
                     if (event.request.mode === 'navigate') {
-                        return cache.match(event.request) || cache.match('/dashboard') || cache.match('/');
+                        // Return the cached version of the requested page, or fallback to dashboard
+                        return cache.match(event.request, { ignoreSearch: true }) ||
+                            cache.match('/dashboard') ||
+                            cache.match('/');
                     }
 
                     if (cachedResponse) return cachedResponse;
