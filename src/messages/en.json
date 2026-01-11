@@ -15,6 +15,17 @@
         "Yes": "Yes",
         "No": "No",
         "NA": "N/A",
+        "Offline": {
+            "Status": "Working Offline",
+            "Syncing": "Syncing Data...",
+            "SyncSuccess": "Sync completed successfully",
+            "SyncFailed": "Sync failed. Retry?",
+            "OfflineSaved": "Saved offline successfully",
+            "SyncRequired": "Sync required to continue",
+            "DaysLeft": "Days left offline: {days}",
+            "ConnectionLost": "Connection lost. Switching to offline mode.",
+            "ConnectionRestored": "Connection restored. Starting sync..."
+        },
         "StatusUpdated": "Status updated successfully",
         "TrialExpired": "Trial expired (50 invoices or 14 days). Please activate to continue.",
         "TrialVersion": "Trial Version",
@@ -23,6 +34,7 @@
         "ActivateNow": "Activate Full Version",
         "CreateNew": "Add New",
         "Loading": "Loading...",
+        "Close": "Close",
         "EGP": "EGP",
         "Uncategorized": "Uncategorized",
         "Export": {
