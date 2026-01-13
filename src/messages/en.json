@@ -79,6 +79,7 @@
         "POS": "Point of Sale",
         "NewInvoice": "New Invoice",
         "InvoicesList": "Invoices List",
+        "Purchases": "Purchases",
         "Logout": "Logout"
     },
     "Dashboard": {
