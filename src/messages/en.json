@@ -382,6 +382,14 @@
                 "Stock": "0"
             }
         },
+        "EditProduct": {
+            "Title": "Edit Product",
+            "Description": "Edit details for",
+            "Save": "Save Changes",
+            "Saving": "Saving...",
+            "Success": "Product updated successfully",
+            "Error": "Failed to update product"
+        },
         "AddAccount": {
             "Title": "Add New Account",
             "Description": "Add a new sub-account to the chart of accounts.",
