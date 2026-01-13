@@ -187,7 +187,7 @@ export function RepresentativeReport({ representativeId }: RepresentativeReportP
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Date || dict.Common?.Date || "Date"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Customer || "Customer"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Total || "Total"}</TableHead>
-                                            <TableHead className="text-center">{dict.Invoices?.Table?.Paid || "Paid"}</TableHead>
+                                            <TableHead className="text-center">{dict.Invoices?.Table?.PaidAmount || "Paid"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Status || "Status"}</TableHead>
                                         </TableRow>
                                     </TableHeader>
