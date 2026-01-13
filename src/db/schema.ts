@@ -32,9 +32,23 @@ export const purchaseInvoiceItems = usePg ? schemaPg.purchaseInvoiceItems : sche
 export const vouchers = usePg ? schemaPg.vouchers : schemaSqlite.vouchers;
 export const auditLogs = usePg ? schemaPg.auditLogs : schemaSqlite.auditLogs;
 export const licensing = usePg ? null : (schemaSqlite as any).licensing;
+export const installments = usePg ? schemaPg.installments : schemaSqlite.installments;
+export const employees = usePg ? schemaPg.employees : schemaSqlite.employees;
+export const advances = usePg ? schemaPg.advances : schemaSqlite.advances;
+export const payrolls = usePg ? schemaPg.payrolls : schemaSqlite.payrolls;
+export const attendance = usePg ? schemaPg.attendance : schemaSqlite.attendance;
+export const representatives = usePg ? null : schemaSqlite.representatives;
+export const units = usePg ? null : schemaSqlite.units;
 
 // Relations
 export const usersRelations = usePg ? schemaPg.usersRelations : schemaSqlite.usersRelations;
+// ...
+export const installmentsRelations = usePg ? schemaPg.installmentsRelations : schemaSqlite.installmentsRelations;
+export const employeesRelations = usePg ? schemaPg.employeesRelations : schemaSqlite.employeesRelations;
+export const advancesRelations = usePg ? schemaPg.advancesRelations : schemaSqlite.advancesRelations;
+export const payrollsRelations = usePg ? schemaPg.payrollsRelations : schemaSqlite.payrollsRelations;
+export const attendanceRelations = usePg ? schemaPg.attendanceRelations : schemaSqlite.attendanceRelations;
+export const representativesRelations = usePg ? null : schemaSqlite.representativesRelations;
 export const fiscalYearsRelations = usePg ? schemaPg.fiscalYearsRelations : schemaSqlite.fiscalYearsRelations;
 export const accountsRelations = usePg ? schemaPg.accountsRelations : schemaSqlite.accountsRelations;
 export const journalEntriesRelations = usePg ? schemaPg.journalEntriesRelations : schemaSqlite.journalEntriesRelations;
@@ -49,3 +63,5 @@ export const vouchersRelations = usePg ? schemaPg.vouchersRelations : schemaSqli
 export const auditLogsRelations = usePg ? schemaPg.auditLogsRelations : schemaSqlite.auditLogsRelations;
 export const categoriesRelations = usePg ? schemaPg.categoriesRelations : schemaSqlite.categoriesRelations;
 export const productsRelations = usePg ? schemaPg.productsRelations : schemaSqlite.productsRelations;
+export const shifts = usePg ? schemaPg.shifts : schemaSqlite.shifts;
+export const shiftsRelations = usePg ? schemaPg.shiftsRelations : schemaSqlite.shiftsRelations;

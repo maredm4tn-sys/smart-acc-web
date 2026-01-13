@@ -496,3 +496,20 @@ export async function getExpensesList(limit = 20) {
     };
 }
 
+export async function getTreasuryAccounts() {
+    const tenantId = await requireTenant();
+    return db.query.accounts.findMany({
+        where: (accounts, { eq, and, or, like }) => and(
+            eq(accounts.tenantId, tenantId),
+            eq(accounts.type, 'asset'),
+            or(
+                like(accounts.name, '%خزينة%'),
+                like(accounts.name, '%نقدية%'),
+                like(accounts.name, '%Cash%'),
+                like(accounts.name, '%Bank%'),
+                like(accounts.name, '%بنك%')
+            )
+        )
+    });
+}
+

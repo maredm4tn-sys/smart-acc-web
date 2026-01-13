@@ -26,6 +26,7 @@ const supplierSchema = z.object({
     phone: z.string().optional(),
     address: z.string().optional(),
     taxId: z.string().optional(),
+    openingBalance: z.coerce.number().optional().default(0),
 });
 
 type SupplierFormValues = z.infer<typeof supplierSchema>;
@@ -37,7 +38,7 @@ export function AddSupplierDialog() {
     const [isPending, startTransition] = useTransition();
 
     const form = useForm<SupplierFormValues>({
-        resolver: zodResolver(supplierSchema),
+        resolver: zodResolver(supplierSchema) as any,
         defaultValues: {
             name: "",
             companyName: "",
@@ -45,6 +46,7 @@ export function AddSupplierDialog() {
             phone: "",
             address: "",
             taxId: "",
+            openingBalance: 0,
         },
     });
 
@@ -89,7 +91,7 @@ export function AddSupplierDialog() {
                 <DialogHeader>
                     <DialogTitle>{dict.Suppliers.AddDialog.Title}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>{dict.Suppliers.AddDialog.Name} *</Label>
@@ -112,6 +114,13 @@ export function AddSupplierDialog() {
                         <div className="space-y-2">
                             <Label>{dict.Suppliers.AddDialog.TaxId}</Label>
                             <Input {...form.register("taxId")} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>{dict.Suppliers.AddDialog.OpeningBalance}</Label>
+                            <Input type="number" step="0.01" {...form.register("openingBalance")} />
                         </div>
                     </div>
 

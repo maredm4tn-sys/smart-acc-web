@@ -13,6 +13,7 @@ dotenv.config();
 
 // Determine App Mode
 const mode = process.env.NEXT_PUBLIC_APP_MODE || 'web';
+console.log(`🔍 [DB DEBUG] Mode: ${mode}, NEXT_PUBLIC_APP_MODE: ${process.env.NEXT_PUBLIC_APP_MODE}`);
 
 let _dbInstance: any;
 
@@ -47,8 +48,8 @@ function initDb() {
                 console.log(`[DB] Migrations Path: ${migrationFolder}`);
 
                 if (fs.existsSync(migrationFolder)) {
-                    migrate(_dbInstance, { migrationsFolder: migrationFolder });
-                    console.log("✅ [DB] Migrations applied!");
+                    // migrate(_dbInstance, { migrationsFolder: migrationFolder });
+                    console.log("✅ [DB] Migrations SKIPPED (Manual Patch Mode)!");
                 }
             } catch (err) {
                 console.error("❌ [DB] Migration failed:", err);

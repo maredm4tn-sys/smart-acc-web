@@ -3,7 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Plus, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Plus, Trash2, Eye, Monitor } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toggleUserStatus, adminResetPassword, createSubscriber, deleteSubscriber } from "@/features/admin/actions";
 import { toast } from "sonner";
@@ -118,8 +118,19 @@ export function UserList({ users }: UserListProps) {
         setIsDeleteDialogOpen(true);
     };
 
+    const isDesktop = process.env.NEXT_PUBLIC_APP_MODE === 'desktop';
+
     return (
         <div className="space-y-4">
+            {isDesktop && (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 text-sm text-blue-700">
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                        <Monitor size={16} />
+                        <span>تنبيه: قاعدة بيانات محلية</span>
+                    </div>
+                    <p>هذه القائمة خاصة بالمشتركين المسجلين على هذا الجهاز فقط (Offline). هي لا تعرض المشتركين الموجودين على السيرفر (Vercel).</p>
+                </div>
+            )}
             <div className="flex justify-end">
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
                     <Plus className={dir === 'rtl' ? "ml-2 h-4 w-4" : "mr-2 h-4 w-4"} />

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { Dictionary } from "@/lib/i18n-server";
-import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet, Truck, ShoppingBag, Receipt, X } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, ShoppingCart, Users, FolderTree, Package, PlusCircle, LogOut, Wallet, Truck, ShoppingBag, Receipt, X, CalendarClock, Briefcase } from "lucide-react";
 import { logout } from "@/features/auth/actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
@@ -89,6 +89,8 @@ export function AppSidebar({ user, dict, onClose }: { user?: User, dict: Diction
                         <SidebarItem href="/dashboard/inventory" icon={<Package size={20} />} label={dict.Sidebar.Inventory} onClick={onClose} />
                         <SidebarItem href="/dashboard/suppliers" icon={<Truck size={20} />} label={dict.Sidebar.Suppliers} onClick={onClose} />
                         <SidebarItem href="/dashboard/customers" icon={<Users size={20} />} label={dict.Sidebar.Customers} onClick={onClose} />
+                        <SidebarItem href="/dashboard/employees" icon={<Users size={20} />} label={(dict as any).Employees?.Title || "الموظفين"} onClick={onClose} />
+                        <SidebarItem href="/dashboard/representatives" icon={<Briefcase size={20} />} label={(dict as any).Representatives?.MenuLabel || "المناديب"} onClick={onClose} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 
@@ -99,6 +101,7 @@ export function AppSidebar({ user, dict, onClose }: { user?: User, dict: Diction
 
                         <SidebarItem href="/dashboard/purchases" icon={<ShoppingBag size={20} />} label={dict.Purchases?.Title || "Purchases"} onClick={onClose} />
                         <SidebarItem href="/dashboard/sales" icon={<ShoppingCart size={20} />} label={dict.Sidebar.SalesAndInvoices} onClick={onClose} />
+                        <SidebarItem href="/dashboard/installments" icon={<CalendarClock size={20} />} label={(dict as any).Installments?.Title || "إدارة التقسيط"} onClick={onClose} />
 
                         <div className="my-6 border-t border-gray-100 mx-4"></div>
 

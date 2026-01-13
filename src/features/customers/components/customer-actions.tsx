@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, MoreHorizontal } from "lucide-react";
+import { Edit2, Trash2, MoreHorizontal, FileText } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { EditCustomerDialog } from "./edit-customer-dialog";
 import { deleteCustomer } from "../actions";
@@ -32,11 +33,16 @@ interface CustomerActionsProps {
         email?: string | null;
         address?: string | null;
         taxId?: string | null;
+        nationalId?: string | null;
+        creditLimit?: number | string | null;
+        paymentDay?: number | null;
     };
     currentRole?: string;
+    dict: any;
+    representatives?: any[];
 }
 
-export function CustomerActions({ customer, currentRole }: CustomerActionsProps) {
+export function CustomerActions({ customer, currentRole, dict, representatives = [] }: CustomerActionsProps) {
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -48,7 +54,7 @@ export function CustomerActions({ customer, currentRole }: CustomerActionsProps)
     const handleDelete = async () => {
         const res = await deleteCustomer(customer.id);
         if (res.success) {
-            toast.success("Customer Deleted");
+            toast.success(dict.Customers.Table.Delete + " " + dict.Common.Success);
         } else {
             toast.error(res.message);
         }
@@ -61,6 +67,11 @@ export function CustomerActions({ customer, currentRole }: CustomerActionsProps)
                 <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)} className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
                     <Edit2 size={16} />
                 </Button>
+                <Link href={`/dashboard/customers/${customer.id}`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title={dict.Suppliers?.Statement?.Title || "Account Statement"}>
+                        <FileText size={16} />
+                    </Button>
+                </Link>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteOpen(true)} className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50">
                     <Trash2 size={16} />
                 </Button>
@@ -70,19 +81,21 @@ export function CustomerActions({ customer, currentRole }: CustomerActionsProps)
                 customer={customer}
                 open={editOpen}
                 onOpenChange={setEditOpen}
+                dict={dict}
+                representatives={representatives}
             />
 
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{dict.Common.Confirm} {dict.Customers.Table.Delete}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will delete <strong>{customer.name}</strong> permanently.
+                            {dict.Suppliers.AddDialog.DeleteConfirm} <strong>{customer.name}</strong>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                        <AlertDialogCancel>{dict.Common.Cancel}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">{dict.Common.Yes}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

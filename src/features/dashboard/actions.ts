@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { invoices, accounts, products, purchaseInvoices, journalLines, journalEntries } from "@/db/schema";
+import { invoices, accounts, products, purchaseInvoices, journalLines, journalEntries, installments, customers } from "@/db/schema";
 import { count, sum, sql, eq, and, gt, desc, gte } from "drizzle-orm";
 import { getCashierStats } from "@/features/sales/stats";
 import { getSession } from "@/features/auth/actions";
@@ -32,9 +32,13 @@ export async function getDashboardStats() {
             recRes,
             lowStockItems,
             overdueInvoices,
-            duePurchases
+            duePurchases,
+            cashLiquidityRes,
+            upcomingInstallmentsTotalRes,
+            upcomingInstallments,
+            dailySalesRes,
+            dailyCountRes
         ] = await Promise.all([
-            // Use COALESCE to ensure SUM doesn't return NULL (causing NaN in UI)
             db.select({ value: sql`COALESCE(SUM(${castNum(invoices.totalAmount)}), 0)` }).from(invoices).where(eq(invoices.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(accounts).where(eq(accounts.tenantId, tenantId)).then(res => res[0]),
             db.select({ value: count() }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]),
@@ -48,7 +52,6 @@ export async function getDashboardStats() {
                 ),
                 limit: 5
             }),
-            // Overdue Invoices (Customer Debts > 0)
             db.select({
                 id: invoices.id,
                 customer: invoices.customerName,
@@ -61,7 +64,6 @@ export async function getDashboardStats() {
                     gt(sql`${castNum(invoices.totalAmount)} - ${castNum(invoices.amountPaid)}`, 0)
                 )
             ).orderBy(desc(invoices.issueDate)).limit(5),
-            // Due Purchases (Supplier Debts > 0)
             db.select({
                 id: purchaseInvoices.id,
                 supplier: purchaseInvoices.supplierName,
@@ -72,8 +74,45 @@ export async function getDashboardStats() {
                     eq(purchaseInvoices.tenantId, tenantId),
                     gt(sql`${castNum(purchaseInvoices.totalAmount)} - ${castNum(purchaseInvoices.amountPaid)}`, 0)
                 )
-            ).orderBy(desc(purchaseInvoices.issueDate)).limit(5)
+            ).orderBy(desc(purchaseInvoices.issueDate)).limit(5),
+            db.select({ value: sql`COALESCE(SUM(${castNum(journalLines.debit)} - ${castNum(journalLines.credit)}), 0)` })
+                .from(journalLines)
+                .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+                .where(and(eq(accounts.tenantId, tenantId), eq(accounts.type, 'asset'))).then(res => res[0]),
+            db.select({ value: sql`COALESCE(SUM(${castNum(installments.amount)}), 0)` })
+                .from(installments)
+                .where(and(eq(installments.tenantId, tenantId), eq(installments.status, 'unpaid')))
+                .then(res => res[0]),
+            db.select({
+                id: installments.id,
+                customer: customers.name,
+                amount: installments.amount,
+                due: installments.dueDate
+            })
+                .from(installments)
+                .innerJoin(customers, eq(installments.customerId, customers.id))
+                .where(and(eq(installments.tenantId, tenantId), eq(installments.status, 'unpaid')))
+                .orderBy(installments.dueDate)
+                .limit(5),
+            db.select({ value: sql`COALESCE(SUM(${castNum(invoices.totalAmount)}), 0)` })
+                .from(invoices)
+                .where(and(
+                    eq(invoices.tenantId, tenantId),
+                    gte(invoices.issueDate, new Date().toISOString().split('T')[0])
+                ))
+                .then(res => res[0]),
+            db.select({ value: count() })
+                .from(invoices)
+                .where(and(
+                    eq(invoices.tenantId, tenantId),
+                    gte(invoices.issueDate, new Date().toISOString().split('T')[0])
+                ))
+                .then(res => res[0])
         ]);
+
+        const dailyTotal = Number(dailySalesRes?.value || 0);
+        const dailyCount = Number(dailyCountRes?.value || 0);
+        const averageBasket = dailyCount > 0 ? dailyTotal / dailyCount : 0;
 
         return {
             role: 'admin',
@@ -83,6 +122,8 @@ export async function getDashboardStats() {
                 activeProducts: Number(prodRes?.value || 0),
                 invoicesCount: Number(invRes?.value || 0),
                 totalReceivables: Number(recRes?.value || 0).toFixed(2),
+                cashLiquidity: Number(cashLiquidityRes?.value || 0).toFixed(2),
+                avgBasket: averageBasket.toFixed(2),
                 lowStockItems: lowStockItems.map(p => ({
                     id: p.id,
                     name: p.name,
@@ -90,7 +131,8 @@ export async function getDashboardStats() {
                 })),
                 overdueInvoices,
                 duePurchases,
-                // Top Selling Units (Top 5)
+                upcomingInstallmentsTotal: Number(upcomingInstallmentsTotalRes?.value || 0).toFixed(2),
+                upcomingInstallments: upcomingInstallments,
                 topProducts: await db.select({
                     name: products.name,
                     sold: sql<number>`SUM(${castNum(sql`invoice_items.quantity`)})`
@@ -102,15 +144,9 @@ export async function getDashboardStats() {
                     .groupBy(products.id)
                     .orderBy(desc(sql`SUM(${castNum(sql`invoice_items.quantity`)})`))
                     .limit(5),
-                // Inventory Value & Liquidity
                 inventoryValue: await db.select({
                     total: sql`SUM(${castNum(products.buyPrice)} * ${castNum(products.stockQuantity)})`
                 }).from(products).where(eq(products.tenantId, tenantId)).then(res => res[0]?.total || 0),
-                cashLiquidity: await db.select({
-                    total: sql`SUM(${castNum(journalLines.debit)} - ${castNum(journalLines.credit)})`
-                }).from(journalLines)
-                    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-                    .where(and(eq(accounts.tenantId, tenantId), eq(accounts.type, 'asset'))).then(res => res[0]?.total || 0)
             }
         };
     } catch (e) {
@@ -125,7 +161,9 @@ export async function getDashboardStats() {
                 totalReceivables: "0.00",
                 lowStockItems: [],
                 overdueInvoices: [],
-                duePurchases: []
+                duePurchases: [],
+                upcomingInstallmentsTotal: "0.00",
+                upcomingInstallments: []
             },
             error: true
         };
@@ -143,7 +181,6 @@ export async function getAnalyticsData() {
         const getMonthSql = (col: any) => isPg ? sql`TO_CHAR(${col}, 'MM')` : sql`strftime('%m', ${col})`;
 
         const [topProducts, incomeCompare] = await Promise.all([
-            // 1. Top 5 Products by Sales
             db.select({
                 name: products.name,
                 value: sql<number>`SUM(${castNum(sql`invoice_items.quantity`)})`
@@ -156,7 +193,6 @@ export async function getAnalyticsData() {
                 .orderBy(desc(sql`SUM(${castNum(sql`invoice_items.quantity`)})`))
                 .limit(5),
 
-            // 2. Profit vs Expense (Simple Monthly Aggregate)
             db.select({
                 month: getMonthSql(journalEntries.transactionDate),
                 profit: sql<number>`SUM(CASE WHEN ${accounts.type} IN ('revenue', 'income') THEN ${castNum(journalLines.credit)} - ${castNum(journalLines.debit)} ELSE 0 END)`,
@@ -199,7 +235,6 @@ export async function getRevenueChartData() {
             .where(eq(invoices.tenantId, tenantId))
             .limit(100);
 
-        // Simple aggregation by day name
         const daysMap: Record<string, number> = {};
         rawData.forEach(inv => {
             if (!inv.date) return;

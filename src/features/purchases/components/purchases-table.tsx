@@ -20,18 +20,19 @@ export function PurchasesTable({ initialInvoices }: { initialInvoices: any[] }) 
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{dict.Purchases.Title}</h1>
-                    <p className="text-muted-foreground">{dict.Purchases.Description}</p>
+                    <p className="text-sm text-muted-foreground">{dict.Purchases.Description}</p>
                 </div>
-                <Link href="/dashboard/purchases/create">
-                    <Button className="gap-2">
+                <Link href="/dashboard/purchases/create" className="w-full sm:w-auto">
+                    <Button className="gap-2 w-full sm:w-auto">
                         <Plus size={16} />
                         <span>{dict.Purchases.NewInvoice}</span>
                     </Button>
                 </Link>
             </div>
+
 
             {/* Desktop View */}
             <div className="hidden md:block bg-white p-4 rounded-lg border shadow-sm container-desktop">

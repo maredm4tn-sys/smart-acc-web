@@ -16,7 +16,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import { updateSettings } from "../actions";
-import { Save, Upload, Building2, Phone, MapPin, Receipt, Coins } from "lucide-react";
+import { Save, Upload, Building2, Phone, MapPin, Receipt, Coins, Printer } from "lucide-react";
 import Image from "next/image";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
@@ -32,6 +32,8 @@ export function SettingsForm({ initialData }: { initialData: any }) {
         taxId: z.string().optional(),
         currency: z.string().min(1, dict.Settings.Form.CurrencyRequired),
         logoUrl: z.string().optional(),
+        defaultPrintSales: z.enum(['standard', 'thermal']),
+        defaultPrintPOS: z.enum(['standard', 'thermal']),
     });
 
     type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -50,6 +52,8 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             taxId: initialData?.taxId || "",
             currency: initialData?.currency || "EGP",
             logoUrl: initialData?.logoUrl || "",
+            defaultPrintSales: (initialData?.defaultPrintSales as any) || "standard",
+            defaultPrintPOS: (initialData?.defaultPrintPOS as any) || "thermal",
         },
     });
 
@@ -187,6 +191,46 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                                     </Select>
                                 </div>
                                 {errors.currency && <p className="text-red-500 text-xs">{errors.currency.message}</p>}
+                            </div>
+                        </div>
+
+                        {/* Printing Defaults Section */}
+                        <div className="pt-4 border-t">
+                            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                                <Printer size={20} className="text-primary" />
+                                {(dict as any).Settings?.Form?.PrintSettings || "إعدادات الطباعة"}
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>{(dict as any).Settings?.Form?.DefaultPrintSales || "الافتراضي للمبيعات (الفاتورة)"}</Label>
+                                    <Select
+                                        defaultValue={initialData?.defaultPrintSales || "standard"}
+                                        onValueChange={(val) => setValue("defaultPrintSales", val as any)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="standard">A4 (رسمي)</SelectItem>
+                                            <SelectItem value="thermal">Thermal (حراري)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{(dict as any).Settings?.Form?.DefaultPrintPOS || "الافتراضي لنقطة البيع (POS)"}</Label>
+                                    <Select
+                                        defaultValue={initialData?.defaultPrintPOS || "thermal"}
+                                        onValueChange={(val) => setValue("defaultPrintPOS", val as any)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="standard">A4 (رسمي)</SelectItem>
+                                            <SelectItem value="thermal">Thermal (حراري)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
                     </div>

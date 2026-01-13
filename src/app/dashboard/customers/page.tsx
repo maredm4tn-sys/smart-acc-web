@@ -6,10 +6,13 @@ import { ExcelExportButton } from "@/components/common/excel-export-button";
 import { getDictionary } from "@/lib/i18n-server";
 import { CustomersClient } from "@/features/customers/components/customers-client";
 
+import { getAllRepresentatives } from "@/features/representatives/actions"; // Added
+
 export default async function CustomersPage() {
     const rawDict = await getDictionary();
     const dict = rawDict as any;
     const customers = await getCustomers();
+    const representatives = await getAllRepresentatives(); // Added
     const session = await getSession();
     const isAdmin = session?.role === 'admin' || session?.role === 'SUPER_ADMIN';
 
@@ -21,7 +24,7 @@ export default async function CustomersPage() {
                     <p className="text-sm md:text-base text-muted-foreground">{dict.Customers.Description}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                    <AddCustomerDialog triggerLabel={dict.Customers.NewCustomer} />
+                    <AddCustomerDialog triggerLabel={dict.Customers.NewCustomer} representatives={representatives} />
                     {isAdmin && <CustomerImport />}
                     {isAdmin && (
                         <ExcelExportButton
@@ -33,7 +36,7 @@ export default async function CustomersPage() {
                 </div>
             </div>
 
-            <CustomersClient initialCustomers={customers} dict={dict} session={session} />
+            <CustomersClient initialCustomers={customers} dict={dict} session={session} representatives={representatives} />
         </div>
     );
 }

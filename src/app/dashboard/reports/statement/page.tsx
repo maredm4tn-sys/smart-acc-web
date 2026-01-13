@@ -12,6 +12,7 @@ import { getCustomerStatement, getAccountStatement, StatementEntry } from "@/fea
 import { useReactToPrint } from "react-to-print";
 import { Loader2, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
+import { formatNumber } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 // Simple Internal Entity Select Component
@@ -237,17 +238,17 @@ function StatementContent({
                         <div className="grid grid-cols-3 gap-4 mb-8 text-center">
                             <div className="bg-gray-50 p-4 rounded border">
                                 <div className="text-sm text-gray-500">{dict.Reports.GeneralStatement.OpeningBalance}</div>
-                                <div className="text-lg font-bold">{data.openingBalance.toFixed(2)}</div>
+                                <div className="text-lg font-bold">{formatNumber(data.openingBalance)}</div>
                             </div>
                             <div className="bg-gray-50 p-4 rounded border">
                                 <div className="text-sm text-gray-500">{dict.Reports.GeneralStatement.PeriodMotion}</div>
                                 <div className={`text-lg font-bold ${data.closingBalance - data.openingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {(data.closingBalance - data.openingBalance).toFixed(2)}
+                                    {formatNumber(data.closingBalance - data.openingBalance)}
                                 </div>
                             </div>
                             <div className="bg-blue-50 p-4 rounded border border-blue-100">
                                 <div className="text-sm text-blue-600">{dict.Reports.GeneralStatement.ClosingBalance}</div>
-                                <div className="text-2xl font-bold text-blue-700 dir-ltr text-center">{data.closingBalance.toFixed(2)}</div>
+                                <div className="text-2xl font-bold text-blue-700 dir-ltr text-center">{formatNumber(data.closingBalance)}</div>
                             </div>
                         </div>
 
@@ -267,28 +268,64 @@ function StatementContent({
                                 {data.statement.map((row: any, idx: number) => (
                                     <tr key={idx} className={`border-b border-gray-100 ${row.type === 'OPENING' ? 'bg-yellow-50 font-medium' : 'hover:bg-gray-50'}`}>
                                         <td className="py-2 px-2 border text-start whitespace-nowrap">
-                                            {new Date(row.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB')}
+                                            {new Date(row.date).toLocaleDateString('en-GB')}
                                         </td>
                                         <td className="py-2 px-2 border text-start font-medium">
                                             {row.description}
                                         </td>
                                         <td className="py-2 px-2 border text-start font-mono text-xs">{row.reference || '-'}</td>
                                         <td className="py-2 px-2 border text-end text-gray-800 font-bold dir-ltr">
-                                            {row.debit > 0 ? row.debit.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 }) : '-'}
+                                            {row.debit > 0 ? formatNumber(row.debit) : '-'}
                                         </td>
                                         <td className="py-2 px-2 border text-end text-gray-800 font-bold dir-ltr">
-                                            {row.credit > 0 ? row.credit.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 }) : '-'}
+                                            {row.credit > 0 ? formatNumber(row.credit) : '-'}
                                         </td>
                                         <td className={`py-2 px-2 border bg-gray-50 font-bold text-end dir-ltr ${row.balance < 0 ? 'text-red-700' : 'text-blue-700'}`}>
-                                            {row.balance.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: 2 })}
+                                            {formatNumber(row.balance)}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
 
+                        {/* Installment Schedule (New Section) */}
+                        {type === 'customer' && data.installments && data.installments.length > 0 && (
+                            <div className="mt-10">
+                                <h3 className="text-lg font-bold text-blue-800 border-b-2 border-blue-100 pb-2 mb-4 flex items-center gap-2">
+                                    📑 جدول الأقساط المتبقية
+                                </h3>
+                                <table className="w-full text-xs border-collapse">
+                                    <thead>
+                                        <tr className="bg-blue-50">
+                                            <th className="py-2 px-2 border border-blue-100 text-start">تاريخ الاستحقاق</th>
+                                            <th className="py-2 px-2 border border-blue-100 text-start">الفاتورة</th>
+                                            <th className="py-2 px-2 border border-blue-100 text-end">المبلغ</th>
+                                            <th className="py-2 px-2 border border-blue-100 text-center">الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.installments.map((inst: any, i: number) => (
+                                            <tr key={i} className={inst.status === 'paid' ? 'bg-green-50/30' : ''}>
+                                                <td className="py-2 px-2 border border-blue-50 text-start">{inst.dueDate}</td>
+                                                <td className="py-2 px-2 border border-blue-50 text-start font-mono text-[10px]">{inst.invoiceNumber}</td>
+                                                <td className="py-2 px-2 border border-blue-50 text-end font-bold text-blue-900">{formatNumber(inst.amount)} EGP</td>
+                                                <td className="py-2 px-2 border border-blue-50 text-center">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${inst.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {inst.status === 'paid' ? 'تم التحصيل' : 'مستحق'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg text-blue-800 text-[11px] font-medium">
+                                    * ملاحظة: يتم تحديث جدول الأقساط تلقائياً عند تسجيل أي دفعة جديدة.
+                                </div>
+                            </div>
+                        )}
+
                         <div className="mt-8 text-xs text-center text-gray-400">
-                            {dict.Reports.GeneralStatement.Footer.replace('{date}', new Date().toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US'))}
+                            {dict.Reports.GeneralStatement.Footer.replace('{date}', new Date().toLocaleString('en-US'))}
                         </div>
                     </div>
                 </div>

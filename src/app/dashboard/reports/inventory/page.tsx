@@ -5,19 +5,12 @@ import { Package, TrendingUp, DollarSign, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { getDictionary } from "@/lib/i18n-server";
 
+import { formatCurrency, formatNumber } from "@/lib/utils";
+
 export default async function InventoryReportPage() {
     const data = await getInventoryReport();
     const { dict, lang } = (await getDictionary()) as any;
-
     if (!data) return <div className="p-8 text-center">{dict?.Common?.Loading || "Loading..."}</div>;
-
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', {
-            style: 'currency',
-            currency: 'EGP',
-            currencyDisplay: 'narrowSymbol'
-        }).format(val).replace('EGP', dict.Common.EGP).replace('ج.م.‏', dict.Common.EGP);
-    };
 
     return (
         <div className="space-y-6">
@@ -34,7 +27,7 @@ export default async function InventoryReportPage() {
                         <Package className="h-4 w-4 text-gray-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data.totalItems.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US')}</div>
+                        <div className="text-2xl font-bold">{formatNumber(data.totalItems)}</div>
                         <p className="text-xs text-gray-400">{dict.Reports.InventoryReport.Subtitles.Goods}</p>
                     </CardContent>
                 </Card>

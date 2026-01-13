@@ -14,6 +14,8 @@ const updateSettingsSchema = z.object({
     taxId: z.string().optional(),
     currency: z.string().min(1),
     logoUrl: z.string().optional(),
+    defaultPrintSales: z.enum(['standard', 'thermal']).default('standard'),
+    defaultPrintPOS: z.enum(['standard', 'thermal']).default('thermal'),
 });
 
 type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
@@ -37,6 +39,8 @@ export async function updateSettings(inputData: UpdateSettingsInput) {
                 taxId: data.taxId,
                 currency: data.currency,
                 logoUrl: data.logoUrl,
+                defaultPrintSales: data.defaultPrintSales,
+                defaultPrintPOS: data.defaultPrintPOS,
                 updatedAt: new Date(),
             })
             .where(eq(tenants.id, tenantId));
@@ -58,11 +62,22 @@ export async function getSettings(tenantIdInput?: string) {
         const { getActiveTenantId } = await import("@/lib/actions-utils");
         const tenantId = await getActiveTenantId(tenantIdInput);
 
-        const tenant = await db.query.tenants.findFirst({
-            where: (t, { eq }) => eq(t.id, tenantId)
-        });
+        let tenant = null;
+        try {
+            tenant = await db.query.tenants.findFirst({
+                where: (t, { eq }) => eq(t.id, tenantId)
+            });
+        } catch (dbError) {
+            console.error("Database schema mismatch, falling back to basic select:", dbError);
+            // Fallback for missing columns: Just get name and basic info
+            const result = await db.select({
+                id: tenants.id,
+                name: tenants.name
+            }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+            if (result.length > 0) tenant = result[0];
+        }
 
-        return tenant;
+        return tenant || { name: "المحاسب الذكي", currency: "EGP" };
     } catch (e) {
         console.error(e);
         return null;

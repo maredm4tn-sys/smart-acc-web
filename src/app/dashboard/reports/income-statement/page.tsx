@@ -8,7 +8,7 @@ import { getIncomeStatementData, getProfitExport } from "@/features/reports/acti
 import { getSession } from "@/features/auth/actions";
 import { ExcelExportButton } from "@/components/common/excel-export-button";
 import { Loader2, TrendingDown, TrendingUp, DollarSign, Calendar as CalendarIcon, Filter, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/components/providers/i18n-provider";
 
 export default function IncomeStatementPage() {
@@ -21,14 +21,6 @@ export default function IncomeStatementPage() {
         });
     }, []);
 
-    // Format currency helper
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', {
-            style: 'currency',
-            currency: 'EGP',
-            minimumFractionDigits: 2
-        }).format(amount).replace('EGP', dict.Common.EGP).replace('ج.م.‏', dict.Common.EGP);
-    };
 
     // Default to current year starting Jan 1st and end of current month
     const today = new Date();
@@ -219,7 +211,7 @@ export default function IncomeStatementPage() {
                                                 <TableRow key={index} className="hover:bg-emerald-50/30 transition-colors">
                                                     <TableCell className="text-xs text-gray-500 align-top whitespace-nowrap">
                                                         <div className="flex flex-col">
-                                                            <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                            <span>{new Date(item.date).toLocaleDateString('en-US')}</span>
                                                             {(() => {
                                                                 const time = getTimeFromItem(item);
                                                                 return time ? (
@@ -271,7 +263,7 @@ export default function IncomeStatementPage() {
                                                 <TableRow key={index} className="hover:bg-red-50/30 transition-colors">
                                                     <TableCell className="text-xs text-gray-500 align-top whitespace-nowrap">
                                                         <div className="flex flex-col">
-                                                            <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                            <span>{new Date(item.date).toLocaleDateString('en-US')}</span>
                                                             {(() => {
                                                                 const time = getTimeFromItem(item);
                                                                 return time ? (
@@ -318,7 +310,7 @@ export default function IncomeStatementPage() {
                                             </div>
                                             <div className="flex justify-between text-xs text-gray-500">
                                                 <div className="flex flex-col">
-                                                    <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                    <span>{new Date(item.date).toLocaleDateString('en-US')}</span>
                                                     {(() => {
                                                         const time = getTimeFromItem(item);
                                                         return time ? (
@@ -356,7 +348,7 @@ export default function IncomeStatementPage() {
                                             </div>
                                             <div className="flex justify-between text-xs text-gray-500">
                                                 <div className="flex flex-col">
-                                                    <span>{new Date(item.date).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}</span>
+                                                    <span>{new Date(item.date).toLocaleDateString('en-US')}</span>
                                                     {(() => {
                                                         const time = getTimeFromItem(item);
                                                         return time ? (

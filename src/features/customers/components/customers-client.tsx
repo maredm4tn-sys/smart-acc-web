@@ -8,7 +8,10 @@ import { mirrorData, getLocalData, STORES } from "@/lib/offline-db";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function CustomersClient({ initialCustomers, dict, session }: { initialCustomers: any[], dict: any, session: any }) {
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle } from "lucide-react";
+
+export function CustomersClient({ initialCustomers, dict, session, representatives = [] }: { initialCustomers: any[], dict: any, session: any, representatives?: any[] }) {
     const [customers, setCustomers] = useState(initialCustomers);
     const [isOffline, setIsOffline] = useState(false);
 
@@ -44,7 +47,7 @@ export function CustomersClient({ initialCustomers, dict, session }: { initialCu
             {isOffline && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm">
                     <CloudOff size={18} />
-                    <span>{(dict as any).Common?.Offline?.NoConnection || "تعمل الآن في وضع عدم الاتصال (بيانات العملاء مخزنة محلياً)"}</span>
+                    <span>{dict.Common.Offline.NoConnection}</span>
                 </div>
             )}
 
@@ -96,11 +99,19 @@ export function CustomersClient({ initialCustomers, dict, session }: { initialCu
                                                     <div className="truncate max-w-[150px] mx-auto font-mono" title={c.email || ""}>{c.email || "-"}</div>
                                                 </TableCell>
                                                 <TableCell className={`text-center font-bold ${Number(c.totalDebt) > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                                    {Number(c.totalDebt || 0).toFixed(2)}
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span>{Number(c.totalDebt || 0).toFixed(2)}</span>
+                                                        {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
+                                                            <Badge variant="destructive" className="text-[10px] px-1 py-0 flex items-center gap-1">
+                                                                <AlertTriangle size={10} />
+                                                                {dict.Customers.Table.LimitExceeded}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex justify-center">
-                                                        <CustomerActions customer={c} currentRole={session?.role} />
+                                                        <CustomerActions customer={c} currentRole={session?.role} dict={dict} />
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -126,16 +137,23 @@ export function CustomersClient({ initialCustomers, dict, session }: { initialCu
                                         <Users className="h-4 w-4 text-primary" />
                                         {c.name}
                                     </div>
-                                    <CustomerActions customer={c} currentRole={session?.role} />
+                                    <CustomerActions customer={c} currentRole={session?.role} dict={dict} />
                                 </div>
                                 <div className="space-y-1 text-sm text-gray-600">
                                     {c.companyName && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict.Customers.Table.Company}:</span> <span className="text-gray-900">{c.companyName}</span></div>}
                                     {c.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict.Customers.Table.Phone}:</span> <span className="font-mono">{c.phone}</span></div>}
                                     <div className="flex justify-between font-bold pt-1">
                                         <span>{dict.Customers.Table.TotalDebt}:</span>
-                                        <span className={Number(c.totalDebt) > 0 ? 'text-red-600' : 'text-green-600'}>
-                                            {Number(c.totalDebt || 0).toFixed(2)}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className={Number(c.totalDebt) > 0 ? 'text-red-600' : 'text-green-600'}>
+                                                {Number(c.totalDebt || 0).toFixed(2)}
+                                            </span>
+                                            {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
+                                                <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
+                                                    {dict.Customers.Table.LimitExceeded}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>

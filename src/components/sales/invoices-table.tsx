@@ -66,6 +66,7 @@ export function InvoicesTable({ initialInvoices }: { initialInvoices: any[] }) {
                             <TableHead>{dict.Sales.Table.Customer}</TableHead>
                             <TableHead>{dict.Sales.Table.Date}</TableHead>
                             <TableHead>{dict.Sales.Table.Type}</TableHead>
+                            <TableHead>{dict.Sales.Table.SaleMode}</TableHead>
                             <TableHead>{dict.Sales.Table.Status}</TableHead>
                             <TableHead className="text-center">{dict.Sales.Table.Total}</TableHead>
                             <TableHead className="text-end">{dict.Sales.Table.Actions}</TableHead>
@@ -100,6 +101,13 @@ export function InvoicesTable({ initialInvoices }: { initialInvoices: any[] }) {
                                         <Badge variant={inv.type === 'return' ? 'destructive' : 'secondary'} className={inv.type === 'return' ? 'bg-orange-100 text-orange-700 hover:bg-orange-100' : ''}>
                                             {inv.type === 'return' ? dict.Sales.Table.Types.Return : dict.Sales.Table.Types.Sale}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {inv.isInstallment ? (
+                                            <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">{dict.Sales.Table.Installment}</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-gray-400">{dict.Sales.Table.Cash}</Badge>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <StatusBadge status={inv.status} dict={dict} />
@@ -150,6 +158,12 @@ export function InvoicesTable({ initialInvoices }: { initialInvoices: any[] }) {
                                         <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                                             {inv.type === 'return' ? dict.Sales.Table.Types.Return : dict.Sales.Table.Types.Sale}
                                         </Badge>
+                                        {inv.isInstallment && (
+                                            <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none text-[10px] h-5 px-1.5">{dict.Sales.Table.Installment}</Badge>
+                                        )}
+                                        {!inv.isInstallment && inv.type !== 'return' && (
+                                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-gray-400">{dict.Sales.Table.Cash}</Badge>
+                                        )}
                                     </div>
                                     <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                         <Calendar size={12} />

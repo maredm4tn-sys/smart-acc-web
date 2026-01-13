@@ -209,6 +209,7 @@ export const suppliers = pgTable('suppliers', {
     phone: text('phone'),
     address: text('address'),
     taxId: text('tax_id'),
+    openingBalance: decimal('opening_balance').default('0'),
     createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -229,8 +230,66 @@ export const customers = pgTable('customers', {
     phone: text('phone'),
     address: text('address'),
     taxId: text('tax_id'),
+    nationalId: text('national_id'),
+    creditLimit: decimal('credit_limit', { precision: 15, scale: 2 }).default('0.00'),
+    paymentDay: integer('payment_day'),
+    openingBalance: decimal('opening_balance').default('0'),
+    priceLevel: text('price_level').default('retail').notNull(), // retail, wholesale, half_wholesale, special
+    representativeId: integer('representative_id').references(() => representatives.id),
     createdAt: timestamp('created_at').defaultNow(),
 });
+
+// --- Representatives ---
+export const representatives = pgTable('representatives', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    address: text('address'),
+    type: text('type', { enum: ['sales', 'delivery'] }).default('sales').notNull(),
+    commissionRate: decimal('commission_rate', { precision: 5, scale: 2 }).default('0.00'),
+    notes: text('notes'),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const representativesRelations = relations(representatives, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [representatives.tenantId],
+        references: [tenants.id],
+    }),
+    invoices: many(invoices),
+}));
+
+// --- Installments ---
+export const installments = pgTable('installments', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    customerId: integer('customer_id').references(() => customers.id, { onDelete: 'cascade' }).notNull(),
+    invoiceId: integer('invoice_id').references(() => invoices.id, { onDelete: 'cascade' }),
+    dueDate: date('due_date').notNull(),
+    amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+    amountPaid: decimal('amount_paid', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    status: text('status').default('pending').notNull(), // pending, paid, overdue, partially_paid
+    paidDate: date('paid_date'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const installmentsRelations = relations(installments, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [installments.tenantId],
+        references: [tenants.id],
+    }),
+    customer: one(customers, {
+        fields: [installments.customerId],
+        references: [customers.id],
+    }),
+    invoice: one(invoices, {
+        fields: [installments.invoiceId],
+        references: [invoices.id],
+    }),
+}));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
     tenant: one(tenants, {
@@ -269,6 +328,14 @@ export const invoices = pgTable('invoices', {
     tokenNumber: integer('token_number'),
     qrCodeData: text('qr_code_data'),
     createdBy: uuid('created_by').references(() => users.id), // Add user tracking
+    // --- Installment Fields ---
+    isInstallment: boolean('is_installment').default(false),
+    installmentDownPayment: decimal('installment_down_payment', { precision: 15, scale: 2 }).default('0.00'),
+    installmentCount: integer('installment_count').default(0),
+    installmentInterest: decimal('installment_interest', { precision: 15, scale: 2 }).default('0.00'), // % or fixed amount
+    installmentMonthlyAmount: decimal('installment_monthly_amount', { precision: 15, scale: 2 }).default('0.00'),
+    representativeId: integer('representative_id').references(() => representatives.id),
+    shiftId: integer('shift_id').references(() => shifts.id),
     createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -290,6 +357,14 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
     customer: one(customers, {
         fields: [invoices.customerId],
         references: [customers.id],
+    }),
+    representative: one(representatives, {
+        fields: [invoices.representativeId],
+        references: [representatives.id],
+    }),
+    shift: one(shifts, {
+        fields: [invoices.shiftId],
+        references: [shifts.id],
     }),
     items: many(invoiceItems),
 }));
@@ -390,6 +465,7 @@ export const vouchers = pgTable('vouchers', {
     accountId: integer('account_id').references(() => accounts.id),
 
     status: text('status', { enum: ['draft', 'posted', 'void'] }).default('draft').notNull(),
+    shiftId: integer('shift_id').references(() => shifts.id),
     createdBy: uuid('created_by').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow(),
 });
@@ -406,6 +482,10 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
     account: one(accounts, {
         fields: [vouchers.accountId],
         references: [accounts.id],
+    }),
+    shift: one(shifts, {
+        fields: [vouchers.shiftId],
+        references: [shifts.id],
     }),
 }));
 
@@ -431,4 +511,149 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
         fields: [auditLogs.userId],
         references: [users.id],
     }),
+}));
+// --- Employees ---
+export const employees = pgTable('employees', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    code: text('code').notNull(),
+    name: text('name').notNull(),
+    address: text('address'),
+    phone: text('phone'),
+    email: text('email'),
+    basicSalary: decimal('basic_salary', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    status: text('status').default('active').notNull(), // active, inactive
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const employeesRelations = relations(employees, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [employees.tenantId],
+        references: [tenants.id],
+    }),
+    advances: many(advances),
+    payrolls: many(payrolls),
+}));
+
+// --- Advances ---
+export const advances = pgTable('advances', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'cascade' }).notNull(),
+    date: date('date').notNull(),
+    salaryMonth: text('salary_month').notNull(),
+    amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+    type: text('type').default('advance').notNull(), // advance, repayment
+    treasuryAccountId: integer('treasury_account_id').references(() => accounts.id),
+    status: text('status').default('pending').notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const advancesRelations = relations(advances, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [advances.tenantId],
+        references: [tenants.id],
+    }),
+    employee: one(employees, {
+        fields: [advances.employeeId],
+        references: [employees.id],
+    }),
+    treasury: one(accounts, {
+        fields: [advances.treasuryAccountId],
+        references: [accounts.id],
+    }),
+}));
+
+// --- Payrolls ---
+export const payrolls = pgTable('payrolls', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'cascade' }).notNull(),
+    paymentDate: date('payment_date').notNull(),
+    salaryMonth: text('salary_month').notNull(),
+    basicSalary: decimal('basic_salary', { precision: 15, scale: 2 }).notNull(),
+    incentives: decimal('incentives', { precision: 15, scale: 2 }).default('0.00'),
+    deductions: decimal('deductions', { precision: 15, scale: 2 }).default('0.00'),
+    advanceDeductions: decimal('advance_deductions', { precision: 15, scale: 2 }).default('0.00'),
+    netSalary: decimal('net_salary', { precision: 15, scale: 2 }).notNull(),
+    treasuryAccountId: integer('treasury_account_id').references(() => accounts.id),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const payrollsRelations = relations(payrolls, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [payrolls.tenantId],
+        references: [tenants.id],
+    }),
+    employee: one(employees, {
+        fields: [payrolls.employeeId],
+        references: [employees.id],
+    }),
+    treasury: one(accounts, {
+        fields: [payrolls.treasuryAccountId],
+        references: [accounts.id],
+    }),
+}));
+
+// --- Attendance ---
+export const attendance = pgTable('attendance', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    employeeId: integer('employee_id').references(() => employees.id, { onDelete: 'cascade' }).notNull(),
+    date: date('date').notNull(),
+    checkIn: text('check_in'),
+    checkOut: text('check_out'),
+    status: text('status').default('present').notNull(),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const attendanceRelations = relations(attendance, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [attendance.tenantId],
+        references: [tenants.id],
+    }),
+    employee: one(employees, {
+        fields: [attendance.employeeId],
+        references: [employees.id],
+    }),
+}));
+
+// --- Shifts (ورديات الكاشير) ---
+export const shifts = pgTable('shifts', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    userId: uuid('user_id').references(() => users.id).notNull(), // Cashier
+    shiftNumber: integer('shift_number').notNull(), // 1, 2, 3...
+
+    startTime: timestamp('start_time').defaultNow().notNull(),
+    endTime: timestamp('end_time'),
+
+    startBalance: decimal('start_balance', { precision: 15, scale: 2 }).default('0.00').notNull(), // رصيد بداية الوردية
+    endBalance: decimal('end_balance', { precision: 15, scale: 2 }).default('0.00'), // الرصيد الفعلي عند الإغلاق (الجرد)
+
+    // System Calculated Totals (للمقارنة عند الإغلاق)
+    systemCashBalance: decimal('system_cash_balance', { precision: 15, scale: 2 }).default('0.00'),
+    systemVisaBalance: decimal('system_visa_balance', { precision: 15, scale: 2 }).default('0.00'),
+    systemUnpaidBalance: decimal('system_unpaid_balance', { precision: 15, scale: 2 }).default('0.00'), // الآجل
+
+    status: text('status').default('open').notNull(), // open, closed
+    notes: text('notes'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const shiftsRelations = relations(shifts, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [shifts.tenantId],
+        references: [tenants.id],
+    }),
+    user: one(users, {
+        fields: [shifts.userId],
+        references: [users.id],
+    }),
+    invoices: many(invoices),
+    vouchers: many(vouchers),
 }));

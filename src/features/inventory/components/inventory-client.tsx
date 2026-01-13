@@ -6,6 +6,7 @@ import { Package, Search, CloudOff, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EditProductDialog } from "@/features/inventory/components/edit-product-dialog";
+import { BarcodePrintDialog } from "@/features/inventory/components/barcode-print-dialog";
 import { mirrorData, getLocalData, STORES } from "@/lib/offline-db";
 import { toast } from "sonner";
 
@@ -121,7 +122,10 @@ export function InventoryClient({ initialProducts, dict }: { initialProducts: an
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-end">
-                                        <EditProductDialog product={product} />
+                                        <div className="flex items-center justify-end gap-1">
+                                            <BarcodePrintDialog product={product} />
+                                            <EditProductDialog product={product} />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )
@@ -161,7 +165,8 @@ export function InventoryClient({ initialProducts, dict }: { initialProducts: an
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex justify-end pt-2 border-t">
+                            <div className="flex justify-end pt-2 border-t gap-2">
+                                <BarcodePrintDialog product={product} />
                                 <EditProductDialog product={product} />
                             </div>
                         </div>

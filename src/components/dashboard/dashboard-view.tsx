@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Activity, CreditCard, DollarSign, Users, Package, TrendingUp, AlertTriangle, Calendar, Plus, FileText, ShoppingCart, Wallet, Truck } from "lucide-react";
+import { Activity, CreditCard, DollarSign, Users, Package, TrendingUp, AlertTriangle, Calendar, Plus, FileText, ShoppingCart, ShoppingBag, Wallet, Truck } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/components/providers/i18n-provider";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
@@ -185,15 +185,18 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
             </div>
 
             {/* Stats Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Revenue Card */}
                 <CardWrapper icon={<DollarSign className="h-5 w-5" />} color="blue" title={dict.Dashboard.TotalRevenue} value={Number(stats.totalRevenue).toLocaleString()} suffix="EGP" trend="+12.5%" trendText={dict.Dashboard.CompareLastMonth} />
 
                 {/* Receivables Card (New) */}
                 <CardWrapper icon={<Wallet className="h-5 w-5" />} color="emerald" title={dict.Dashboard.Receivables} value={Number(stats.totalReceivables).toLocaleString()} suffix="EGP" pill={dict.Dashboard.Due} />
 
+                {/* Avg Basket Card (New KPI) */}
+                <CardWrapper icon={<ShoppingBag className="h-5 w-5" />} color="purple" title={dict.Dashboard?.AvgBasket || "Avg Basket"} value={stats.avgBasket} suffix="EGP" pill={dict.Dashboard?.Today || "Today"} />
+
                 {/* Invoices Card */}
-                <CardWrapper icon={<CreditCard className="h-5 w-5" />} color="purple" title={dict.Dashboard.SalesInvoices} value={stats.invoicesCount} suffix={dict.Dashboard.Invoice} trend="+2" />
+                <CardWrapper icon={<CreditCard className="h-5 w-5" />} color="blue" title={dict.Dashboard.SalesInvoices} value={stats.invoicesCount} suffix={dict.Dashboard.Invoice} trend="+2" />
 
                 {/* Products Card */}
                 <CardWrapper icon={<Package className="h-5 w-5" />} color="orange" title={dict.Dashboard.ActiveProducts} value={stats.activeProducts} suffix={dict.Dashboard.Item} pill={dict.Dashboard.Active} />
@@ -268,24 +271,58 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                 {dict.Dashboard.QuickActions}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 grid grid-cols-2 gap-4">
-                            <Link href="/dashboard/sales/create" className="group">
-                                <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-dashed border-gray-200 hover:border-blue-500/50 hover:bg-blue-50/50 transition-all duration-300 cursor-pointer">
-                                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                        <Plus className="h-6 w-6" />
+                        <CardContent className="p-4 grid grid-cols-2 gap-3">
+
+                            {/* 1. New Sale (Hero Action) */}
+                            <Link href="/dashboard/sales/create" className="col-span-2 group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] hover:shadow-xl">
+                                <div className="absolute right-0 top-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
+                                <div className="relative flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-lg font-black tracking-tight">{dict.Dashboard.NewInvoice || "فاتورة بيع جديدة"}</span>
+                                        <span className="text-xs font-medium text-emerald-100 opacity-90">{dict.Dashboard.NewInvoiceDesc || "تسجيل عملية بيع"}</span>
                                     </div>
-                                    <span className="font-medium text-sm text-slate-700">{dict.Dashboard.NewInvoice}</span>
+                                    <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                        <ShoppingCart className="h-6 w-6 text-white" />
+                                    </div>
                                 </div>
                             </Link>
 
-                            <Link href="/dashboard/journal/new" className="group">
-                                <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-dashed border-gray-200 hover:border-purple-500/50 hover:bg-purple-50/50 transition-all duration-300 cursor-pointer">
-                                    <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
-                                        <FileText className="h-6 w-6" />
-                                    </div>
-                                    <span className="font-medium text-sm text-slate-700">{dict.Sidebar.JournalEntries}</span>
+                            {/* 2. Products */}
+                            <Link href="/dashboard/products" className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 text-white shadow-md shadow-indigo-100 transition-all hover:scale-[1.02]">
+                                <div className="relative flex flex-col items-center text-center gap-2">
+                                    <Package className="h-8 w-8 text-indigo-100 opacity-80" />
+                                    <span className="text-sm font-bold">{dict.Sidebar.Inventory || "المخزون والمنتجات"}</span>
                                 </div>
                             </Link>
+
+                            {/* 3. Customers */}
+                            <Link href="/dashboard/customers" className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 text-white shadow-md shadow-purple-100 transition-all hover:scale-[1.02]">
+                                <div className="relative flex flex-col items-center text-center gap-2">
+                                    <Users className="h-8 w-8 text-purple-100 opacity-80" />
+                                    <span className="text-sm font-bold">{dict.Sidebar.Customers || "العملاء"}</span>
+                                </div>
+                            </Link>
+
+                            {/* 4. Purchases (Blue) */}
+                            <Link href="/dashboard/purchases" className="group relative overflow-hidden rounded-xl bg-white border border-blue-100 p-4 shadow-sm transition-all hover:bg-blue-50/50 hover:border-blue-200">
+                                <div className="flex flex-col items-center text-center gap-2">
+                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                        <Truck className="h-5 w-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">{dict.Sidebar.Purchases || "المشتريات"}</span>
+                                </div>
+                            </Link>
+
+                            {/* 5. Expenses / Journal (Orange) */}
+                            <Link href="/dashboard/journal/new" className="group relative overflow-hidden rounded-xl bg-white border border-orange-100 p-4 shadow-sm transition-all hover:bg-orange-50/50 hover:border-orange-200">
+                                <div className="flex flex-col items-center text-center gap-2">
+                                    <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                        <Wallet className="h-5 w-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">{dict.Sidebar.JournalEntries || "المصروفات"}</span>
+                                </div>
+                            </Link>
+
                         </CardContent>
                     </Card>
 
@@ -371,6 +408,36 @@ export function DashboardView({ initialData, session }: { initialData: Dashboard
                                 ) : (
                                     <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
                                         {dict.Dashboard.NoDuePurchases}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Upcoming Installments (New) */}
+                            <div className="space-y-3 mt-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-400 flex items-center gap-2">
+                                    <Calendar size={14} /> تحصيل الأقساط القادمة
+                                </h4>
+                                <div className="bg-orange-50 border border-orange-100 p-3 rounded-xl mb-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-orange-800">إجمالي المطلوب تحصيله</span>
+                                        <span className="text-sm font-black text-orange-900">{Number(stats.upcomingInstallmentsTotal || 0).toLocaleString()} EGP</span>
+                                    </div>
+                                </div>
+                                {stats.upcomingInstallments && stats.upcomingInstallments.length > 0 ? (
+                                    stats.upcomingInstallments.map((inst: any) => (
+                                        <Link key={inst.id} href={`/dashboard/installments`} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100 group transition-all hover:bg-orange-50 hover:border-orange-200 block">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-900">{inst.customer}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold">استحقاق: {inst.due}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-sm font-black text-slate-700 font-mono">{Number(inst.amount).toLocaleString()}</span>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="text-xs text-center text-gray-400 py-2 italic border border-dashed rounded-lg">
+                                        لا توجد أقساط قادمة
                                     </div>
                                 )}
                             </div>

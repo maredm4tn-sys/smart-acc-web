@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import {
     DollarSign, Calendar, TrendingUp, Users, Truck, RefreshCw,
     Package, FileText, ArrowRightLeft, PieChart, Wallet,
-    ShoppingBag, Receipt, Scale, Landmark, Coins, ArrowDownRight, ArrowUpRight, ShieldCheck
+    ShoppingBag, Receipt, Scale, Landmark, Coins, ArrowDownRight, ArrowUpRight, ShieldCheck, TrendingDown
 } from "lucide-react";
 import { syncAllPurchasesToLedger } from "@/features/purchases/sync-action";
 import { toast } from "sonner";
 import { getSalesSummary } from "@/features/reports/actions";
+import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect } from "react";
 import { getLicenseAction } from "@/features/admin/license-actions";
@@ -31,12 +32,6 @@ export default function ReportsClient({ initialSummary, dict }: ReportsClientPro
         getLicenseAction().then(l => setIsActivated(l.isActivated));
     }, []);
 
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'EGP',
-        }).format(val);
-    };
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -197,6 +192,12 @@ export default function ReportsClient({ initialSummary, dict }: ReportsClientPro
                     <PieChart className="mb-2 text-teal-600 group-hover:text-teal-900" />
                     <span className="text-sm font-bold text-slate-800">{dict.Reports.Statements.DepartmentSales}</span>
                 </Link>
+                <Link href="/dashboard/reports/stagnant-stock" className="bg-amber-50 hover:bg-amber-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center transition-all border border-amber-200 group">
+                    <TrendingDown className="mb-2 text-amber-600 group-hover:text-amber-900" />
+                    <span className="text-sm font-bold text-slate-800">{dict.Reports?.StagnantStock?.Title || "Stagnant Stock"}</span>
+                </Link>
+
+
 
                 {/* The New Compact Tax Section */}
                 <Link href="#" className="bg-violet-50 hover:bg-violet-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center transition-all border border-violet-200 group col-span-2 lg:col-span-4">

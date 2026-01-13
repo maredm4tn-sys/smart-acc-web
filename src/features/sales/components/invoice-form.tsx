@@ -6,7 +6,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Save, Printer } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,14 +28,32 @@ interface CustomerOption {
     name: string;
 }
 
-import { ProductCombobox } from "./product-combobox";
+interface RepresentativeOption {
+    id: number;
+    name: string;
+    type: "sales" | "delivery";
+}
 
-export function InvoiceForm({ products, customers }: { products: ProductOption[], customers: CustomerOption[] }) {
+import { ProductCombobox } from "./product-combobox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+export function InvoiceForm({ products, customers, representatives = [], settings }: {
+    products: ProductOption[],
+    customers: CustomerOption[],
+    representatives?: RepresentativeOption[],
+    settings?: any
+}) {
     const { dict: rawDict } = useTranslation();
     const dict = rawDict as any;
     const router = useRouter();
     const { mutate } = useSWRConfig();
     const [totals, setTotals] = useState({ subtotal: 0, tax: 0, total: 0 });
+    const [autoPrint, setAutoPrint] = useState(true);
+    const [printLayout, setPrintLayout] = useState<'standard' | 'thermal'>(settings?.defaultPrintSales || 'standard');
+    const printFrameRef = useRef<HTMLIFrameElement>(null);
 
 
     // ... existing ...
@@ -46,6 +64,12 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         exchangeRate: z.number().min(0.000001, dict.Sales.Invoice.Form.Errors.RatePositive),
         includeTax: z.boolean(),
         initialPayment: z.number().min(0).optional(),
+        discountAmount: z.number().min(0).default(0), // Added Discount
+        representativeId: z.coerce.number().optional().nullable(), // Sales Rep
+        // Installment Fields
+        isInstallment: z.boolean().default(false),
+        installmentCount: z.number().min(0).default(0),
+        installmentInterest: z.number().min(0).default(0),
         items: z.array(z.object({
             productId: z.string().min(1, dict.Sales.Invoice.Form.Errors.ProductRequired),
             description: z.string().optional(),
@@ -56,15 +80,19 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
 
     type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
-    const { control, register, handleSubmit, watch, setValue, setFocus, reset, formState: { errors, isSubmitting } } = useForm<InvoiceFormValues>({
+    const { control, register, handleSubmit, watch, setValue, setFocus, reset, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(invoiceSchema),
         defaultValues: {
-            customerName: "",
+            customerName: "عميل نقدي",
             issueDate: new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
             currency: "EGP",
             exchangeRate: 1,
             includeTax: false,
             initialPayment: 0,
+            discountAmount: 0,
+            isInstallment: false,
+            installmentCount: 12,
+            installmentInterest: 0,
             items: [
                 { productId: "", description: "", quantity: 1, unitPrice: 0 }
             ]
@@ -77,9 +105,13 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
     });
 
     const watchedItems = useWatch({ control, name: "items" });
-    const selectedCurrency = watch("currency");
+    const isInstallment = watch("isInstallment");
+    const installmentCount = watch("installmentCount") || 1;
+    const installmentInterest = watch("installmentInterest") || 0;
     const includeTax = watch("includeTax");
+    const selectedCurrency = watch("currency");
     const initialPayment = useWatch({ control, name: "initialPayment" }) || 0;
+    const discountAmount = useWatch({ control, name: "discountAmount" }) || 0;
 
     // Calculate totals live
     useEffect(() => {
@@ -91,19 +123,26 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
         }, 0);
 
         const tax = includeTax ? sub * 0.14 : 0;
-        const total = sub + tax;
+        let total = (sub + tax) - discountAmount;
+
+        // Add Interest if installment
+        if (isInstallment && installmentInterest > 0) {
+            total = total + (total * (installmentInterest / 100));
+        }
 
         setTotals({
             subtotal: sub,
             tax: tax,
             total: total
         });
-    }, [watchedItems, includeTax]);
+    }, [watchedItems, includeTax, isInstallment, installmentInterest, discountAmount]);
 
-    // FORCE Auto-fill Payment to match Total (Separate Effect for Reliability)
+    // FORCE Auto-fill Payment to match Total (Only if NOT installment)
     useEffect(() => {
-        setValue("initialPayment", Number(totals.total.toFixed(2)), { shouldValidate: true });
-    }, [totals.total, setValue]);
+        if (!isInstallment) {
+            setValue("initialPayment", Number(totals.total.toFixed(2)), { shouldValidate: true });
+        }
+    }, [totals.total, setValue, isInstallment]);
 
     const onProductChange = (index: number, productId: string) => {
         const prod = products.find(p => p.id.toString() === productId);
@@ -183,22 +222,37 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                 // CRITICAL: Set ID immediately for print button
                 if (res.id) {
                     setCreatedInvoiceId(res.id);
+
+                    // Auto-print logic using window.open
+                    if (autoPrint) {
+                        const printUrl = `/print/sales/${res.id}?type=${printLayout}&auto=true&t=${Date.now()}`;
+                        const printWindow = window.open(printUrl, 'invoice_print_window', 'width=400,height=600,left=1000,top=1000');
+                        if (printWindow) {
+                            setTimeout(() => {
+                                try { if (!printWindow.closed) printWindow.close(); } catch (e) { }
+                            }, 3000);
+                        }
+                    }
                 }
 
                 // Refresh Data
                 mutate('invoices-list');
                 mutate('dashboard-stats');
 
-                // Auto-Clear Form
-                reset({
-                    customerName: "",
-                    issueDate: new Date().toISOString().split('T')[0],
-                    currency: "EGP",
-                    exchangeRate: 1,
-                    includeTax: false,
-                    initialPayment: 0,
-                    items: [{ productId: "", description: "", quantity: 1, unitPrice: 0 }]
-                });
+                // Auto-Clear Form with delay to ensure print triggers
+                setTimeout(() => {
+                    reset({
+                        customerName: "عميل نقدي",
+                        issueDate: new Date().toISOString().split('T')[0],
+                        currency: "EGP",
+                        exchangeRate: 1,
+                        includeTax: false,
+                        initialPayment: 0,
+                        discountAmount: 0,
+                        items: [{ productId: "", description: "", quantity: 1, unitPrice: 0 }]
+                    });
+                    setCreatedInvoiceId(null);
+                }, 2000);
             } else {
                 // Only show error if success is explicitly false or missing
                 toast.error(res?.message || dict.Settings.Form.Error);
@@ -253,6 +307,29 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                         <Input type="date" {...register("issueDate")} />
                         {errors.issueDate && <p className="text-red-500 text-xs mt-1">{errors.issueDate.message}</p>}
                     </div>
+
+                    {/* Representative Selection */}
+                    <div>
+                        <label className="text-sm font-medium mb-1 block">{(dict as any).Representatives?.MenuLabel || "Representative"}</label>
+                        <Select
+                            onValueChange={(val) => {
+                                setValue("representativeId", parseInt(val));
+                            }}
+                            defaultValue={watch("representativeId")?.toString()}
+                        >
+                            <SelectTrigger className="bg-white">
+                                <SelectValue placeholder={(dict as any).Representatives?.SearchPlaceholder || "Select Representative"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {representatives.map((rep) => (
+                                    <SelectItem key={rep.id} value={rep.id.toString()}>
+                                        {rep.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div>
                         <label className="text-sm font-medium mb-1 block">{dict.Sales.Invoice.Form.Currency}</label>
                         <select
@@ -276,19 +353,52 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                             {errors.exchangeRate && <p className="text-red-500 text-xs mt-1">{errors.exchangeRate.message}</p>}
                         </div>
                     )}
-                    {/* Tax Toggle */}
-                    <div className="flex items-center gap-2 pt-6">
-                        <input
-                            type="checkbox"
-                            id="includeTax"
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            {...register("includeTax")}
-                        />
-                        <label htmlFor="includeTax" className="text-sm font-medium cursor-pointer">
-                            {dict.Sales.Invoice.Form.IncludeTax}
-                        </label>
+                    {/* Tax & Installment Toggles */}
+                    <div className="flex flex-col gap-2 pt-2">
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="includeTax"
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                {...register("includeTax")}
+                            />
+                            <label htmlFor="includeTax" className="text-sm font-medium cursor-pointer">
+                                {dict.Sales.Invoice.Form.IncludeTax}
+                            </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="isInstallment"
+                                className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                {...register("isInstallment")}
+                            />
+                            <label htmlFor="isInstallment" className="text-sm font-bold text-orange-600 cursor-pointer">
+                                💳 {dict.Sales.Invoice.Form.IsInstallment}
+                            </label>
+                        </div>
                     </div>
                 </div>
+
+                {/* Installment Details Panel */}
+                {isInstallment && (
+                    <div className="bg-orange-50 border border-orange-200 p-4 rounded-md grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                            <label className="text-sm font-bold text-orange-800 mb-1 block">{dict.Sales.Invoice.Form.InstallmentMonths}</label>
+                            <Input type="number" {...register("installmentCount", { valueAsNumber: true })} min="1" className="bg-white border-orange-200" />
+                        </div>
+                        <div>
+                            <label className="text-sm font-bold text-orange-800 mb-1 block">{dict.Sales.Invoice.Form.InstallmentInterest}</label>
+                            <Input type="number" step="0.1" {...register("installmentInterest", { valueAsNumber: true })} min="0" className="bg-white border-orange-200" />
+                        </div>
+                        <div className="bg-white p-2 rounded border border-orange-200 flex flex-col justify-center items-center">
+                            <span className="text-xs text-orange-600 font-bold">{dict.Sales.Invoice.Form.ExpectedMonthlyInstallment}</span>
+                            <span className="text-xl font-black text-orange-700 font-mono">
+                                {((totals.total - initialPayment) / (installmentCount || 1)).toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Lines Table */}
                 <Card>
@@ -370,6 +480,14 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                                 <span className="text-muted-foreground">{dict.Sales.Invoice.Form.Tax} (14%):</span>
                                 <span className="font-mono">{totals.tax.toFixed(2)}</span>
                             </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{(dict as any).Sales?.Invoice?.Form?.Discount || "الخصم"}:</span>
+                                <Input
+                                    type="number"
+                                    className="w-24 h-7 text-right font-mono text-xs border-green-200 bg-green-50/10 focus:bg-white"
+                                    {...register("discountAmount", { valueAsNumber: true })}
+                                />
+                            </div>
                             <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
                                 <span>{dict.Sales.Invoice.Form.GrandTotal}:</span>
                                 <span className="text-primary font-mono text-xl">{totals.total.toFixed(2)}</span>
@@ -399,7 +517,33 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end items-center gap-6">
+                    {/* Print Layout Toggle */}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase text-center block mb-1">
+                            {(dict as any).Sales?.Invoice?.Form?.PrintLayout || "نمط الطباعة"}
+                        </label>
+                        <Tabs value={printLayout} onValueChange={(v: any) => setPrintLayout(v)} className="w-32">
+                            <TabsList className="grid grid-cols-2 h-8 w-full">
+                                <TabsTrigger value="standard" className="text-[10px] font-bold" title="A4 Layout">A4</TabsTrigger>
+                                <TabsTrigger value="thermal" className="text-[10px] font-bold" title="Thermal Layout">📟</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+
+                    {/* Auto-print Toggle */}
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="auto-print-invoice"
+                            checked={autoPrint}
+                            onCheckedChange={(val) => setAutoPrint(val as boolean)}
+                            className="w-5 h-5"
+                        />
+                        <Label htmlFor="auto-print-invoice" className="font-bold text-slate-600 cursor-pointer">
+                            {(dict as any).Sales?.Invoice?.Form?.AutoPrint || "طباعة تلقائية"}
+                        </Label>
+                    </div>
+
                     {createdInvoiceId && (
                         <Button
                             type="button"
@@ -417,6 +561,14 @@ export function InvoiceForm({ products, customers }: { products: ProductOption[]
                         <span>{dict.Sales.Invoice.Form.Submit} (F2)</span>
                     </Button>
                 </div>
+
+                {/* Hidden Print Iframe */}
+                <iframe
+                    ref={printFrameRef}
+                    name="invoice_print_frame"
+                    title="Invoice Printing"
+                    style={{ position: 'fixed', right: '-1000px', bottom: '-1000px', width: '10px', height: '10px', opacity: 0, border: 'none' }}
+                />
             </form>
         </div>
     );

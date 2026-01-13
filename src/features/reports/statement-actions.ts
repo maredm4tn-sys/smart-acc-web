@@ -2,7 +2,7 @@
 "use server";
 
 import { db } from "@/db";
-import { customers, invoices, journalEntries, journalLines, suppliers, accounts } from "@/db/schema";
+import { customers, invoices, journalEntries, journalLines, suppliers, accounts, installments } from "@/db/schema";
 import { and, eq, gte, lte, desc, asc, sql } from "drizzle-orm";
 import { getSession } from "@/features/auth/actions";
 import { getActiveTenantId } from "@/lib/actions-utils";
@@ -169,11 +169,28 @@ export async function getCustomerStatement(
         // Fallback if no linked account found yet (rare if system is consistent)
         return {
             statement: [],
-            entity: { name: targetEntityName, code: 'N/A', error: "لم يتم العثور على حساب مالي مرتبط بهذا الاسم. يرجى تعديل أحد قيود الجهة وحفظه لتوليد الحساب." },
+            entity: { name: targetEntityName, code: 'N/A', error: "لم يتم العثور على حساب مالي مرتبط بهذا الاسم." },
             openingBalance: 0,
             closingBalance: 0
         };
     }
 
-    return getAccountStatement(account.id, startDate, endDate);
+    const statementData = await getAccountStatement(account.id, startDate, endDate);
+
+    // Fetch Installments for this customer
+    const userInstallments = await db.select({
+        dueDate: installments.dueDate,
+        amount: installments.amount,
+        status: installments.status,
+        invoiceNumber: invoices.invoiceNumber
+    })
+        .from(installments)
+        .innerJoin(invoices, eq(installments.invoiceId, invoices.id))
+        .where(and(eq(installments.customerId, cleanId), eq(installments.tenantId, tenantId)))
+        .orderBy(asc(installments.dueDate));
+
+    return {
+        ...statementData,
+        installments: userInstallments
+    };
 }

@@ -15,7 +15,13 @@ const createCustomerSchema = z.object({
     email: z.string().optional(), // Relaxed validation
     address: z.string().optional(),
     taxId: z.string().optional(),
-    tenantId: z.string().optional()
+    nationalId: z.string().optional(),
+    creditLimit: z.coerce.number().optional().default(0),
+    paymentDay: z.coerce.number().min(1).max(31).optional(),
+    tenantId: z.string().optional(),
+    openingBalance: z.coerce.number().optional().default(0),
+    priceLevel: z.enum(['retail', 'wholesale', 'half_wholesale', 'special']).default('retail'),
+    representativeId: z.coerce.number().optional().nullable() // Added
 });
 
 type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
@@ -27,7 +33,6 @@ export async function deleteCustomer(id: number) {
     if (!tenantId) return { success: false, message: dict.Common.Error };
 
     try {
-        // Find customer and check for invoices by name (as per the code's pattern)
         const customer = await db.query.customers.findFirst({
             where: and(eq(customers.id, id), eq(customers.tenantId, tenantId))
         });
@@ -63,6 +68,7 @@ export async function updateCustomer(id: number, data: Partial<CreateCustomerInp
 }
 
 export async function createCustomer(inputData: CreateCustomerInput) {
+    console.log("🚀 [Server Action] createCustomer called with:", inputData);
     const dict = await getDictionary();
 
     const validation = createCustomerSchema.safeParse(inputData);
@@ -88,14 +94,22 @@ export async function createCustomer(inputData: CreateCustomerInput) {
             email: data.email,
             address: data.address,
             taxId: data.taxId,
+            nationalId: data.nationalId,
+            creditLimit: data.creditLimit,
+            paymentDay: data.paymentDay,
+            openingBalance: data.openingBalance,
+            priceLevel: data.priceLevel,
+            representativeId: data.representativeId, // Added
             tenantId: tenantId
         });
 
         revalidatePath("/dashboard/customers");
         return { success: true, message: dict.Dialogs.AddCustomer.Success };
-    } catch (error) {
-        console.error("Error creating customer:", error);
-        return { success: false, message: dict.Dialogs.AddCustomer.Error };
+    } catch (error: any) {
+        const mode = process.env.NEXT_PUBLIC_APP_MODE;
+        const dbInfo = process.env.DATABASE_URL ? "HasPG" : "NoPG";
+        console.error("CRITICAL ERROR in createCustomer:", error);
+        return { success: false, message: `${dict.Dialogs.AddCustomer.Error} (${error.message || "Unknown"}) [Mode:${mode}, DB:${dbInfo}]` };
     }
 }
 
@@ -105,11 +119,6 @@ export async function getCustomers() {
         const session = await getSession();
         // FIX: Prioritize session tenant
         const tenantId = session?.tenantId || await getActiveTenantId();
-
-        // Calculate Debt: Sum of (Total - Paid) for all 'unpaid'/'partial' invoices
-        // We can do this via raw SQL or robust logic. 
-        // For type safety with Drizzle, let's fetch customers and their invoices or use a raw query if relation heavily nested.
-        // Simplest V2 approach:
 
         const isPg = !!(process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL);
         const castNum = (col: any) => isPg ? sql`CAST(${col} AS DOUBLE PRECISION)` : sql`CAST(${col} AS REAL)`;
@@ -122,12 +131,30 @@ export async function getCustomers() {
             email: customers.email,
             address: customers.address,
             taxId: customers.taxId,
-            totalDebt: sql<number>`COALESCE(SUM(${castNum(invoices.totalAmount)} - COALESCE(${castNum(invoices.amountPaid)}, 0)), 0)`
+            nationalId: customers.nationalId,
+            creditLimit: customers.creditLimit,
+            paymentDay: customers.paymentDay,
+            openingBalance: customers.openingBalance,
+            representativeId: customers.representativeId, // Added
+            totalDebt: sql<number>`COALESCE(${castNum(customers.openingBalance)}, 0) + COALESCE(SUM(${castNum(invoices.totalAmount)} - COALESCE(${castNum(invoices.amountPaid)}, 0)), 0)`
         })
             .from(customers)
             .leftJoin(invoices, eq(customers.name, invoices.customerName)) // ideally join on ID, but schema uses name currently
             .where(eq(customers.tenantId, tenantId))
-            .groupBy(customers.id);
+            .groupBy(
+                customers.id,
+                customers.openingBalance,
+                customers.nationalId,
+                customers.creditLimit,
+                customers.paymentDay,
+                customers.name,
+                customers.companyName,
+                customers.phone,
+                customers.email,
+                customers.address,
+                customers.taxId,
+                customers.representativeId // Added to group by
+            );
 
         return rows.map(r => ({
             ...r,
@@ -136,6 +163,92 @@ export async function getCustomers() {
     } catch (error) {
         console.error("Get Customers Error:", error);
         return [];
+    }
+}
+
+export async function getCustomerStatement(id: number, dateRange?: { from: Date, to: Date }) {
+    const session = await getSession();
+    if (!session?.tenantId) return null;
+    const { tenantId } = session;
+
+    try {
+        const customer = await db.query.customers.findFirst({
+            where: and(eq(customers.id, id), eq(customers.tenantId, tenantId))
+        });
+
+        if (!customer) return null;
+
+        // Fetch Invoices (Debit to Customer)
+        // Sales Invoice -> Customer owes money -> Debit
+        const invoicesData = await db.select().from(invoices)
+            .where(and(
+                eq(invoices.customerName, customer.name), // ideally link by ID
+                eq(invoices.tenantId, tenantId)
+            ));
+
+        // Fetch Receipts (Credit to Customer)
+        // Customer pays -> Credit
+        const { vouchers } = await import("@/db/schema");
+        const receiptsData = await db.select().from(vouchers)
+            .where(and(
+                eq(vouchers.partyType, 'customer'),
+                eq(vouchers.partyId, id),
+                eq(vouchers.tenantId, tenantId)
+            ));
+
+        let transactions = [
+            ...invoicesData.map(inv => ({
+                id: `INV-${inv.id}`,
+                date: new Date(inv.issueDate),
+                type: 'INVOICE',
+                ref: inv.invoiceNumber,
+                description: `Sales Invoice #${inv.invoiceNumber}`,
+                debit: Number(inv.totalAmount),
+                credit: 0
+            })),
+            ...receiptsData.map(pay => ({
+                id: `VCH-${pay.id}`,
+                date: new Date(pay.date),
+                type: pay.type === 'receipt' ? 'RECEIPT' : 'PAYMENT', // Receipt = money in
+                ref: pay.voucherNumber,
+                description: pay.description || 'Receipt',
+                debit: pay.type === 'payment' ? Number(pay.amount) : 0, // Refund?
+                credit: pay.type === 'receipt' ? Number(pay.amount) : 0 // Normal payment from customer
+            }))
+        ];
+
+        // Sort
+        transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        // Calculate balances
+        let balance = Number(customer.openingBalance) || 0;
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        // Opening Balance: Positive = Debit (He owes us), Negative = Credit (We owe him/Prepaid)
+
+        const statement = transactions.map(t => {
+            // Debit increases balance (he owes more), Credit decreases it (he paid)
+            balance += (t.debit - t.credit);
+            totalDebit += t.debit;
+            totalCredit += t.credit;
+            return { ...t, balance };
+        });
+
+        return {
+            customer,
+            openingBalance: Number(customer.openingBalance) || 0,
+            transactions: statement,
+            summary: {
+                totalDebit,
+                totalCredit,
+                netBalance: balance
+            }
+        };
+
+    } catch (e) {
+        console.error("getCustomerStatement Error", e);
+        return null;
     }
 }
 

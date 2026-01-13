@@ -9,27 +9,42 @@ import { getDictionary } from "@/lib/i18n-server";
 import { categories } from "@/db/schema";
 
 // Re-declaring for external usage compatibility if needed, though usually inferred from schema
+// Re-declaring for external usage compatibility if needed, though usually inferred from schema
 type CreateProductInput = {
     name: string;
     sku: string;
+    barcode?: string;
     type: "goods" | "service";
     sellPrice: number;
     buyPrice: number;
+    priceWholesale?: number;
+    priceHalfWholesale?: number;
+    priceSpecial?: number;
     stockQuantity: number;
+    minStock?: number;
+    location?: string;
     requiresToken?: boolean;
     categoryId?: number;
+    unitId?: number;
     tenantId: string;
 };
 
 const createProductSchema = z.object({
     name: z.string().min(1),
     sku: z.string().min(1),
+    barcode: z.string().optional(),
     type: z.enum(["goods", "service"]),
     sellPrice: z.number().nonnegative(),
     buyPrice: z.number().nonnegative(),
+    priceWholesale: z.number().nonnegative().optional().default(0),
+    priceHalfWholesale: z.number().nonnegative().optional().default(0),
+    priceSpecial: z.number().nonnegative().optional().default(0),
     stockQuantity: z.number().int(),
+    minStock: z.number().int().optional().default(0),
+    location: z.string().optional(),
     requiresToken: z.boolean().optional().default(false),
     categoryId: z.number().int().optional(),
+    unitId: z.number().int().optional(),
     tenantId: z.string().optional()
 });
 
@@ -52,8 +67,8 @@ export async function createProduct(inputData: CreateProductInput) {
         // FIX: Prefer session tenantId, fallback to provided or active utils
         const tenantId = session.tenantId || await getActiveTenantId(data.tenantId);
 
-        // 1. Check SKU uniqueness
-        const existingList = await db.select().from(products)
+        // 1. Check SKU uniqueness - select ONLY id to be safe
+        const existingList = await db.select({ id: products.id }).from(products)
             .where(and(eq(products.sku, data.sku), eq(products.tenantId, tenantId)))
             .limit(1);
 
@@ -66,12 +81,19 @@ export async function createProduct(inputData: CreateProductInput) {
             tenantId: tenantId,
             name: data.name,
             sku: data.sku,
+            barcode: data.barcode,
             type: data.type,
             sellPrice: data.sellPrice.toString(),
             buyPrice: data.buyPrice.toString(),
+            priceWholesale: data.priceWholesale.toString(),
+            priceHalfWholesale: data.priceHalfWholesale.toString(),
+            priceSpecial: data.priceSpecial.toString(),
             stockQuantity: data.stockQuantity.toString(),
-            requiresToken: data.requiresToken || false,
+            minStock: data.minStock,
+            requiresToken: data.requiresToken,
             categoryId: data.categoryId,
+            unitId: data.unitId,
+            location: data.location,
         });
 
         try {
@@ -118,8 +140,8 @@ export async function updateProduct(data: UpdateProductInput) {
                 sellPrice: data.sellPrice.toString(),
                 buyPrice: data.buyPrice.toString(),
                 stockQuantity: data.stockQuantity.toString(),
-                requiresToken: data.requiresToken !== undefined ? data.requiresToken : undefined,
-                categoryId: data.categoryId,
+                // requiresToken: data.requiresToken !== undefined ? data.requiresToken : undefined,
+                // categoryId: data.categoryId,
             })
             .where(and(eq(products.id, data.id), eq(products.tenantId, tenantId)));
 
@@ -152,48 +174,53 @@ export async function bulkImportProducts(productsList: { name: string; sku?: str
 
         if (!productsList || productsList.length === 0) return { success: false, message: dict.Common.Error };
 
-        let successCount = 0;
-        let errors = [];
+        // 1. Get all existing SKUs for this tenant to avoid N+1 queries
+        const existingProducts = await db.select({ sku: products.sku })
+            .from(products)
+            .where(eq(products.tenantId, tenantId));
+
+        const existingSkus = new Set(existingProducts.map(p => p.sku));
+        const toInsert = [];
+        let skippedCount = 0;
 
         for (let i = 0; i < productsList.length; i++) {
             const p = productsList[i];
-            // Auto-generate SKU if missing or empty
             const skuToUse = p.sku && p.sku.trim() !== ""
                 ? p.sku
                 : `PROD-${Date.now()}-${Math.floor(Math.random() * 10000)}-${i}`;
 
-            try {
-                // Check if SKU exists
-                const existing = await db.query.products.findFirst({
-                    where: (prod, { and, eq }) => and(eq(prod.sku, skuToUse), eq(prod.tenantId, tenantId))
-                });
+            if (existingSkus.has(skuToUse)) {
+                skippedCount++;
+                continue;
+            }
 
-                if (existing) {
-                    errors.push(`Skipped ${skuToUse} (Exists)`);
-                    continue;
-                }
+            toInsert.push({
+                tenantId: tenantId,
+                name: p.name,
+                sku: skuToUse,
+                type: "goods" as const,
+                sellPrice: p.sellPrice.toString(),
+                buyPrice: p.buyPrice.toString(),
+                stockQuantity: p.stockQuantity.toString(),
+            });
 
-                await db.insert(products).values({
-                    tenantId: tenantId,
-                    name: p.name,
-                    sku: skuToUse,
-                    type: "goods",
-                    sellPrice: p.sellPrice.toString(),
-                    buyPrice: p.buyPrice.toString(),
-                    stockQuantity: p.stockQuantity.toString(),
-                });
-                successCount++;
-            } catch (err) {
-                console.error(`Error importing ${skuToUse}:`, err);
-                errors.push(`Error ${skuToUse}`);
+            // Add to set to prevent duplicates within the same upload
+            existingSkus.add(skuToUse);
+        }
+
+        if (toInsert.length > 0) {
+            // Batch insert in chunks of 50 to avoid hitting placeholder limits
+            const chunk = 50;
+            for (let i = 0; i < toInsert.length; i += chunk) {
+                await db.insert(products).values(toInsert.slice(i, i + chunk));
             }
         }
 
         revalidatePath("/dashboard/inventory");
         return {
             success: true,
-            message: dict.Inventory.ImportDialog.ImportedCount.replace("{count}", successCount.toString()),
-            details: errors.length > 0 ? `${errors.length} skipped/failed.` : undefined
+            message: dict.Inventory.ImportDialog.ImportedCount.replace("{count}", toInsert.length.toString()),
+            details: skippedCount > 0 ? `${skippedCount} skipped (exists).` : undefined
         };
 
     } catch (e) {
@@ -266,6 +293,47 @@ export async function getCategories() {
         const tenantId = session.tenantId || await getActiveTenantId();
 
         const data = await db.select().from(categories).where(eq(categories.tenantId, tenantId));
+        return data;
+    } catch (e) {
+        return [];
+    }
+}
+
+// --- Units Actions ---
+
+import { units } from "@/db/schema";
+import { sql } from "drizzle-orm"; // Ensure sql is imported if needed, usually available via db
+
+export async function createUnit(name: string) {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    try {
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = session.tenantId || await getActiveTenantId();
+
+        const [newUnit] = await db.insert(units).values({
+            tenantId,
+            name,
+        }).returning();
+
+        return { success: true, unit: newUnit };
+    } catch (e: any) {
+        return { success: false, message: e.message };
+    }
+}
+
+export async function getUnits() {
+    const { getSession } = await import("@/features/auth/actions");
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        const { getActiveTenantId } = await import("@/lib/actions-utils");
+        const tenantId = session.tenantId || await getActiveTenantId();
+
+        const data = await db.select().from(units).where(eq(units.tenantId, tenantId));
         return data;
     } catch (e) {
         return [];

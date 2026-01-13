@@ -38,16 +38,22 @@ export function BulkUploadDialog() {
 
             // Map Data
             const productsToImport = jsonData.map((row: any) => {
-                // Try Arabic headers first, transform to clean numbers
-                const name = row['اسم الصنف'] || row['Name'] || row['name'];
-                const buyPrice = parseFloat(row['سعر الشراء'] || row['Buying Price'] || row['buyPrice'] || 0);
-                const sellPrice = parseFloat(row['سعر البيع'] || row['Selling Price'] || row['sellPrice'] || 0);
-                const stock = parseFloat(row['الرصيد'] || row['Stock'] || row['stock'] || 0);
+                // Normalize keys (trim spaces)
+                const cleanRow: any = {};
+                Object.keys(row).forEach(key => {
+                    cleanRow[key.trim()] = row[key];
+                });
 
-                // Allow SKU if provided, otherwise undefined (backend handles it)
-                const sku = row['SKU'] || row['sku']; // Optional
+                // Try Arabic headers first
+                const name = cleanRow['اسم الصنف'] || cleanRow['Name'] || cleanRow['name'];
+                const buyPrice = parseFloat(cleanRow['سعر الشراء'] || cleanRow['Buying Price'] || cleanRow['buyPrice'] || 0);
+                const sellPrice = parseFloat(cleanRow['سعر البيع'] || cleanRow['Selling Price'] || cleanRow['sellPrice'] || 0);
+                const stock = parseFloat(cleanRow['الرصيد'] || cleanRow['Stock'] || cleanRow['stock'] || 0);
 
-                if (!name) return null; // Skip invalid rows without name
+                // SKU can be "الكود" or "SKU"
+                const sku = cleanRow['الكود'] || cleanRow['الكد'] || cleanRow['SKU'] || cleanRow['sku'];
+
+                if (!name) return null;
 
                 return {
                     name: String(name),
@@ -56,7 +62,7 @@ export function BulkUploadDialog() {
                     sellPrice: isNaN(sellPrice) ? 0 : sellPrice,
                     stockQuantity: isNaN(stock) ? 0 : stock,
                 };
-            }).filter(Boolean); // Remove nulls
+            }).filter(Boolean);
 
             if (productsToImport.length === 0) {
                 toast.error(dict.Inventory.ImportDialog.NoValidRows);

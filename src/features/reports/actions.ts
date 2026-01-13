@@ -43,6 +43,20 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
 
     const totalRevenue = (Number(revenueResult[0]?.totalCredit) || 0) - (Number(revenueResult[0]?.totalDebit) || 0);
 
+    // --- Calculate Installment Interest Separately for the Report ---
+    const interestRes = await db.select({
+        totalInterest: sql`SUM(${castNum(invoices.installmentInterest)})`
+    })
+        .from(invoices)
+        .where(and(
+            eq(invoices.tenantId, tenantId),
+            gte(invoices.issueDate, startDate.toISOString().split('T')[0]),
+            lte(invoices.issueDate, endDate.toISOString().split('T')[0]),
+            eq(invoices.isInstallment, true)
+        ));
+
+    const interestIncome = Number(interestRes[0]?.totalInterest || 0);
+
     // 3. Fetch Expenses
     // Expenses = Sum(Debit) - Sum(Credit) WHERE Account.Type = 'expense' AND Date in Range
     const expenseResult = await db
@@ -101,7 +115,7 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
         value: (Number(item.totalDebit) || 0) - (Number(item.totalCredit) || 0)
     })).filter(item => item.value > 0);
 
-    // 6. Detailed Revenue Breakdown
+    // 6. Detailed Revenue Breakdown - Subtract Interest from main sales to show it separate
     const revenueDetails = await db
         .select({
             date: journalEntries.transactionDate,
@@ -132,7 +146,7 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
         )
         .orderBy(desc(journalEntries.transactionDate), desc(journalEntries.id)); // Sort by Date DESC, then ID DESC (Newest First)
 
-    const formattedRevenue = revenueDetails.map(item => ({
+    let formattedRevenue = revenueDetails.map(item => ({
         date: item.date,
         createdAt: item.createdAt, // Pass createdAt
         entryNumber: item.entryNumber, // Pass entryNumber
@@ -141,19 +155,42 @@ export async function getIncomeStatementData(startDate: Date, endDate: Date) {
         value: (Number(item.totalCredit) || 0) - (Number(item.totalDebit) || 0)
     })).filter(item => item.value > 0);
 
-    // Debug logging removed for production safety
-    // try {
-    //     const fs = await import('fs');
-    //     fs.writeFileSync('debug_report_data.json', JSON.stringify({
-    //         expenses: formattedExpenses.slice(0, 5),
-    //         revenue: formattedRevenue.slice(0, 5)
-    //     }, null, 2));
-    // } catch (e) { console.error("Debug Write Failed", e); }
+    // If we have interest income, adjust the first "Sales" item in formattedRevenue (heuristic)
+    // or just add it as a new virtual line item
+    if (interestIncome > 0) {
+        formattedRevenue = formattedRevenue.map(rev => {
+            if (rev.accountName.includes("مبيعات") || rev.accountName.toLocaleLowerCase().includes("sales")) {
+                // This is a bit risky but good for visualization
+                // However, since interest was included in the invoice total which was posted to sales, 
+                // we should deduct the TOTAL interest from the TOTAL sales in the report display.
+            }
+            return rev;
+        });
+
+        // Add virtual interest income row
+        formattedRevenue.push({
+            date: endDate.toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
+            entryNumber: 0,
+            name: "إجمالي فوائد التقسيط (Interest Income)",
+            accountName: "فوائد التقسيط",
+            value: interestIncome
+        });
+
+        // Deduct interest from other revenue rows so total stays correct
+        // We deduct it from the first sales row we find
+        const salesIdx = formattedRevenue.findIndex(r => r.accountName.includes("مبيعات") || r.accountName.toLowerCase().includes("sales"));
+        if (salesIdx !== -1) {
+            formattedRevenue[salesIdx].value -= interestIncome;
+            formattedRevenue[salesIdx].name += " (بعد خصم الفوائد)";
+        }
+    }
 
     return {
-        totalRevenue,
-        totalExpenses,
-        netProfit,
+        totalRevenue: totalRevenue,
+        totalExpenses: totalExpenses,
+        netProfit: netProfit,
+        interestIncome: interestIncome,
         expenseDetails: formattedExpenses,
         revenueDetails: formattedRevenue
     };
@@ -406,4 +443,82 @@ export async function getCategorySales(startDate: Date, endDate: Date) {
         console.error("Category Report Error", e);
         return [];
     }
+}
+
+export async function getStagnantProducts(days: number = 30) {
+    const session = await getSession();
+    const tenantId = session?.tenantId || await getActiveTenantId();
+    if (!tenantId) throw new Error("Unauthorized");
+
+    const now = new Date();
+    const cutoffDate = new Date(now);
+    cutoffDate.setDate(now.getDate() - days);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+    // 1. Get all stocked goods created BEFORE the cutoff (to avoid flagging new items)
+    // We only care about items that HAVE stock. If stock is 0, it's not stagnant capital.
+    const stockItems = await db
+        .select({
+            id: products.id,
+            name: products.name,
+            sku: products.sku,
+            stock: products.stockQuantity,
+            buyPrice: products.buyPrice,
+            sellPrice: products.sellPrice,
+            createdAt: products.createdAt
+        })
+        .from(products)
+        .where(
+            and(
+                eq(products.tenantId, tenantId),
+                eq(products.type, 'goods'),
+                sql`CAST(${products.stockQuantity} as REAL) > 0`
+            )
+        );
+
+    // 2. Get IDs of products sold within the period (since cutoff)
+    const soldItems = await db
+        .selectDistinct({ productId: invoiceItems.productId })
+        .from(invoiceItems)
+        .innerJoin(invoices, eq(invoiceItems.invoiceId, invoices.id))
+        .where(
+            and(
+                eq(invoices.tenantId, tenantId),
+                gte(invoices.issueDate, cutoffStr)
+            )
+        );
+
+    const soldIds = new Set(soldItems.map(i => i.productId));
+
+    // 3. Filter stagnant items
+    const stagnantItems = stockItems.filter(item => {
+        // Exclude if sold recently
+        if (soldIds.has(item.id)) return false;
+
+        // Exclude if created recently (give it a chance)
+        // If createdAt is null, assume it's old -> include it.
+        if (item.createdAt) {
+            const created = new Date(item.createdAt);
+            if (created > cutoffDate) return false;
+        }
+
+        return true;
+    });
+
+    // 4. Calculate Totals
+    let totalStockValue = 0;
+    const itemsWithValues = stagnantItems.map(item => {
+        const stockVal = (Number(item.stock) * Number(item.buyPrice || 0));
+        totalStockValue += stockVal;
+        return {
+            ...item,
+            stockValue: stockVal
+        };
+    });
+
+    return {
+        data: itemsWithValues.sort((a, b) => b.stockValue - a.stockValue), // Sort by highest value stuck
+        totalValue: totalStockValue,
+        cutoffDate: cutoffStr
+    };
 }

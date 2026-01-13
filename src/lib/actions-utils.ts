@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { tenants } from "@/db/schema";
+import { sql } from "drizzle-orm";
 
 export async function getActiveTenantId(providedId?: string): Promise<string> {
 
@@ -12,11 +13,12 @@ export async function getActiveTenantId(providedId?: string): Promise<string> {
     }
 
     try {
-        // 1. Try to find the first existing tenant using standard select to avoid RQB issues
-        const allTenants = await db.select().from(tenants).limit(1);
+        // 1. Try to find the first existing tenant using raw SQL to avoid schema mismatch errors
+        // Standard Drizzle better-sqlite3 uses .get() for raw queries
+        const row = db.get(sql`SELECT id FROM tenants LIMIT 1`) as { id: string } | undefined;
 
-        if (allTenants.length > 0) {
-            return allTenants[0].id;
+        if (row && row.id) {
+            return row.id;
         }
 
         // 2. If no tenant exists, create one

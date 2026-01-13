@@ -87,7 +87,7 @@ export function SuppliersClient({ initialSuppliers, dict }: { initialSuppliers: 
                                             <TableCell className="text-center font-mono text-xs">{s.taxId || "-"}</TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex justify-center">
-                                                    <SupplierActions supplier={s} />
+                                                    <SupplierActions supplier={s} dict={dict} />
                                                 </div>
                                             </TableCell>
                                         </TableRow>

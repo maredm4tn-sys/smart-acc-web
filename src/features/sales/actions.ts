@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { invoices, invoiceItems, products, journalEntries, journalLines, accounts } from "@/db/schema";
+import { invoices, invoiceItems, products, journalEntries, journalLines, accounts, installments, customers } from "@/db/schema";
 import { eq, and, sql, or, like, desc, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/tenant-security";
@@ -9,28 +9,45 @@ import { getSession } from "@/features/auth/actions";
 
 type CreateInvoiceInput = {
     customerName: string;
+    customerId?: number | null; // Added
     issueDate: string;
     dueDate?: string;
     currency: string;
     exchangeRate: number;
-    includeTax: boolean; // New field
+    includeTax: boolean;
+    representativeId?: number | null;
     items: {
         productId: number;
         description: string;
         quantity: number;
         unitPrice: number;
+        unitId?: number | null; // Added
+        storeId?: number | null; // Added
+        discount?: number; // Added
     }[];
     discountAmount?: number;
+    discountPercent?: number; // Added
+    deliveryFee?: number; // Added
     paymentMethod?: string;
-    tenantId: string;
+    tenantId?: string;
+    // POS Fields
+    priceType?: string; // Added
+    storeId?: number; // Added
+
+    // Installment Fields
+    isInstallment?: boolean;
+    installmentCount?: number;
+    installmentInterest?: number;
 };
 
 import { z } from "zod";
 import { getDictionary } from "@/lib/i18n-server";
-import { createJournalEntry } from "@/features/accounting/actions"; // Static Import
+import { createJournalEntry } from "@/features/accounting/actions";
+import { getActiveShift } from "@/features/shifts/actions";
 
 const createInvoiceSchema = z.object({
     customerName: z.string().min(1),
+    customerId: z.number().nullable().optional(),
     issueDate: z.string().min(1),
     dueDate: z.string().optional(),
     currency: z.string(),
@@ -41,10 +58,21 @@ const createInvoiceSchema = z.object({
         description: z.string(),
         quantity: z.number().positive(),
         unitPrice: z.number().nonnegative(),
+        unitId: z.number().nullable().optional(),
+        storeId: z.number().nullable().optional(),
+        discount: z.number().nonnegative().optional()
     })).min(1),
     discountAmount: z.number().nonnegative().optional(),
+    discountPercent: z.number().nonnegative().optional(),
+    deliveryFee: z.number().nonnegative().optional(),
     paymentMethod: z.string().optional(),
-    tenantId: z.string().optional()
+    tenantId: z.string().optional(),
+    priceType: z.string().optional(),
+    storeId: z.number().optional(),
+    isInstallment: z.boolean().optional(),
+    installmentCount: z.number().min(0).optional(),
+    installmentInterest: z.number().min(0).optional(),
+    representativeId: z.number().optional().nullable(),
 });
 
 
@@ -52,7 +80,6 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     const dict = await getDictionary();
 
     // Secure Input Validation with Zod
-    // Extend schema for initialPayment which is optional
     const extendedSchema = createInvoiceSchema.extend({
         initialPayment: z.number().nonnegative().optional()
     });
@@ -65,7 +92,7 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
     const data = validation.data;
 
     try {
-        const tenantId = await requireTenant(); // Strict Tenant
+        const tenantId = await requireTenant();
 
         // --- License Check (TRIAL) ---
         const { getLicenseStatus } = await import("@/lib/license-check");
@@ -77,22 +104,38 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             };
         }
 
-        // ---------------------------------------------------------
-        // REMOVED db.transaction wrapper causing "return promise" error
-        // Executing sequentially instead. 
-        // ---------------------------------------------------------
-
         // Calculate totals
         let subtotal = 0;
         data.items.forEach(item => {
-            subtotal += item.quantity * item.unitPrice;
+            const lineTotal = (item.quantity * item.unitPrice) - (item.discount || 0);
+            subtotal += lineTotal;
         });
-        const discount = data.discountAmount || 0;
-        const netSubtotal = Math.max(0, subtotal - discount);
 
-        const taxRate = data.includeTax ? 0.14 : 0; // Egypt VAT 14%
+        // Bill Level Discount
+        const billDiscountAmount = data.discountAmount || 0;
+        const billDiscountPercentVal = data.discountPercent ? (subtotal * data.discountPercent / 100) : 0;
+        const totalDiscount = billDiscountAmount + billDiscountPercentVal;
+
+        const netSubtotal = Math.max(0, subtotal - totalDiscount);
+
+        const taxRate = data.includeTax ? 0.14 : 0;
         const taxTotal = netSubtotal * taxRate;
-        const totalAmount = netSubtotal + taxTotal;
+        const delivery = data.deliveryFee || 0;
+
+        let totalAmount = netSubtotal + taxTotal + delivery;
+
+        // --- Installment Logic ---
+        let installmentMonthlyAmount = 0;
+        if (data.isInstallment && (data.installmentInterest || 0) > 0) {
+            const interest = totalAmount * ((data.installmentInterest || 0) / 100);
+            totalAmount += interest;
+        }
+
+        if (data.isInstallment && (data.installmentCount || 0) > 0) {
+            const paidNow = data.initialPayment || 0;
+            const remaining = totalAmount - paidNow;
+            installmentMonthlyAmount = remaining / (data.installmentCount || 1);
+        }
 
         // Determine Payment Status
         let paymentStatus: 'paid' | 'unpaid' | 'partial' = 'unpaid';
@@ -120,29 +163,9 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
         const needsToken = involvedProducts.some(p => p.requiresToken);
 
         if (needsToken) {
-            // Determine Category for Token
-            // If invoice has multiple items, we use the category of the first item that requires a token.
             const tokenItem = involvedProducts.find(p => p.requiresToken);
             const tokenCategoryId = tokenItem?.categoryId;
 
-            // Count existing tokens for today FOR THIS CATEGORY
-            // We join invoices -> invoiceItems -> products to filter by category
-            // We count invoices created today that have at least one item of this category
-
-            const result = await db.select({ count: sql<number>`count(distinct ${invoices.id})` })
-                .from(invoices)
-                .innerJoin(invoiceItems, eq(invoices.id, invoiceItems.invoiceId))
-                .innerJoin(products, eq(invoiceItems.productId, products.id))
-                .where(and(
-                    eq(invoices.tenantId, tenantId),
-                    eq(invoices.issueDate, formattedDate),
-                    isNotNull(invoices.tokenNumber),
-                    // If the item has a category, filter by it. If null, filter by null (general queue)
-                    tokenCategoryId ? eq(products.categoryId, tokenCategoryId) : sql`1=1` // Simplification: If no category, just count globally? Or we ideally should filter by "IsNull".
-                    // However, to be strict: If I am "Dental" (Cat=1), I only count invoices that are ALSO "Dental" (Cat=1).
-                ));
-
-            // Refined Logic if category exists:
             if (tokenCategoryId) {
                 const countResult = await db.select({ count: sql<number>`count(distinct ${invoices.id})` })
                     .from(invoices)
@@ -153,12 +176,11 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                             eq(invoices.tenantId, tenantId),
                             eq(invoices.issueDate, formattedDate),
                             isNotNull(invoices.tokenNumber),
-                            eq(products.categoryId, tokenCategoryId) // Only count invoices that contain products of this category
+                            eq(products.categoryId, tokenCategoryId)
                         )
                     );
                 tokenNumber = (Number(countResult[0]?.count) || 0) + 1;
             } else {
-                // Fallback: Global Count if no category assigned
                 const globalResult = await db.select({ count: sql<number>`count(*)` })
                     .from(invoices)
                     .where(and(
@@ -175,24 +197,35 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             tenantId: tenantId,
             invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
             customerName: data.customerName,
+            customerId: data.customerId, // Added
+            representativeId: data.representativeId,
             issueDate: formattedDate,
             dueDate: formattedDueDate,
             currency: data.currency,
             exchangeRate: data.exchangeRate.toString(),
             subtotal: subtotal.toFixed(2),
             taxTotal: taxTotal.toFixed(2),
-            discountAmount: discount.toFixed(2),
+            discountAmount: totalDiscount.toFixed(2), // Total discount (amount + %)
+            discountPercent: data.discountPercent?.toString(),
+            deliveryFee: delivery.toFixed(2),
             paymentMethod: data.paymentMethod || "cash",
             totalAmount: totalAmount.toFixed(2),
             amountPaid: Number(paidAmount).toFixed(2),
             paymentStatus: paymentStatus,
             status: "issued",
-            tokenNumber: tokenNumber, // Add Token Number
+            priceType: data.priceType || 'retail',
+            storeId: data.storeId || 1,
+            tokenNumber: tokenNumber,
             createdBy: session?.userId,
+            shiftId: (await getActiveShift())?.id,
+            isInstallment: !!data.isInstallment,
+            installmentDownPayment: Number(data.initialPayment || 0).toFixed(2),
+            installmentCount: data.installmentCount,
+            installmentInterest: Number(data.installmentInterest || 0).toFixed(2),
+            installmentMonthlyAmount: installmentMonthlyAmount.toFixed(2),
         }).returning();
 
         // 2. Create Invoice Items & Update Stock
-
         for (const item of data.items) {
             await db.insert(invoiceItems).values({
                 invoiceId: newInvoice.id,
@@ -200,7 +233,10 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 description: item.description,
                 quantity: Number(item.quantity).toFixed(2),
                 unitPrice: Number(item.unitPrice).toFixed(2),
-                total: (item.quantity * item.unitPrice).toFixed(2),
+                unitId: item.unitId,
+                storeId: item.storeId,
+                discount: (item.discount || 0).toFixed(2),
+                total: ((item.quantity * item.unitPrice) - (item.discount || 0)).toFixed(2),
             });
 
             // Decrement Stock ONLY for 'goods'
@@ -211,6 +247,34 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
                 await db.update(products)
                     .set({ stockQuantity: sql`${castNum(products.stockQuantity)} - ${item.quantity}` })
                     .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
+            }
+        }
+
+        // 2.1 CREATE INSTALLMENT SCHEDULE
+        if (data.isInstallment && (data.installmentCount || 0) > 0) {
+            // Find Customer ID by name
+            const customerObj = await db.query.customers.findFirst({
+                where: and(eq(customers.name, data.customerName), eq(customers.tenantId, tenantId))
+            });
+
+            if (customerObj) {
+                const count = data.installmentCount || 0;
+                const startDate = new Date(formattedDate);
+
+                for (let i = 1; i <= count; i++) {
+                    const dueDate = new Date(startDate);
+                    dueDate.setMonth(dueDate.getMonth() + i);
+
+                    await db.insert(installments).values({
+                        tenantId: tenantId,
+                        customerId: customerObj.id,
+                        invoiceId: newInvoice.id,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        amount: installmentMonthlyAmount.toFixed(2),
+                        amountPaid: "0.00",
+                        status: "unpaid",
+                    });
+                }
             }
         }
 
@@ -345,10 +409,10 @@ export async function createInvoice(inputData: CreateInvoiceInput & { initialPay
             }
 
             // Debit Discount (Accounting Assurance Fix)
-            if (discount > 0 && discountAccount) {
+            if (totalDiscount > 0 && discountAccount) {
                 lines.push({
                     accountId: discountAccount.id,
-                    debit: discount * rate,
+                    debit: totalDiscount * rate,
                     credit: 0,
                     description: `خصم مسموح به - فاتورة ${newInvoice.invoiceNumber}`
                 });

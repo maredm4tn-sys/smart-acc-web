@@ -14,6 +14,7 @@
         "Confirm": "Confirm",
         "Yes": "Yes",
         "No": "No",
+        "All": "All",
         "NA": "N/A",
         "Offline": {
             "Status": "Working Offline",
@@ -42,6 +43,20 @@
             "Preparing": "Preparing file...",
             "Success": "File exported successfully",
             "Error": "Error during export"
+        },
+        "DateRange": "Date Range",
+        "Search": "Search",
+        "Date": "Date",
+        "NoData": "No data found"
+    },
+    "Invoices": {
+        "Table": {
+            "InvoiceNumber": "Invoice No",
+            "IssueDate": "Issue Date",
+            "Customer": "Customer",
+            "Total": "Total",
+            "Paid": "Paid",
+            "Status": "Status"
         }
     },
     "Sidebar": {
@@ -91,6 +106,8 @@
         "Invoice": " Invoice",
         "Active": "Active",
         "Due": "Due",
+        "AvgBasket": "Avg Basket (Today)",
+        "Today": "Today",
         "Receivables": "Receivables",
         "Account": "Account",
         "CompareLastMonth": "vs Last Month",
@@ -210,13 +227,30 @@
             "Company": "Company",
             "Address": "Address",
             "TotalDebt": "Total Debt",
+            "LimitExceeded": "Limit Exceeded",
             "Actions": "Actions",
-            "NoCustomers": "No customers found."
+            "Edit": "Edit Details",
+            "Delete": "Delete Customer",
+            "NoCustomers": "No customers registered yet."
         },
         "Messages": {
             "ImportSuccess": "Customers imported successfully",
             "ImportedCount": "Imported {count} customers successfully. Errors: {errors}",
             "FileUploaded": "File uploaded successfully"
+        },
+        "Statement": {
+            "Title": "Customer Statement",
+            "Summary": {
+                "TotalDebit": "Total Sales (Debit)",
+                "TotalDebitDesc": "Invoice value",
+                "TotalCredit": "Total Receipts (Credit)",
+                "TotalCreditDesc": "Collected amounts",
+                "NetBalance": "Current Balance (Net)",
+                "DebitLabel": "(Debit)",
+                "CreditLabel": "(Credit)",
+                "CollectFrom": "Required collection from customer",
+                "BalanceDue": "Credit balance to customer"
+            }
         }
     },
     "Suppliers": {
@@ -231,6 +265,8 @@
             "Phone": "Phone",
             "TaxId": "Tax ID",
             "Actions": "Actions",
+            "Edit": "Edit",
+            "Delete": "Delete",
             "NoSuppliers": "No suppliers found.",
             "Draft": "Draft",
             "Returned": "Returned"
@@ -244,6 +280,7 @@
             "TaxId": "Tax ID",
             "Email": "Email",
             "Address": "Address",
+            "OpeningBalance": "Opening Balance",
             "Cancel": "Cancel",
             "Save": "Save",
             "Placeholders": {
@@ -252,7 +289,45 @@
                 "Phone": "01xxxxxxxxx"
             },
             "Success": "Supplier added successfully",
-            "Error": "Error adding supplier"
+            "Error": "Error adding supplier",
+            "DeleteConfirm": "Are you sure you want to delete this supplier?",
+            "DeleteSuccess": "Deleted successfully",
+            "DeleteError": "Deletion failed"
+        },
+        "Statement": {
+            "Title": "Supplier Statement",
+            "Print": "Print Statement",
+            "Summary": {
+                "TotalCredit": "Total Purchases (Credit)",
+                "TotalCreditDesc": "Value of credit invoices",
+                "TotalDebit": "Total Payments (Debit)",
+                "TotalDebitDesc": "Amounts paid to supplier",
+                "NetBalance": "Current Balance (Net)",
+                "NetBalanceCredit": "Due to supplier",
+                "NetBalanceDebit": "Surplus/Advance payment",
+                "CreditLabel": "(Cr)",
+                "DebitLabel": "(Dr)"
+            },
+            "Table": {
+                "Transactions": "Detailed Account Movement",
+                "Date": "Date",
+                "Type": "Type",
+                "Ref": "Reference",
+                "Description": "Description",
+                "Credit": "Credit (Cr)",
+                "Debit": "Debit (Dr)",
+                "Balance": "Balance",
+                "OpeningBalance": "Opening Balance",
+                "OpeningBalanceDesc": "Prior balance",
+                "Invoice": "Purchase Invoice",
+                "Payment": "Payment Voucher",
+                "NoData": "No transactions recorded for this supplier yet."
+            }
+        },
+        "EditDialog": {
+            "Title": "Edit Supplier Details",
+            "Success": "Updated successfully",
+            "Error": "Update failed"
         }
     },
     "Expenses": {
@@ -361,15 +436,36 @@
             "Name": "Customer Name",
             "Phone": "Phone Number",
             "Email": "Email Address",
+            "Company": "Company / Organization Name",
             "Address": "Address",
             "TaxId": "Tax ID",
+            "NationalId": "National ID (Guarantee)",
+            "NationalIdPlaceholder": "National ID Number",
+            "CreditLimit": "Credit Limit (Credit)",
+            "PaymentDay": "Collection Day",
+            "PaymentDayPlaceholder": "1-31",
+            "AdditionalInfo": "Additional Information",
+            "OpeningBalance": "Opening Balance",
+            "PriceLevel": "Price Level",
+            "PriceLevelPlaceholder": "Select Price Level",
+            "Retail": "Retail (Consumer)",
+            "Wholesale": "Wholesale",
+            "HalfWholesale": "Semi-Wholesale",
+            "Special": "Special Price",
+            "BasicInfo": "Basic Information",
             "Save": "Save Customer",
             "Saving": "Saving...",
             "Success": "Customer saved successfully",
             "Error": "Failed to save customer",
             "Errors": {
                 "NameRequired": "Customer name is required",
-                "InvalidEmail": "Invalid email address"
+                "InvalidEmail": "Invalid email address",
+                "AllFieldsRequired": "Please make sure to fill all required fields"
+            },
+            "Placeholders": {
+                "Name": "Customer Name",
+                "Company": "Company / Organization Name",
+                "Email": "example@mail.com"
             }
         }
     },
@@ -452,6 +548,10 @@
                 "Currency": "Currency",
                 "ExchangeRate": "Exchange Rate (vs EGP)",
                 "IncludeTax": "Apply 14% Tax",
+                "IsInstallment": "Sell with Installments",
+                "InstallmentMonths": "Number of Months",
+                "InstallmentInterest": "Interest Rate %",
+                "ExpectedMonthlyInstallment": "Expected Monthly Installment",
                 "AddItem": "Add Item",
                 "Subtotal": "Subtotal",
                 "Tax": "Tax (14%)",
@@ -519,11 +619,40 @@
             "StatusLabels": {
                 "Returned": "Returned",
                 "PartiallyReturned": "Partially Returned"
-            }
+            },
+            "SaleMode": "Sale Mode",
+            "Cash": "Cash",
+            "Installment": "Installment"
         }
     },
     "Confirm": {
         "Message": "Are you sure you want to proceed?"
+    },
+    "Shifts": {
+        "ActiveShift": "Active Shift",
+        "OpenShift": "Open New Shift",
+        "OpenShiftDesc": "Welcome back! Please enter the opening cash balance (float) to start.",
+        "StartBalance": "Start Balance (Float)",
+        "StartButton": "Start Shift",
+        "CloseShiftTitle": "Close Cashier Shift",
+        "ShiftNumber": "Shift #",
+        "CurrentCashier": "Cashier",
+        "MainTreasury": "Cashier Treasury",
+        "TreasuryName": "Main Safe",
+        "CurrentUser": "Current User",
+        "SalesCash": "Cash Sales",
+        "SalesVisa": "Visa Sales",
+        "SalesUnpaid": "Credit Sales (Unpaid)",
+        "StartShiftBalance": "Start Cash Balance",
+        "ExpectedCash": "Expected Actual Cash",
+        "ActualCash": "Actual Count (Cash in Drawer)",
+        "Difference": "Difference (Shortage / Surplus)",
+        "CloseButton": "Close Shift Permanently",
+        "PrintReport": "Print End of Shift Report",
+        "CloseSuccess": "Shift closed successfully",
+        "OpenSuccess": "Shift opened successfully",
+        "ErrorStarting": "Failed to open shift",
+        "EnterValidBalance": "Enter a valid start balance"
     },
     "Reports": {
         "Title": "Reports & Analytics",
@@ -559,12 +688,14 @@
             "Expenses": "Expense Account Statement",
             "Receipts": "Receipt Vouchers",
             "Payments": "Payment Vouchers",
-            "ProfitAndLoss": "Profit and Loss",
-            "DepartmentSales": "Department Sales Report",
-            "StatusLabels": {
-                "Posted": "Posted",
-                "Draft": "Draft"
-            }
+            "ProfitAndLoss": "Profit & Loss",
+            "DepartmentSales": "Department Sales",
+            "Employees": "Employee Statement"
+        },
+        "NoData": "No data available in this period",
+        "StatusLabels": {
+            "Posted": "Posted",
+            "Draft": "Draft"
         },
         "TaxDashboard": {
             "Title": "VAT Returns (Tax Dashboard)",
@@ -596,28 +727,45 @@
         },
         "IncomeStatement": {
             "Title": "Income Statement (P&L)",
-            "CardDescription": "Detailed view of revenue, expenses, and net profit over a specific period.",
-            "Subtitle": "Income Statement",
+            "CardDescription": "Detailed breakdown of revenues, expenses, and net profit over a selected period.",
+            "Subtitle": "Income Statement (P&L)",
             "FromDate": "From Date",
             "ToDate": "To Date",
             "ShowReport": "Show Report",
             "SelectPeriodTitle": "Select Period",
-            "SelectPeriodDesc": "Select start and end dates then click 'Show Report' to view profit and expense analysis.",
+            "SelectPeriodDesc": "Choose start and end dates then click 'Show Report' to view profit and loss analysis.",
             "TotalRevenue": "Total Revenue",
             "TotalExpenses": "Total Expenses",
             "NetProfit": "Net Profit / Loss",
             "ExpenseDetails": "Expense Details",
             "RevenueDetails": "Revenue Details",
-            "ExportComprehensive": "Comprehensive Export (Excel)",
+            "ExportComprehensive": "Export Comprehensive (Excel)",
             "Table": {
                 "Date": "Date",
                 "Item": "Item",
                 "Category": "Category",
                 "Value": "Value",
-                "Percentage": "Percentage",
+                "Percentage": "Pct %",
                 "NoExpenses": "No expenses recorded in this period.",
-                "NoRevenues": "No revenue recorded in this period."
+                "NoRevenues": "No revenue recorded."
             }
+        },
+        "StagnantStock": {
+            "Title": "Stagnant Stock Analysis",
+            "Desc": "Identify unsold products to free up frozen capital.",
+            "Period": "Stagnant Period",
+            "Days30": "30 Days (Warning)",
+            "Days60": "60 Days (Slow)",
+            "Days90": "90 Days (Stagnant)",
+            "Days180": "180 Days (Dead Stock)",
+            "TotalValue": "Frozen Capital",
+            "TotalValueDesc": "Total cost value of stagnant items",
+            "ItemsCount": "Stagnant Items Count",
+            "ItemsCountDesc": "Number of unique products not moving",
+            "TableTitle": "Stagnant Items Details",
+            "NoData": "Great! No stagnant stock found.",
+            "NoDataDesc": "Your inventory is moving well within this period.",
+            "TotalCost": "Frozen Value"
         },
         "DepartmentSalesPage": {
             "Title": "Department Sales Report",
@@ -998,5 +1146,192 @@
         "DecreaseQty": "Decrease Qty",
         "IncreaseQty": "Increase Qty",
         "RemoveFromCart": "Remove from Cart"
+    },
+    "Representatives": {
+        "MenuLabel": "Representative",
+        "SearchPlaceholder": "Select Representative",
+        "Types": {
+            "Sales": "Sales Representative",
+            "Delivery": "Delivery Representative"
+        },
+        "Table": {
+            "Name": "Name",
+            "Type": "Type",
+            "Phone": "Phone",
+            "Address": "Address",
+            "CommissionRate": "Commission %",
+            "Notes": "Notes",
+            "Actions": "Actions",
+            "Edit": "Edit",
+            "Delete": "Delete",
+            "ViewReport": "View Report",
+            "NoRepresentatives": "No representatives found."
+        },
+        "Dialog": {
+            "AddTitle": "Add Representative",
+            "EditTitle": "Edit Representative",
+            "Name": "Name",
+            "Type": "Type",
+            "Phone": "Phone",
+            "Address": "Address",
+            "CommissionRate": "Commission Rate (%)",
+            "Notes": "Notes",
+            "Save": "Save",
+            "Saving": "Saving...",
+            "Success": "Representative saved successfully",
+            "UpdateSuccess": "Representative updated successfully",
+            "Error": "Failed to save representative",
+            "Salary": "Monthly Salary",
+            "CommissionType": "Commission Type",
+            "CommissionValue": "Value",
+            "Types": {
+                "Sales": "Sales Representative",
+                "Delivery": "Delivery Representative",
+                "Percentage": "Percentage (%)",
+                "Fixed": "Fixed Amount (LE)"
+            }
+        },
+        "Reports": {
+            "Title": "Performance Report",
+            "Description": "View sales performance and calculate commissions.",
+            "TotalSales": "Total Sales",
+            "Collected": "Collected Amount",
+            "CommissionRate": "Commission Rate",
+            "Salary": "Fixed Salary",
+            "CommissionAmount": "Commission (Due)",
+            "InvoicesList": "Sales Invoices",
+            "Settle": "Settle & Pay",
+            "SettleTitle": "Settle Representative Payment",
+            "Amount": "Amount Due",
+            "Period": "For Period",
+            "PaymentNotes": "Payment notes...",
+            "ConfirmPay": "Confirm Payment"
+        }
+    },
+    "Employees": {
+        "Title": "Employees & Payroll Management",
+        "Description": "Manage employee data, advances, and monthly payroll processing.",
+        "NewEmployee": "Add Employee",
+        "Tabs": {
+            "List": "Employee List",
+            "Payroll": "Payroll",
+            "Advances": "Advances & Loans",
+            "Attendance": "Attendance",
+            "Reports": "Reports"
+        },
+        "Table": {
+            "Code": "Code",
+            "Name": "Name",
+            "Salary": "Basic Salary",
+            "Phone": "Phone",
+            "Status": "Status",
+            "Active": "Active",
+            "Inactive": "Inactive"
+        },
+        "Form": {
+            "Title": "Employee Details",
+            "PersonalData": "Personal Data",
+            "SalaryData": "Salary Data",
+            "Name": "Full Name",
+            "Code": "Employee Code",
+            "BasicSalary": "Basic Salary",
+            "Address": "Address",
+            "Phone": "Phone Number",
+            "Email": "Email Address",
+            "Notes": "Notes",
+            "Save": "Save Employee",
+            "Cancel": "Cancel",
+            "Success": "Employee data saved successfully",
+            "Error": "Failed to save employee data",
+            "Placeholders": {
+                "Name": "Full Name",
+                "Code": "Ex: EMP001",
+                "Phone": "01xxxxxxxxx",
+                "Address": "Detailed Address",
+                "Email": "example@mail.com",
+                "Notes": "Any additional notes..."
+            }
+        },
+        "Empty": "No employees registered yet.",
+        "DeleteConfirm": "Are you sure you want to delete this employee?",
+        "DeleteSuccess": "Employee deleted successfully",
+        "DeleteError": "Failed to delete employee"
+    },
+    "Payroll": {
+        "Title": "Payroll",
+        "SelectEmployee": "Select Employee...",
+        "Month": "Salary Month",
+        "PaymentDate": "Payment Date",
+        "Basic": "Basic Salary",
+        "Incentives": "Incentives & Overtime",
+        "Deductions": "Deductions",
+        "AdvanceDed": "Advance Detections",
+        "Net": "Net Payable Amount",
+        "Treasury": "Pay from (Treasury/Cashier)",
+        "SelectTreasury": "Select Treasury...",
+        "Process": "Process Payroll",
+        "Notes": "Payroll Notes",
+        "NotesPlaceholder": "Enter any additional notes here...",
+        "Success": "Payroll processed successfully",
+        "Error": "Failed to process payroll"
+    },
+    "Attendance": {
+        "Title": "Attendance",
+        "Present": "Present",
+        "Absent": "Absent",
+        "Late": "Late",
+        "Leave": "Leave",
+        "CheckIn": "Check In",
+        "CheckOut": "Check Out",
+        "Save": "Record",
+        "Success": "Attendance recorded successfully",
+        "Error": "Failed to record attendance"
+    },
+    "Advances": {
+        "Title": "Advances Management",
+        "New": "Issue New Advance",
+        "Type": "Transaction Type",
+        "Types": {
+            "Advance": "Advance Issue",
+            "Repayment": "Advance Repayment"
+        },
+        "Amount": "Amount",
+        "Date": "Date",
+        "Month": "Target Month",
+        "Success": "Transaction recorded successfully",
+        "Status": {
+            "Pending": "Pending",
+            "Deducted": "Deducted"
+        }
+    },
+    "Installments": {
+        "Title": "Installment Management",
+        "Description": "Track and collect monthly installments from customers.",
+        "Status": {
+            "Due": "Due This Month",
+            "Count": "Installments to Collect",
+            "Total": "Total Collection Amount",
+            "MonthLabel": "Due during",
+            "CommitmentRate": "Commitment Rate",
+            "CommitmentDesc": "Percentage of collected installments from total"
+        },
+        "Table": {
+            "Customer": "Customer",
+            "Invoice": "Invoice",
+            "DueDate": "Due Date",
+            "Amount": "Amount",
+            "Status": "Status",
+            "Actions": "Actions",
+            "Paid": "Paid",
+            "Unpaid": "Unpaid",
+            "Partial": "Partial",
+            "Overdue": "Overdue",
+            "Upcoming": "Upcoming"
+        },
+        "Pay": "Collect",
+        "PaidOn": "on",
+        "SearchPlaceholder": "Search customer or invoice...",
+        "Success": "Installment collected successfully",
+        "NoInstallments": "No installments due currently."
     }
 }

@@ -3,15 +3,20 @@ import { invoices, invoiceItems, products, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { PrintButton } from "./print-button";
-import Image from "next/image";
 import { getSettings } from "@/features/settings/actions";
 import { getDictionary, getLocale } from "@/lib/i18n-server";
+import { cn } from "@/lib/utils";
 
-export default async function InvoicePrintPage(props: { params: Promise<{ id: string }> }) {
+export default async function InvoicePrintPage(props: {
+    params: Promise<{ id: string }>,
+    searchParams: Promise<{ type?: string; auto?: string }>
+}) {
     const params = await props.params;
-    const dict = await getDictionary();
-    const locale = await getLocale();
+    const searchParams = await props.searchParams;
+    const type = searchParams.type || 'standard';
+    const auto = searchParams.auto === 'true';
 
+    const dict = await getDictionary();
     let invoice = null;
     let items: any[] = [];
     let settings = null;
@@ -19,7 +24,7 @@ export default async function InvoicePrintPage(props: { params: Promise<{ id: st
     try {
         const invId = parseInt(params.id);
         const invRes = await db.select().from(invoices).where(eq(invoices.id, invId));
-        settings = await getSettings(); // Fetch company settings
+        settings = await getSettings();
 
         if (invRes.length > 0) {
             invoice = invRes[0];
@@ -35,142 +40,204 @@ export default async function InvoicePrintPage(props: { params: Promise<{ id: st
                 .where(eq(invoiceItems.invoiceId, invId));
         }
     } catch (e) {
-        // Mock data logic removed for succinctness, assuming DB works now
         console.error("Print Page Error", e);
     }
 
     if (!invoice) return notFound();
 
-    // Format Date & Time
     const dateObj = new Date(invoice.createdAt || new Date());
-    const timeStr = dateObj.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Africa/Cairo' });
+    const dateStr = dateObj.toLocaleDateString('en-GB');
+    const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-    return (
-        <div className="bg-white min-h-screen p-8 text-black print:p-0 font-sans">
-            {/* Print Button (Hidden when printing) */}
-            <div className="mb-8 print:hidden flex justify-end">
-                <PrintButton />
+    // --- Improved Auto-Print & Auto-Close Script ---
+    const autoPrintScript = auto ? (
+        <script dangerouslySetInnerHTML={{
+            __html: `
+                (function() {
+                    window.addEventListener('afterprint', () => {
+                        window.close();
+                    });
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.focus();
+                            window.print();
+                        }, 1000);
+                    };
+                })();
+            `
+        }} />
+    ) : null;
+
+    // --- THERMAL LAYOUT (80mm) ---
+    if (type === 'thermal') {
+        return (
+            <div className="bg-white min-h-screen text-black font-mono font-bold" style={{ width: '80mm', margin: '0 auto', padding: '8mm' }}>
+                <style>{`
+                    @media print {
+                        @page { size: 80mm auto; margin: 0; }
+                        body { margin: 0; padding: 0; width: 80mm; background: white; }
+                        .no-print { display: none; }
+                    }
+                `}</style>
+                {autoPrintScript}
+
+                <div className="text-center mb-2">
+                    <h1 className="text-xl leading-tight font-black">{settings?.name || "المحاسب الذكي"}</h1>
+                    <div className="border-t-2 border-black my-1" />
+                    <p className="text-sm">فاتورة مبيعات</p>
+                </div>
+
+                <div className="text-[12px] space-y-1 my-3">
+                    <div className="flex justify-between"><span>التاريخ:</span><span>{dateStr}</span></div>
+                    <div className="flex justify-between"><span>الوقت:</span><span>{timeStr}</span></div>
+                    <div className="flex justify-between"><span>رقم الفاتورة:</span><span>#{invoice.invoiceNumber}</span></div>
+                    <div className="flex justify-between"><span>العميل:</span><span>{invoice.customerName || "عميل نقدي"}</span></div>
+                </div>
+
+                <div className="border-t-2 border-dashed border-black my-2" />
+                <div className="flex text-[11px] pb-1 font-black">
+                    <span className="w-10">الكمية</span>
+                    <span className="flex-1 px-1">الصنف</span>
+                    <span className="w-20 text-left">الإجمالي</span>
+                </div>
+                <div className="border-t border-black mb-1" />
+
+                <div className="space-y-2 mb-4">
+                    {items.map((item, i) => (
+                        <div key={i} className="flex text-[12px] items-start border-b border-gray-100 pb-1">
+                            <span className="w-10">{Number(item.quantity)}</span>
+                            <span className="flex-1 px-1 leading-tight">{item.description}</span>
+                            <span className="w-20 text-left font-black">{Number(item.total).toFixed(2)}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="border-t-2 border-dashed border-black my-2" />
+                <div className="text-[12px] space-y-1">
+                    <div className="flex justify-between"><span>المجموع:</span><span>{Number(invoice.subtotal).toFixed(2)}</span></div>
+                    {Number(invoice.taxTotal) > 0 && <div className="flex justify-between"><span>الضريبة (14%):</span><span>{Number(invoice.taxTotal).toFixed(2)}</span></div>}
+                    {Number(invoice.discountAmount) > 0 && <div className="flex justify-between"><span>الخصم:</span><span>-{Number(invoice.discountAmount).toFixed(2)}</span></div>}
+                </div>
+                <div className="border-t-2 border-black my-2" />
+
+                <div className="flex justify-between items-center text-xl py-1 font-black">
+                    <span>الإجمالي:</span>
+                    <span>{Number(invoice.totalAmount).toFixed(2)}</span>
+                </div>
+
+                <div className="text-center text-[10px] mt-8 opacity-70">
+                    <p>شكراً لتعاملكم معنا</p>
+                    <p>*** المحاسب الذكي ***</p>
+                </div>
+
+                <div className="no-print mt-8 flex justify-center">
+                    <PrintButton />
+                </div>
             </div>
+        );
+    }
 
-            {/* Invoice Layout */}
-            <div className="max-w-3xl mx-auto border p-8 print:border-0 print:w-full">
+    // --- STANDARD A4 LAYOUT ---
+    return (
+        <div className="bg-white min-h-screen p-0 sm:p-8 text-black font-sans" dir="rtl">
+            <style>{`
+                @media print {
+                    @page { size: A4; margin: 15mm; }
+                    body { margin: 0; padding: 0; background: white; }
+                    .no-print { display: none; }
+                }
+            `}</style>
+            {autoPrintScript}
+
+            <div className="max-w-[210mm] mx-auto bg-white p-8 border print:border-0 shadow-sm print:shadow-none min-h-[297mm] flex flex-col">
                 {/* Header */}
-                <div className="flex justify-between items-start mb-8 border-b pb-4">
-                    <div className="flex gap-4 items-center">
-                        <div className="relative h-24 w-24 overflow-hidden rounded-lg border flex items-center justify-center bg-gray-50">
-                            {settings?.logoUrl ? (
-                                <img
-                                    src={settings.logoUrl}
-                                    alt="Company Logo"
-                                    className="object-contain w-full h-full"
-                                />
-                            ) : (
-                                <Image
-                                    src="/logo.jpg"
-                                    alt="Default Logo"
-                                    fill
-                                    className="object-cover"
-                                />
-                            )}
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                {Number(invoice.taxTotal) > 0 ? dict.Sales.Invoice.Print.Title : dict.Sales.Invoice.Print.SimpleTitle}
-                            </h1>
-                            <p className="text-gray-500 mt-1 uppercase tracking-wider text-xs">
-                                {Number(invoice.taxTotal) > 0 ? "Tax Invoice" : "Invoice"}
-                            </p>
-                            {/* Token / Queue Number Display */}
-                            {invoice.tokenNumber && (
-                                <div className="mt-4 inline-block">
-                                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-800 p-2 px-6 rounded-lg bg-gray-50 print:bg-white">
-                                        <span className="text-xs font-bold uppercase text-gray-500 tracking-widest">{dict.Sales.Invoice.Print.Token || "Queue No"}</span>
-                                        <span className="text-4xl font-black text-gray-900 leading-none mt-1">{invoice.tokenNumber}</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                <div className="flex justify-between items-start border-b-2 border-blue-600 pb-6 mb-8">
+                    <div>
+                        <h1 className="text-4xl font-black text-blue-900 mb-2">{settings?.name || "المحاسب الذكي"}</h1>
+                        <p className="text-gray-600 font-bold">{settings?.address || "العنوان غير مسجل"}</p>
+                        <p className="text-gray-600 font-bold">{settings?.phone || "الهاتف غير مسجل"}</p>
                     </div>
-                    <div className="text-left rtl:text-left">
-                        <h2 className="font-bold text-xl text-primary">{settings?.name || dict.Logo}</h2>
-                        <p className="text-sm text-gray-600">{settings?.address || ""}</p>
-                        <p className="text-sm text-gray-600 dir-ltr flex justify-end gap-1">
-                            <span>{settings?.phone || ""}</span>
-                            {settings?.phone && <span className="text-gray-400">|</span>}
-                            <span>{settings?.taxId ? `Tax ID: ${settings.taxId}` : ""}</span>
-                        </p>
+                    <div className="text-left" dir="ltr">
+                        <div className="bg-blue-900 text-white px-6 py-2 rounded-lg mb-2 inline-block">
+                            <h2 className="text-xl font-bold uppercase tracking-widest">فاتورة مبيعات</h2>
+                        </div>
+                        <div className="space-y-1 text-sm font-bold text-gray-700">
+                            <p>رقم الفاتورة: <span className="text-blue-900">#{invoice.invoiceNumber}</span></p>
+                            <p>التاريخ: {dateStr}</p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Info Grid */}
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                    <div>
-                        <p className="text-sm text-gray-500 mb-1">{dict.Sales.Invoice.Print.BillTo}:</p>
-                        <h3 className="font-bold text-lg">{invoice.customerName}</h3>
-                        <p className="text-sm text-gray-500">{invoice.customerTaxId ? `${dict.Sales.Invoice.Print.TaxId}: ${invoice.customerTaxId}` : ''}</p>
+                <div className="grid grid-cols-2 gap-8 mb-10">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h3 className="text-xs font-black text-slate-400 uppercase mb-2">بيانات العميل</h3>
+                        <p className="text-lg font-black text-slate-900">{invoice.customerName || "عميل نقدي"}</p>
                     </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between border-b border-dashed pb-1">
-                            <span className="text-gray-500">{dict.Sales.Invoice.Print.InvoiceNo}:</span>
-                            <span className="font-mono font-bold">{invoice.invoiceNumber}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-b border-dashed pb-1">
-                            <span className="text-gray-500">{dict.Sales.Invoice.Print.Date}:</span>
-                            <div className="flex flex-col items-center">
-                                <span className="font-bold">{invoice.issueDate}</span>
-                                <span className="text-[10px] text-gray-400 font-mono text-center leading-none mt-0.5">{timeStr}</span>
-                            </div>
-                        </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-left" dir="ltr">
+                        <h3 className="text-xs font-black text-slate-400 uppercase mb-2">PAYMENT METHOD</h3>
+                        <p className="text-lg font-black text-blue-700 uppercase">{invoice.paymentMethod || "CASH"}</p>
                     </div>
                 </div>
 
                 {/* Items Table */}
-                <table className="w-full mb-8">
-                    <thead>
-                        <tr className="border-b-2 border-gray-800">
-                            <th className="text-right py-2">{dict.Sales.Invoice.Print.Item}</th>
-                            <th className="text-center py-2">{dict.Sales.Invoice.Print.Qty}</th>
-                            <th className="text-center py-2">{dict.Sales.Invoice.Print.Price}</th>
-                            <th className="text-left py-2">{dict.Sales.Invoice.Print.Total}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map((item, i) => (
-                            <tr key={i} className="border-b border-gray-200">
-                                <td className="py-2">
-                                    <div className="font-medium">{item.description}</div>
-                                    <div className="text-xs text-gray-500">{item.sku}</div>
-                                </td>
-                                <td className="text-center py-2">{Number(item.quantity)}</td>
-                                <td className="text-center py-2">{Number(item.unitPrice).toLocaleString()}</td>
-                                <td className="text-left py-2 font-bold">{Number(item.total).toLocaleString()}</td>
+                <div className="flex-1">
+                    <table className="w-full border-collapse overflow-hidden rounded-xl shadow-sm">
+                        <thead className="bg-blue-900 text-white">
+                            <tr>
+                                <th className="p-4 text-right">الصنف / الوصف</th>
+                                <th className="p-4 text-center w-24">الكمية</th>
+                                <th className="p-4 text-center w-32">سعر الوحدة</th>
+                                <th className="p-4 text-left w-32">الإجمالي</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="text-gray-700 font-medium">
+                            {items.map((item, i) => (
+                                <tr key={i} className="border-b border-slate-100 even:bg-slate-50/50">
+                                    <td className="p-4 text-right font-bold">{item.description}</td>
+                                    <td className="p-4 text-center font-mono">{Number(item.quantity).toFixed(2)}</td>
+                                    <td className="p-4 text-center font-mono">{Number(item.unitPrice).toFixed(2)}</td>
+                                    <td className="p-4 text-left font-mono font-bold" dir="ltr">{Number(item.total).toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
-                {/* Totals */}
-                <div className="flex justify-end">
-                    <div className="w-64 space-y-2">
-                        <div className="flex justify-between py-1 border-b">
-                            <span className="text-gray-600">{dict.Sales.Invoice.Print.Subtotal}:</span>
-                            <span>{Number(invoice.subtotal).toLocaleString()} {invoice.currency || 'EGP'}</span>
+                {/* Totals Section */}
+                <div className="mt-8 flex justify-end">
+                    <div className="w-72 space-y-3">
+                        <div className="flex justify-between px-2 text-slate-500 font-bold">
+                            <span>المجموع الفرعي:</span>
+                            <span className="font-mono">{Number(invoice.subtotal).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between py-1 border-b">
-                            <span className="text-gray-600">{dict.Sales.Invoice.Print.Tax}:</span>
-                            <span>{Number(invoice.taxTotal).toLocaleString()} {invoice.currency || 'EGP'}</span>
-                        </div>
-                        <div className="flex justify-between py-2 text-lg font-bold">
-                            <span>{dict.Sales.Invoice.Print.GrandTotal}:</span>
-                            <span>{Number(invoice.totalAmount).toLocaleString()} {invoice.currency || 'EGP'}</span>
+                        {Number(invoice.taxTotal) > 0 && (
+                            <div className="flex justify-between px-2 text-slate-500 font-bold">
+                                <span>الضريبة (14%):</span>
+                                <span className="font-mono">{Number(invoice.taxTotal).toFixed(2)}</span>
+                            </div>
+                        )}
+                        {Number(invoice.discountAmount) > 0 && (
+                            <div className="flex justify-between px-2 text-green-600 font-bold">
+                                <span>الخصم:</span>
+                                <span className="font-mono">-{Number(invoice.discountAmount).toFixed(2)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between bg-blue-900 text-white p-4 rounded-xl shadow-lg">
+                            <span className="text-xl font-black">الإجمالي الكلي:</span>
+                            <span className="text-2xl font-black font-mono">{Number(invoice.totalAmount).toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-12 pt-4 border-t text-center text-sm text-gray-500">
-                    <p>{dict.Sales.Invoice.Print.Footer}</p>
+                {/* Footer Message */}
+                <div className="mt-16 border-t pt-6 text-center text-slate-400 text-sm font-bold">
+                    <p>نشكركم لثقتكم بنا، ونتمنى رؤيتكم مرة أخرى قريباً.</p>
                 </div>
+            </div>
+
+            <div className="fixed bottom-8 left-8 no-print">
+                <PrintButton />
             </div>
         </div>
     );

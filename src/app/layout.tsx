@@ -30,6 +30,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import { GlobalErrorHandler } from "@/components/global-error-handler";
 import { PWARegister } from "@/components/pwa-register";
+import { EnvBanner } from "@/components/env-banner";
 
 export default async function RootLayout({
   children,
@@ -44,6 +45,7 @@ export default async function RootLayout({
     <html lang={lang} dir={dir} suppressHydrationWarning>
       <body className={`${readex.className} bg-gray-50 dark:bg-gray-950 antialiased`}>
         <GlobalErrorHandler>
+          <EnvBanner />
           <PWARegister />
           <I18nProvider lang={lang} dict={dict}>
             <ThemeProvider
