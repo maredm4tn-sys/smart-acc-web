@@ -26,5 +26,26 @@ export async function getLocale(): Promise<Locale> {
 
 export async function getDictionary(): Promise<Dictionary> {
     const locale = await getLocale();
-    return await dictionaries[locale]();
+    const selectedDict = await dictionaries[locale]();
+
+    // If it's already Arabic, return it
+    if (locale === "ar") return selectedDict;
+
+    // For English, use Arabic as a deep fallback to prevent crashes if keys are missing
+    const arDict = await dictionaries["ar"]();
+
+    // Helper to deeply merge/fallback
+    const merge = (target: any, source: any) => {
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object') {
+                if (!target[key]) target[key] = {};
+                merge(target[key], source[key]);
+            } else if (!target[key]) {
+                target[key] = source[key];
+            }
+        }
+        return target;
+    };
+
+    return merge(selectedDict, arDict);
 }
