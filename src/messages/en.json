@@ -1201,6 +1201,33 @@
             "ConfirmPay": "Confirm Payment"
         }
     },
+    "Invoices": {
+        "Title": "Invoices",
+        "Table": {
+            "InvoiceNo": "Invoice No",
+            "Customer": "Customer",
+            "Date": "Date",
+            "Total": "Total",
+            "PaidAmount": "Paid",
+            "Balance": "Balance",
+            "Status": "Status",
+            "Actions": "Actions",
+            "NoInvoices": "No invoices found",
+            "Draft": "Draft",
+            "Returned": "Returned",
+            "StatusLabels": {
+                "Paid": "Paid",
+                "Unpaid": "Unpaid",
+                "Partial": "Partial"
+            },
+            "Edit": "Edit",
+            "Return": "Return"
+        },
+        "Messages": {
+            "Success": "Invoice saved successfully",
+            "UpdateSuccess": "Invoice updated successfully"
+        }
+    },
     "Employees": {
         "Title": "Employees & Payroll Management",
         "Description": "Manage employee data, advances, and monthly payroll processing.",
