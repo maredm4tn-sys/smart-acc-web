@@ -1144,6 +1144,8 @@
         "RemoveFromCart": "حذف من السلة"
     },
     "Representatives": {
+        "Title": "المناديب والمندوبين",
+        "Description": "إدارة عمولات المناديب وتتبع أداء المبيعات والتوصيل.",
         "MenuLabel": "المندوب",
         "SearchPlaceholder": "اختر المندوب",
         "Types": {

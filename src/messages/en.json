@@ -1148,6 +1148,8 @@
         "RemoveFromCart": "Remove from Cart"
     },
     "Representatives": {
+        "Title": "Representatives",
+        "Description": "Manage representative commissions and track sales/delivery performance.",
         "MenuLabel": "Representative",
         "SearchPlaceholder": "Select Representative",
         "Types": {
