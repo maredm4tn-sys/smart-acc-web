@@ -362,7 +362,7 @@
     },
     "Dialogs": {
         "AddProduct": {
-            "Title": "Add New Product",
+            "Title": "Add New Item",
             "Description": "Product or service details (stock and pricing).",
             "SKU": "SKU",
             "Type": "Type",
@@ -370,29 +370,17 @@
             "SellPrice": "Sell Price",
             "BuyPrice": "Buy Price",
             "OpeningStock": "Opening Stock",
-            "Save": "Save Product",
+            "Save": "Save Item",
             "Saving": "Saving...",
-            "Success": "Product saved successfully",
-            "Error": "Failed to save product",
-            "Goods": "Goods (Stock)",
-            "Service": "Service",
-            "Category": "Department / Category",
-            "SelectCategory": "Select Category...",
-            "New": "New",
-            "Errors": {
-                "NameRequired": "Item name is required",
-                "SKURequired": "SKU is required",
-                "PricePositive": "Price cannot be negative",
-                "SKUExists": "SKU already exists"
+            "Success": "Item saved successfully",
+            "Error": "Failed to save item",
+            "Placeholders": {
+                "Name": "Item Name",
+                "SKU": "Unique Code",
+                "BuyPrice": "0.00",
+                "SellPrice": "0.00",
+                "Stock": "0"
             }
-        },
-        "EditProduct": {
-            "Title": "Edit Product",
-            "Description": "Edit details for",
-            "Save": "Save Changes",
-            "Saving": "Saving...",
-            "Success": "Product updated successfully",
-            "Error": "Failed to update product"
         },
         "AddAccount": {
             "Title": "Add New Account",
@@ -423,39 +411,35 @@
         },
         "AddCustomer": {
             "Title": "Add New Customer",
-            "Description": "Enter details for the new customer.",
-            "Name": "Customer Name",
-            "Phone": "Phone Number",
-            "Email": "Email Address",
-            "Company": "Company / Organization Name",
+            "Description": "Enter customer basic and financial details.",
+            "BasicInfo": "Basic Info",
+            "AdditionalInfo": "Additional Info",
+            "Name": "Name",
+            "Phone": "Phone",
             "Address": "Address",
-            "TaxId": "Tax ID",
-            "NationalId": "National ID (Guarantee)",
-            "NationalIdPlaceholder": "National ID Number",
-            "CreditLimit": "Credit Limit (Credit)",
-            "PaymentDay": "Collection Day",
-            "PaymentDayPlaceholder": "1-31",
-            "AdditionalInfo": "Additional Information",
             "OpeningBalance": "Opening Balance",
             "PriceLevel": "Price Level",
             "PriceLevelPlaceholder": "Select Price Level",
-            "Retail": "Retail (Consumer)",
+            "Retail": "Retail",
             "Wholesale": "Wholesale",
-            "HalfWholesale": "Semi-Wholesale",
-            "Special": "Special Price",
-            "BasicInfo": "Basic Information",
-            "Save": "Save Customer",
+            "HalfWholesale": "Half Wholesale",
+            "Special": "Special",
+            "Company": "Company",
+            "TaxId": "Tax ID",
+            "NationalId": "National ID",
+            "NationalIdPlaceholder": "Enter National ID",
+            "CreditLimit": "Credit Limit",
+            "PaymentDay": "Payment Day",
+            "PaymentDayPlaceholder": "Day of month (1-31)",
+            "Email": "Email",
             "Saving": "Saving...",
-            "Success": "Customer saved successfully",
-            "Error": "Failed to save customer",
+            "Save": "Save Customer",
             "Errors": {
-                "NameRequired": "Customer name is required",
-                "InvalidEmail": "Invalid email address",
-                "AllFieldsRequired": "Please make sure to fill all required fields"
+                "NameRequired": "Customer name is required"
             },
             "Placeholders": {
                 "Name": "Customer Name",
-                "Company": "Company / Organization Name",
+                "Company": "Company Name",
                 "Email": "example@mail.com"
             }
         }
