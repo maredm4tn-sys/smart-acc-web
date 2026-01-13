@@ -14,7 +14,7 @@ export default async function CustomersPage() {
     const customers = await getCustomers();
     const representatives = await getAllRepresentatives(); // Added
     const session = await getSession();
-    const isAdmin = session?.role === 'admin' || session?.role === 'SUPER_ADMIN';
+    const isAdmin = session?.role?.toUpperCase() === 'ADMIN' || session?.role?.toUpperCase() === 'SUPER_ADMIN';
 
     return (
         <div className="space-y-6">

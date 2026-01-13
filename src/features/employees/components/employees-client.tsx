@@ -12,7 +12,7 @@ import { AttendanceView } from "./attendance-view";
 export function EmployeesClient({ initialEmployees, dict, session }: { initialEmployees: any[], dict: any, session: any }) {
     const [employees, setEmployees] = useState(initialEmployees);
 
-    const isAdmin = session?.user?.role === 'ADMIN';
+    const isAdmin = session?.role?.toUpperCase() === 'ADMIN' || session?.role?.toUpperCase() === 'SUPER_ADMIN';
 
     return (
         <Tabs defaultValue="list" className="w-full" dir="rtl">
