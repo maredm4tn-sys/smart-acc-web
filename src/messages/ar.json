@@ -49,16 +49,6 @@
         "Date": "التاريخ",
         "NoData": "لا توجد بيانات"
     },
-    "Invoices": {
-        "Table": {
-            "InvoiceNumber": "رقم الفاتورة",
-            "IssueDate": "تاريخ الإصدار",
-            "Customer": "العميل",
-            "Total": "الإجمالي",
-            "Paid": "المدفوع",
-            "Status": "الحالة"
-        }
-    },
     "Sidebar": {
         "MainMenu": "القائمة الرئيسية",
         "Dashboard": "لوحة التحكم",

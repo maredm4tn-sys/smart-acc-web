@@ -49,16 +49,6 @@
         "Date": "Date",
         "NoData": "No data found"
     },
-    "Invoices": {
-        "Table": {
-            "InvoiceNumber": "Invoice No",
-            "IssueDate": "Issue Date",
-            "Customer": "Customer",
-            "Total": "Total",
-            "Paid": "Paid",
-            "Status": "Status"
-        }
-    },
     "Sidebar": {
         "MainMenu": "Main Menu",
         "Dashboard": "Dashboard",

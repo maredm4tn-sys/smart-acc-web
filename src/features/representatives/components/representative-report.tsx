@@ -183,8 +183,8 @@ export function RepresentativeReport({ representativeId }: RepresentativeReportP
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[100px] text-center">{dict.Invoices?.Table?.InvoiceNumber || "Ref"}</TableHead>
-                                            <TableHead className="text-center">{dict.Invoices?.Table?.IssueDate || dict.Common?.Date || "Date"}</TableHead>
+                                            <TableHead className="w-[100px] text-center">{dict.Invoices?.Table?.InvoiceNo || "Ref"}</TableHead>
+                                            <TableHead className="text-center">{dict.Invoices?.Table?.Date || dict.Common?.Date || "Date"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Customer || "Customer"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Total || "Total"}</TableHead>
                                             <TableHead className="text-center">{dict.Invoices?.Table?.Paid || "Paid"}</TableHead>
