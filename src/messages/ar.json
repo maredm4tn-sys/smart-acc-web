@@ -458,6 +458,17 @@
                 "Company": "اسم الشركة / المؤسسة",
                 "Email": "example@mail.com"
             }
+        },
+        "AddSupplier": {
+            "Title": "إضافة مورد جديد",
+            "Name": "اسم المورد",
+            "Company": "اسم الشركة",
+            "Phone": "رقم الهاتف",
+            "Email": "البريد الإلكتروني",
+            "Address": "العنوان",
+            "OpeningBalance": "الرصيد الافتتاحي",
+            "Save": "حفظ المورد",
+            "Success": "تم حفظ المورد بنجاح"
         }
     },
     "Journal": {
@@ -1289,7 +1300,20 @@
         "Notes": "ملاحظات المسير",
         "NotesPlaceholder": "اكتب أي ملاحظات إضافية هنا...",
         "Success": "تم تسجيل صرف الراتب في الحسابات بنجاح",
-        "Error": "فشل تسجيل صرف الراتب"
+        "Error": "فشل تسجيل صرف الراتب",
+        "Generate": "Generate Payroll",
+        "Status": {
+            "Draft": "Draft",
+            "Paid": "Paid"
+        },
+        "Table": {
+            "Name": "Employee",
+            "Salary": "Basic",
+            "Advances": "Advances",
+            "Absent": "Absence Ded.",
+            "Net": "Net Salary",
+            "Actions": "Actions"
+        }
     },
     "Attendance": {
         "Title": "الحضور والانصراف",
