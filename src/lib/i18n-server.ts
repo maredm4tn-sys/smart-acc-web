@@ -1,26 +1,23 @@
 "use server";
 
 import { cookies } from "next/headers";
-import ar from "@/messages/ar.json";
-import en from "@/messages/en.json";
+// Dictionaries are loaded dynamically to avoid bundle issues
 
 const dictionaries = {
-    ar,
-    en,
+    ar: () => import("@/messages/ar.json").then((module) => module.default),
+    en: () => import("@/messages/en.json").then((module) => module.default),
 };
 
 export type Locale = keyof typeof dictionaries;
-export type Dictionary = typeof ar;
+// Use the Arabic dictionary as the source of truth for the type
+import ar_type from "@/messages/ar.json";
+export type Dictionary = typeof ar_type;
 
 export async function getLocale(): Promise<Locale> {
     try {
         const cookieStore = await cookies();
         const lang = cookieStore.get("NEXT_LOCALE")?.value;
-
-        // If we have a stored preference, use it, otherwise DEFAULT TO 'ar'
-        if (lang === "en" || lang === "ar") return lang;
-
-        // Final fallback ALWAYS Arabic for the market
+        if (lang === "en" || lang === "ar") return lang as Locale;
         return "ar";
     } catch (e) {
         return "ar";
@@ -29,5 +26,5 @@ export async function getLocale(): Promise<Locale> {
 
 export async function getDictionary(): Promise<Dictionary> {
     const locale = await getLocale();
-    return dictionaries[locale];
+    return await dictionaries[locale]();
 }
