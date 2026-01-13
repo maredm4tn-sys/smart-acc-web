@@ -24,7 +24,7 @@ export function RepresentativesClient({ representatives, dict }: { representativ
                                 <TableHead className="text-center">{dict.Representatives.Table.Type}</TableHead>
                                 <TableHead className="text-center">{dict.Representatives.Table.Phone}</TableHead>
                                 <TableHead className="text-center">{dict.Representatives.Table.Address}</TableHead>
-                                <TableHead className="text-center">{dict.Representatives.Table.Commission}</TableHead>
+                                <TableHead className="text-center">{dict.Representatives.Table.CommissionRate}</TableHead>
                                 <TableHead className="text-center">{dict.Representatives.Table.Notes}</TableHead>
                                 <TableHead className="text-center w-[100px]">{dict.Representatives.Table.Actions}</TableHead>
                             </TableRow>

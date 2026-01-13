@@ -111,7 +111,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex justify-center">
-                                                        <CustomerActions customer={c} currentRole={session?.role} dict={dict} />
+                                                        <CustomerActions customer={c} currentRole={session?.role?.toUpperCase()} dict={dict} />
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
