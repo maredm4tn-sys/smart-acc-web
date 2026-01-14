@@ -13,9 +13,10 @@ export async function getActiveTenantId(providedId?: string): Promise<string> {
     }
 
     try {
-        // 1. Try to find the first existing tenant using raw SQL to avoid schema mismatch errors
-        // Standard Drizzle better-sqlite3 uses .get() for raw queries
-        const row = db.get(sql`SELECT id FROM tenants LIMIT 1`) as { id: string } | undefined;
+        // 1. Try to find the first existing tenant using standard Drizzle select
+        // compatible with both SQLite and Postgres
+        const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);
+        const row = rows[0];
 
         if (row && row.id) {
             return row.id;
