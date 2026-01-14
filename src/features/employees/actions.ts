@@ -55,7 +55,8 @@ export async function getEmployees() {
 
     return data.map(emp => ({
         ...emp,
-        basicSalary: Number(emp.basicSalary || 0)
+        basicSalary: Number(emp.basicSalary || 0),
+        createdAt: emp.createdAt ? emp.createdAt.toISOString() : null
     }));
 }
 

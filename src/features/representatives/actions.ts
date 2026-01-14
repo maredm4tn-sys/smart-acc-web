@@ -63,7 +63,8 @@ export async function getRepresentatives(
         representatives: data.map(rep => ({
             ...rep,
             commissionRate: Number(rep.commissionRate || 0),
-            salary: Number(rep.salary || 0)
+            salary: Number(rep.salary || 0),
+            createdAt: rep.createdAt ? rep.createdAt.toISOString() : null
         })),
         totalPages,
         totalCount,
@@ -83,7 +84,8 @@ export async function getAllRepresentatives() {
     return data.map(rep => ({
         ...rep,
         commissionRate: Number(rep.commissionRate || 0),
-        salary: Number(rep.salary || 0)
+        salary: Number(rep.salary || 0),
+        createdAt: rep.createdAt ? rep.createdAt.toISOString() : null
     }));
 }
 

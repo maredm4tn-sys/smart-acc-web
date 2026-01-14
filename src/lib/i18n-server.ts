@@ -47,5 +47,6 @@ export async function getDictionary(): Promise<Dictionary> {
         return target;
     };
 
-    return merge(selectedDict, arDict);
+    const merged = merge(selectedDict, arDict);
+    return JSON.parse(JSON.stringify(merged));
 }
