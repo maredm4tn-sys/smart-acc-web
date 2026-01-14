@@ -18,8 +18,8 @@ export default async function EmployeesPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict.Employees.Title}</h2>
-                    <p className="text-sm md:text-base text-muted-foreground">{dict.Employees.Description}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict?.Employees?.Title || "Employees"}</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">{dict?.Employees?.Description || "Manage employee data"}</p>
                 </div>
             </div>
 

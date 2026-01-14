@@ -29,7 +29,7 @@ export async function getDictionary(): Promise<Dictionary> {
     const selectedDict = await dictionaries[locale]();
 
     // If it's already Arabic, return it
-    if (locale === "ar") return selectedDict;
+    if (locale === "ar") return JSON.parse(JSON.stringify(selectedDict));
 
     // For English, use Arabic as a deep fallback to prevent crashes if keys are missing
     const arDict = await dictionaries["ar"]();

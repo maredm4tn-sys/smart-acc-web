@@ -42,7 +42,7 @@ export function AddCustomerDialog({ triggerLabel, representatives = [] }: { trig
     const { dict } = useTranslation();
 
     const customerSchema = z.object({
-        name: z.string().min(2, dict.Dialogs.AddCustomer.Errors.NameRequired),
+        name: z.string().min(2, dict?.Dialogs?.AddCustomer?.Errors?.NameRequired || "Name is required"),
         companyName: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().optional(),
@@ -100,60 +100,60 @@ export function AddCustomerDialog({ triggerLabel, representatives = [] }: { trig
             <DialogTrigger asChild>
                 <Button className="flex items-center justify-center gap-2 h-10">
                     <Plus size={16} />
-                    {triggerLabel || dict.Dialogs.AddCustomer.Title}
+                    {triggerLabel || dict?.Dialogs?.AddCustomer?.Title || "Add Customer"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{dict.Dialogs.AddCustomer.Title}</DialogTitle>
+                    <DialogTitle>{dict?.Dialogs?.AddCustomer?.Title || "Add New Customer"}</DialogTitle>
                     <DialogDescription>
-                        {dict.Dialogs.AddCustomer.Description}
+                        {dict?.Dialogs?.AddCustomer?.Description || "Enter customer details"}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit, (e) => toast.error(dict.Users.Dialog.Errors.AllFieldsRequired))} className="space-y-4 py-2">
+                <form onSubmit={handleSubmit(onSubmit, (e) => toast.error(dict?.Users?.Dialog?.Errors?.AllFieldsRequired || "All fields required"))} className="space-y-4 py-2">
                     <Tabs defaultValue="basic" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="basic" className="flex items-center gap-2">
                                 <User size={14} />
-                                {dict.Dialogs.AddCustomer.BasicInfo}
+                                {dict?.Dialogs?.AddCustomer?.BasicInfo || "Basic"}
                             </TabsTrigger>
                             <TabsTrigger value="advanced" className="flex items-center gap-2">
                                 <ShieldCheck size={14} />
-                                {dict.Dialogs.AddCustomer.AdditionalInfo}
+                                {dict?.Dialogs?.AddCustomer?.AdditionalInfo || "Advanced"}
                             </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="basic" className="space-y-4 mt-4">
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.Name}</Label>
-                                <Input {...register("name")} placeholder={dict.Dialogs.AddCustomer.Placeholders.Name} />
-                                {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+                                <Label>{dict?.Dialogs?.AddCustomer?.Name || "Name"}</Label>
+                                <Input {...register("name")} placeholder={dict?.Dialogs?.AddCustomer?.Placeholders?.Name || "Name"} />
+                                {errors.name && <p className="text-red-500 text-xs">{errors.name.message as string}</p>}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>{dict.Dialogs.AddCustomer.Phone}</Label>
+                                    <Label>{dict?.Dialogs?.AddCustomer?.Phone || "Phone"}</Label>
                                     <Input {...register("phone")} className="dir-ltr text-left" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{dict.Dialogs.AddCustomer.OpeningBalance}</Label>
+                                    <Label>{dict?.Dialogs?.AddCustomer?.OpeningBalance || "Opening Balance"}</Label>
                                     <Input type="number" step="0.01" {...register("openingBalance")} className="dir-ltr text-left" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.Address}</Label>
+                                <Label>{dict?.Dialogs?.AddCustomer?.Address || "Address"}</Label>
                                 <Input {...register("address")} />
                             </div>
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.PriceLevel}</Label>
+                                <Label>{dict?.Dialogs?.AddCustomer?.PriceLevel || "Price Level"}</Label>
                                 <Select onValueChange={(val: any) => setValue("priceLevel", val)} defaultValue="retail">
                                     <SelectTrigger>
-                                        <SelectValue placeholder={dict.Dialogs.AddCustomer.PriceLevelPlaceholder} />
+                                        <SelectValue placeholder={dict?.Dialogs?.AddCustomer?.PriceLevelPlaceholder || "Select Level"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="retail">{dict.Dialogs.AddCustomer.Retail}</SelectItem>
-                                        <SelectItem value="wholesale">{dict.Dialogs.AddCustomer.Wholesale}</SelectItem>
-                                        <SelectItem value="half_wholesale">{dict.Dialogs.AddCustomer.HalfWholesale}</SelectItem>
-                                        <SelectItem value="special">{dict.Dialogs.AddCustomer.Special}</SelectItem>
+                                        <SelectItem value="retail">{dict?.Dialogs?.AddCustomer?.Retail || "Retail"}</SelectItem>
+                                        <SelectItem value="wholesale">{dict?.Dialogs?.AddCustomer?.Wholesale || "Wholesale"}</SelectItem>
+                                        <SelectItem value="half_wholesale">{dict?.Dialogs?.AddCustomer?.HalfWholesale || "Half Wholesale"}</SelectItem>
+                                        <SelectItem value="special">{dict?.Dialogs?.AddCustomer?.Special || "Special"}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -177,37 +177,37 @@ export function AddCustomerDialog({ triggerLabel, representatives = [] }: { trig
 
                         <TabsContent value="advanced" className="space-y-4 mt-4">
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.Company}</Label>
-                                <Input {...register("companyName")} placeholder={dict.Dialogs.AddCustomer.Placeholders.Company} />
+                                <Label>{dict?.Dialogs?.AddCustomer?.Company || "Company"}</Label>
+                                <Input {...register("companyName")} placeholder={dict?.Dialogs?.AddCustomer?.Placeholders?.Company || "Company"} />
                             </div>
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.TaxId}</Label>
+                                <Label>{dict?.Dialogs?.AddCustomer?.TaxId || "Tax ID"}</Label>
                                 <Input {...register("taxId")} className="dir-ltr text-left" />
                             </div>
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.NationalId}</Label>
-                                <Input {...register("nationalId")} placeholder={dict.Dialogs.AddCustomer.NationalIdPlaceholder} className="dir-ltr text-left" />
+                                <Label>{dict?.Dialogs?.AddCustomer?.NationalId || "National ID"}</Label>
+                                <Input {...register("nationalId")} placeholder={dict?.Dialogs?.AddCustomer?.NationalIdPlaceholder || "Enter ID"} className="dir-ltr text-left" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>{dict.Dialogs.AddCustomer.CreditLimit}</Label>
+                                    <Label>{dict?.Dialogs?.AddCustomer?.CreditLimit || "Credit Limit"}</Label>
                                     <Input type="number" {...register("creditLimit")} className="dir-ltr text-left" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{dict.Dialogs.AddCustomer.PaymentDay}</Label>
-                                    <Input type="number" min="1" max="31" {...register("paymentDay")} placeholder={dict.Dialogs.AddCustomer.PaymentDayPlaceholder} className="dir-ltr text-left" />
+                                    <Label>{dict?.Dialogs?.AddCustomer?.PaymentDay || "Payment Day"}</Label>
+                                    <Input type="number" min="1" max="31" {...register("paymentDay")} placeholder={dict?.Dialogs?.AddCustomer?.PaymentDayPlaceholder || "1-31"} className="dir-ltr text-left" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>{dict.Dialogs.AddCustomer.Email}</Label>
-                                <Input {...register("email")} className="dir-ltr text-left" placeholder={dict.Dialogs.AddCustomer.Placeholders.Email} />
+                                <Label>{dict?.Dialogs?.AddCustomer?.Email || "Email"}</Label>
+                                <Input {...register("email")} className="dir-ltr text-left" placeholder={dict?.Dialogs?.AddCustomer?.Placeholders?.Email || "example@mail.com"} />
                             </div>
                         </TabsContent>
                     </Tabs>
 
                     <DialogFooter className="mt-6">
                         <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? dict.Dialogs.AddCustomer.Saving : dict.Dialogs.AddCustomer.Save}
+                            {isSubmitting ? (dict?.Dialogs?.AddCustomer?.Saving || "Saving...") : (dict?.Dialogs?.AddCustomer?.Save || "Save")}
                         </Button>
                     </DialogFooter>
                 </form>

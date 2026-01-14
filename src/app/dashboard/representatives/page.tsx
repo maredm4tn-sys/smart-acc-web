@@ -11,8 +11,8 @@ export default async function RepresentativesPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict.Representatives.Title}</h2>
-                    <p className="text-sm md:text-base text-muted-foreground">{dict.Representatives.Description}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict?.Representatives?.Title || "Representatives"}</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">{dict?.Representatives?.Description || "Manage representatives"}</p>
                 </div>
                 <div className="w-full sm:w-auto">
                     <AddRepresentativeDialog />

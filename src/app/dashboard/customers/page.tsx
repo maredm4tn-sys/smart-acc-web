@@ -20,17 +20,17 @@ export default async function CustomersPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict.Customers.Title}</h2>
-                    <p className="text-sm md:text-base text-muted-foreground">{dict.Customers.Description}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">{dict?.Customers?.Title || "Customers"}</h2>
+                    <p className="text-sm md:text-base text-muted-foreground">{dict?.Customers?.Description || "Manage your customers"}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                    <AddCustomerDialog triggerLabel={dict.Customers.NewCustomer} representatives={representatives} />
+                    <AddCustomerDialog triggerLabel={dict?.Customers?.NewCustomer || "Add Customer"} representatives={representatives} />
                     {isAdmin && <CustomerImport />}
                     {isAdmin && (
                         <ExcelExportButton
                             getData={getCustomersExport}
                             fileName="Customers_List"
-                            label={dict.Customers.ExportExcel}
+                            label={dict?.Customers?.ExportExcel || "Export"}
                         />
                     )}
                 </div>
