@@ -160,7 +160,9 @@ export async function getCustomers() {
 
         return rows.map(r => ({
             ...r,
-            totalDebt: Number(r.totalDebt)
+            totalDebt: Number(r.totalDebt || 0),
+            openingBalance: Number(r.openingBalance || 0),
+            creditLimit: Number(r.creditLimit || 0)
         }));
     } catch (error) {
         console.error("Get Customers Error:", error);
