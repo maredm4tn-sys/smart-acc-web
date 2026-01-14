@@ -72,9 +72,9 @@ export function DashboardShell({ children, user, dict, isRtl }: DashboardShellPr
                             </Button>
 
                             <div className="hidden sm:flex items-center gap-2 text-gray-500 overflow-hidden">
-                                <span className="text-xs md:text-sm truncate">{dict.Sidebar.Dashboard}</span>
+                                <span className="text-xs md:text-sm truncate">{dict?.Sidebar?.Dashboard || "Dashboard"}</span>
                                 <span className="text-gray-300">/</span>
-                                <span className="text-xs md:text-sm font-semibold text-gray-900 truncate">{dict.General.Overview}</span>
+                                <span className="text-xs md:text-sm font-semibold text-gray-900 truncate">{dict?.General?.Overview || "Overview"}</span>
                             </div>
                         </div>
 
