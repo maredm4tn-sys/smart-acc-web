@@ -48,10 +48,15 @@ const payrollSchema = z.object({
 // --- Employee Actions ---
 export async function getEmployees() {
     const tenantId = await requireTenant();
-    return db.query.employees.findMany({
+    const data = await db.query.employees.findMany({
         where: eq(employees.tenantId, tenantId),
         orderBy: desc(employees.createdAt),
     });
+
+    return data.map(emp => ({
+        ...emp,
+        basicSalary: Number(emp.basicSalary || 0)
+    }));
 }
 
 export async function upsertEmployee(data: z.infer<typeof employeeSchema>) {

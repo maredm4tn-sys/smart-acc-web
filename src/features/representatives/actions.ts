@@ -60,7 +60,11 @@ export async function getRepresentatives(
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
-        representatives: data,
+        representatives: data.map(rep => ({
+            ...rep,
+            commissionRate: Number(rep.commissionRate || 0),
+            salary: Number(rep.salary || 0)
+        })),
         totalPages,
         totalCount,
         currentPage: page,
@@ -70,11 +74,17 @@ export async function getRepresentatives(
 export async function getAllRepresentatives() {
     const tenantId = await requireTenant();
 
-    return await db
+    const data = await db
         .select()
         .from(representatives)
         .where(and(eq(representatives.tenantId, tenantId), eq(representatives.isActive, true)))
         .orderBy(representatives.name);
+
+    return data.map(rep => ({
+        ...rep,
+        commissionRate: Number(rep.commissionRate || 0),
+        salary: Number(rep.salary || 0)
+    }));
 }
 
 export async function createRepresentative(data: RepresentativeFormValues) {
