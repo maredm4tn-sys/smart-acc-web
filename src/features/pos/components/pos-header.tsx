@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { ShiftManager } from "@/features/shifts/components/shift-manager";
 
 export function POSHeader() {
     const { header, setHeader, customers } = usePOS();
@@ -36,6 +37,7 @@ export function POSHeader() {
                 </div>
 
                 <div className="flex gap-2">
+                    <ShiftManager />
                     <Button variant="outline" size="sm" className="gap-2 text-orange-600 border-orange-200 bg-orange-50">
                         <RotateCcw size={16} /> مرتجع (Ctrl+R)
                     </Button>

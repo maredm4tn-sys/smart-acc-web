@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from "sonner";
+import { useShift } from "@/features/shifts/context/shift-context";
 
 // --- Types ---
 export type Unit = {
@@ -132,7 +133,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     });
     const [products, setProducts] = useState<Product[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
-    const [activeShift, setActiveShift] = useState<any>(null);
+    const { activeShift, checkActiveShift } = useShift();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuspendedMode, setIsSuspendedMode] = useState(false);
     const [settings, setSettings] = useState({
@@ -212,7 +213,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         loadCustomers();
         checkActiveShift();
         loadSystemSettings();
-    }, []);
+    }, [checkActiveShift]);
 
     const loadSystemSettings = async () => {
         try {
@@ -229,15 +230,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
         } catch (e) { console.error(e); }
     };
 
-    const checkActiveShift = async () => {
-        try {
-            const res = await fetch('/api/shifts/active'); // We might need an API or action for this
-            // For now, let's assume we can get it via action or passed prop. 
-            // The previous page used getActiveShift(). Let's use action if we can, 
-            // but we can't import server actions directly in client context in some setups without 'use server'.
-            // Actually, we can if next.js handles it. Let's use the pattern from before.
-        } catch (e) { console.error(e); }
-    };
+
 
     const loadCustomers = async () => {
         try {

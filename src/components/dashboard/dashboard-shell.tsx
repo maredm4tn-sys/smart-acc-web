@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "./app-sidebar";
 import { MobileNav } from "./mobile-nav";
+import { ShiftManager } from "@/features/shifts/components/shift-manager";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +76,10 @@ export function DashboardShell({ children, user, dict, isRtl }: DashboardShellPr
                                 <span className="text-xs md:text-sm truncate">{dict?.Sidebar?.Dashboard || "Dashboard"}</span>
                                 <span className="text-gray-300">/</span>
                                 <span className="text-xs md:text-sm font-semibold text-gray-900 truncate">{dict?.General?.Overview || "Overview"}</span>
+                            </div>
+
+                            <div className="flex items-center">
+                                <ShiftManager />
                             </div>
                         </div>
 

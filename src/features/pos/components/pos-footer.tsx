@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Printer, CreditCard, Banknote, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePOSActions } from "../hooks/use-pos-actions";
 
 export function POSFooter() {
-    const { totals, setTotals, checkout, isLoading, header, setHeader, settings, setSettings, clearCart } = usePOS();
+    const { totals, setTotals, isLoading, header, setHeader, settings, setSettings } = usePOS();
+    const { handleIssueInvoice, isProcessing } = usePOSActions();
 
     // Local state for auto print
     const [autoPrint, setAutoPrint] = useState(true);
@@ -23,25 +25,7 @@ export function POSFooter() {
     // Checkout wrapper with auto-print
     const handleCheckout = async (e?: React.MouseEvent) => {
         if (e) e.preventDefault();
-        const result = await checkout();
-        if (result && result.success) {
-            // 1. Trigger Printing using window.open (More reliable for modern browsers)
-            if (autoPrint) {
-                const layoutType = settings.printLayout || 'thermal';
-                const printUrl = `/print/sales/${result.id}?type=${layoutType}&auto=true&t=${Date.now()}`;
-
-                // Open a small hidden-like window
-                const printWindow = window.open(printUrl, 'pos_print_window', 'width=400,height=600,left=1000,top=1000');
-                // The print window now handles its own closing via 'afterprint' listener
-            }
-
-            // 2. Delayed Cleanup (Wait for print dialog to potentially open)
-            setTimeout(() => {
-                clearCart();
-                setHeader({ customerId: 0, customerName: "", paymentMethod: 'cash', priceType: 'retail' });
-                setTotals({ paid: 0, discountAmount: 0, discountPercent: 0, deliveryFee: 0 });
-            }, 1500);
-        }
+        await handleIssueInvoice(autoPrint);
     };
 
     return (
@@ -120,7 +104,7 @@ export function POSFooter() {
                 size="lg"
                 className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-xl font-black rounded-xl mt-0.5 shadow-lg shadow-blue-100 transition-all active:scale-[0.98]"
                 onClick={(e) => handleCheckout(e)}
-                disabled={isLoading}
+                disabled={isLoading || isProcessing}
             >
                 <div className="flex items-center gap-2">
                     <Banknote size={24} />

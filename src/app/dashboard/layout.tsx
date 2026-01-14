@@ -3,6 +3,8 @@ import { getSession } from "@/features/auth/actions";
 import { redirect } from "next/navigation";
 import { getDictionary, getLocale } from "@/lib/i18n-server";
 import { ActivationDialog } from "@/features/admin/components/activation-dialog";
+import { ShiftProvider } from "@/features/shifts/context/shift-context";
+import { PrintProvider } from "@/components/printing/print-provider";
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +23,15 @@ export default async function DashboardLayout({
 
     return (
         <>
-            <DashboardShell user={session} dict={dict} isRtl={isRtl}>
-                {children}
-            </DashboardShell>
-            <ActivationDialog dict={dict} />
-            <OfflineSyncManager />
+            <ShiftProvider>
+                <PrintProvider>
+                    <DashboardShell user={session} dict={dict} isRtl={isRtl}>
+                        {children}
+                    </DashboardShell>
+                    <ActivationDialog dict={dict} />
+                    <OfflineSyncManager />
+                </PrintProvider>
+            </ShiftProvider>
         </>
     );
 }

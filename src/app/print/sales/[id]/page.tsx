@@ -47,33 +47,47 @@ export default async function InvoicePrintPage(props: {
     const dateStr = dateObj.toLocaleDateString('en-GB');
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-    const autoPrintScript = auto ? (
+    const autoPrintScript = (
         <script dangerouslySetInnerHTML={{
             __html: `
                 (function() {
+                    function signalDone() {
+                        if (window.opener) {
+                            window.opener.postMessage({ type: 'PRINT_COMPLETED' }, '*');
+                        }
+                    }
+
                     window.addEventListener('afterprint', () => {
-                        window.close();
+                        signalDone();
+                        ${auto ? 'window.close();' : ''}
                     });
+
+                    // Also signal if the user just closes the tab or navigates away
+                    window.addEventListener('beforeunload', signalDone);
+
+                    ${auto ? `
                     window.onload = function() {
                         setTimeout(function() {
                             window.focus();
                             window.print();
-                        }, 1000);
+                        }, 800);
                     };
+                    ` : ''}
                 })();
             `
         }} />
-    ) : null;
+    );
 
     // --- THERMAL LAYOUT ---
     if (type === 'thermal') {
         return (
-            <div className="bg-white min-h-screen text-black font-mono font-bold" style={{ width: '80mm', margin: '0 auto', padding: '8mm' }}>
+            <div className="bg-white h-auto text-black font-mono font-bold" style={{ width: '80mm', margin: '0', padding: '4mm' }}>
                 <style>{`
                     @media print {
                         @page { size: 80mm auto; margin: 0; }
-                        body { margin: 0; padding: 0; width: 80mm; background: white; }
+                        body { margin: 0; padding: 0; width: 80mm; background: white; overflow: hidden; }
                         .no-print { display: none; }
+                        * { -webkit-print-color-adjust: exact; }
                     }
                 `}</style>
                 {autoPrintScript}
