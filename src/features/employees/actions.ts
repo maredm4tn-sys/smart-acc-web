@@ -53,11 +53,13 @@ export async function getEmployees() {
         orderBy: desc(employees.createdAt),
     });
 
-    return data.map(emp => ({
+    const result = data.map(emp => ({
         ...emp,
         basicSalary: Number(emp.basicSalary || 0),
         createdAt: emp.createdAt ? emp.createdAt.toISOString() : null
     }));
+
+    return JSON.parse(JSON.stringify(result));
 }
 
 export async function upsertEmployee(data: z.infer<typeof employeeSchema>) {

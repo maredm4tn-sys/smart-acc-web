@@ -158,11 +158,14 @@ export async function getCustomers() {
                 customers.representativeId
             );
 
+        // Ultimate Sanitization: Convert to plain JSON to avoid any Serialization errors on Vercel
         const sanitized = rows.map(r => ({
             ...r,
             totalDebt: Number(r.totalDebt || 0),
             openingBalance: Number(r.openingBalance || 0),
-            creditLimit: Number(r.creditLimit || 0)
+            creditLimit: Number(r.creditLimit || 0),
+            paymentDay: r.paymentDay ? Number(r.paymentDay) : null,
+            representativeId: r.representativeId ? Number(r.representativeId) : null
         }));
 
         return JSON.parse(JSON.stringify(sanitized));
