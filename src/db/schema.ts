@@ -37,8 +37,8 @@ export const employees = usePg ? schemaPg.employees : schemaSqlite.employees;
 export const advances = usePg ? schemaPg.advances : schemaSqlite.advances;
 export const payrolls = usePg ? schemaPg.payrolls : schemaSqlite.payrolls;
 export const attendance = usePg ? schemaPg.attendance : schemaSqlite.attendance;
-export const representatives = usePg ? null : schemaSqlite.representatives;
-export const units = usePg ? null : schemaSqlite.units;
+export const representatives = usePg ? schemaPg.representatives : schemaSqlite.representatives;
+export const units = usePg ? schemaPg.units : schemaSqlite.units;
 
 // Relations
 export const usersRelations = usePg ? schemaPg.usersRelations : schemaSqlite.usersRelations;
@@ -48,7 +48,8 @@ export const employeesRelations = usePg ? schemaPg.employeesRelations : schemaSq
 export const advancesRelations = usePg ? schemaPg.advancesRelations : schemaSqlite.advancesRelations;
 export const payrollsRelations = usePg ? schemaPg.payrollsRelations : schemaSqlite.payrollsRelations;
 export const attendanceRelations = usePg ? schemaPg.attendanceRelations : schemaSqlite.attendanceRelations;
-export const representativesRelations = usePg ? null : schemaSqlite.representativesRelations;
+export const representativesRelations = usePg ? schemaPg.representativesRelations : schemaSqlite.representativesRelations;
+export const unitsRelations = usePg ? schemaPg.unitsRelations : schemaSqlite.unitsRelations;
 export const fiscalYearsRelations = usePg ? schemaPg.fiscalYearsRelations : schemaSqlite.fiscalYearsRelations;
 export const accountsRelations = usePg ? schemaPg.accountsRelations : schemaSqlite.accountsRelations;
 export const journalEntriesRelations = usePg ? schemaPg.journalEntriesRelations : schemaSqlite.journalEntriesRelations;

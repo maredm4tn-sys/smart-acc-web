@@ -17,6 +17,8 @@ export const tenants = pgTable('tenants', {
     customerRating: text('customer_rating', { enum: ['VIP', 'Normal', 'Difficult'] }).default('Normal'),
     adminNotes: text('admin_notes'),
     activityType: text('activity_type'), // e.g. 'Grocery', 'Tech', 'Restaurant'
+    defaultPrintSales: text('default_print_sales').default('standard').notNull(),
+    defaultPrintPOS: text('default_print_pos').default('thermal').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -28,6 +30,8 @@ export const users = pgTable('users', {
     username: text('username').notNull().unique(), // Add username
     fullName: text('full_name').notNull(),
     email: text('email'), // Make email optional if not strictly needed or keep it
+    phone: text('phone'),
+    address: text('address'),
     passwordHash: text('password_hash').notNull(),
     role: text('role', { enum: ['CLIENT', 'SUPER_ADMIN', 'admin', 'cashier'] }).default('CLIENT').notNull(),
     status: text('status', { enum: ['ACTIVE', 'SUSPENDED'] }).default('ACTIVE').notNull(),
@@ -155,11 +159,27 @@ export const journalLinesRelations = relations(journalLines, ({ one }) => ({
 // --- Categories ---
 export const categories = pgTable('categories', {
     id: serial('id').primaryKey(),
-    tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     description: text('description'),
     createdAt: timestamp('created_at').defaultNow(),
 });
+
+// --- Units ---
+export const units = pgTable('units', {
+    id: serial('id').primaryKey(),
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name').notNull(), // e.g., Piece, Box, Kg
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const unitsRelations = relations(units, ({ one, many }) => ({
+    tenant: one(tenants, {
+        fields: [units.tenantId],
+        references: [tenants.id],
+    }),
+    products: many(products),
+}));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
     tenant: one(tenants, {
@@ -175,12 +195,19 @@ export const products = pgTable('products', {
     tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     sku: text('sku').notNull(),
+    barcode: text('barcode'),
     type: text('type', { enum: ['service', 'goods'] }).default('goods').notNull(),
     sellPrice: decimal('sell_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    priceWholesale: decimal('price_wholesale', { precision: 15, scale: 2 }).default('0.00'),
+    priceHalfWholesale: decimal('price_half_wholesale', { precision: 15, scale: 2 }).default('0.00'),
+    priceSpecial: decimal('price_special', { precision: 15, scale: 2 }).default('0.00'),
     buyPrice: decimal('buy_price', { precision: 15, scale: 2 }).default('0.00').notNull(),
     stockQuantity: decimal('stock_quantity', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    minStock: integer('min_stock').default(0),
     requiresToken: boolean('requires_token').default(false).notNull(),
     categoryId: integer('category_id').references(() => categories.id),
+    unitId: integer('unit_id').references(() => units.id),
+    location: text('location'),
     createdAt: timestamp('created_at').defaultNow(),
 }, (table) => {
     return {
@@ -196,6 +223,10 @@ export const productsRelations = relations(products, ({ one }) => ({
     category: one(categories, {
         fields: [products.categoryId],
         references: [categories.id],
+    }),
+    unit: one(units, {
+        fields: [products.unitId],
+        references: [units.id],
     }),
 }));
 
@@ -247,6 +278,8 @@ export const representatives = pgTable('representatives', {
     phone: text('phone'),
     address: text('address'),
     type: text('type', { enum: ['sales', 'delivery'] }).default('sales').notNull(),
+    salary: decimal('salary', { precision: 15, scale: 2 }).default('0.00'),
+    commissionType: text('commission_type').default('percentage'), // 'percentage' or 'fixed_per_invoice'
     commissionRate: decimal('commission_rate', { precision: 5, scale: 2 }).default('0.00'),
     notes: text('notes'),
     isActive: boolean('is_active').default(true).notNull(),
@@ -315,7 +348,11 @@ export const invoices = pgTable('invoices', {
     taxTotal: decimal('tax_total', { precision: 15, scale: 2 }).default('0.00').notNull(),
     totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
     discountAmount: decimal('discount_amount', { precision: 15, scale: 2 }).default('0.00').notNull(),
+    discountPercent: decimal('discount_percent', { precision: 5, scale: 2 }).default('0.00'),
+    deliveryFee: decimal('delivery_fee', { precision: 15, scale: 2 }).default('0.00'),
     paymentMethod: text('payment_method').default('cash').notNull(), // cash, card, other
+    priceType: text('price_type').default('retail').notNull(),
+    storeId: integer('store_id').default(1),
 
     // --- AR Fields ---
     paymentStatus: text("payment_status").notNull().default("paid"), // paid, partial, unpaid
@@ -343,9 +380,12 @@ export const invoiceItems = pgTable('invoice_items', {
     id: serial('id').primaryKey(),
     invoiceId: integer('invoice_id').references(() => invoices.id, { onDelete: 'cascade' }).notNull(),
     productId: integer('product_id').references(() => products.id),
+    unitId: integer('unit_id').references(() => units.id),
+    storeId: integer('store_id').default(1),
     description: text('description').notNull(),
     quantity: decimal('quantity', { precision: 10, scale: 2 }).notNull(),
     unitPrice: decimal('unit_price', { precision: 15, scale: 2 }).notNull(),
+    discount: decimal('discount', { precision: 15, scale: 2 }).default('0.00'),
     total: decimal('total', { precision: 15, scale: 2 }).notNull(),
 });
 
