@@ -9,7 +9,7 @@ import { AdvanceForm } from "./advance-form";
 import { EmployeeReports } from "./employee-reports";
 import { AttendanceView } from "./attendance-view";
 
-export function EmployeesClient({ initialEmployees, dict, session }: { initialEmployees: any[], dict: any, session: any }) {
+export function EmployeesClient({ initialEmployees = [], dict, session }: { initialEmployees?: any[], dict: any, session: any }) {
     const [employees, setEmployees] = useState(initialEmployees);
 
     const isAdmin = session?.role?.toUpperCase() === 'ADMIN' || session?.role?.toUpperCase() === 'SUPER_ADMIN';
@@ -19,30 +19,30 @@ export function EmployeesClient({ initialEmployees, dict, session }: { initialEm
             <TabsList className={`grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'} w-full max-w-3xl h-auto p-1 bg-slate-100/50`}>
                 <TabsTrigger value="list" className="gap-2 py-2">
                     <Users size={16} />
-                    <span>{dict.Employees.Tabs.List}</span>
+                    <span>{dict?.Employees?.Tabs?.List || "Employees"}</span>
                 </TabsTrigger>
 
                 {isAdmin && (
                     <TabsTrigger value="payroll" className="gap-2 py-2">
                         <Wallet size={16} />
-                        <span>{dict.Employees.Tabs.Payroll}</span>
+                        <span>{dict?.Employees?.Tabs?.Payroll || "Payroll"}</span>
                     </TabsTrigger>
                 )}
 
                 <TabsTrigger value="advances" className="gap-2 py-2">
                     <CreditCard size={16} />
-                    <span>{dict.Employees.Tabs.Advances}</span>
+                    <span>{dict?.Employees?.Tabs?.Advances || "Advances"}</span>
                 </TabsTrigger>
 
                 <TabsTrigger value="attendance" className="gap-2 py-2">
                     <ClipboardList size={16} />
-                    <span>{dict.Employees.Tabs.Attendance}</span>
+                    <span>{dict?.Employees?.Tabs?.Attendance || "Attendance"}</span>
                 </TabsTrigger>
 
                 {isAdmin && (
                     <TabsTrigger value="reports" className="gap-2 py-2">
                         <ClipboardList size={16} />
-                        <span>{dict.Employees.Tabs.Reports}</span>
+                        <span>{dict?.Employees?.Tabs?.Reports || "Reports"}</span>
                     </TabsTrigger>
                 )}
             </TabsList>
@@ -69,3 +69,4 @@ export function EmployeesClient({ initialEmployees, dict, session }: { initialEm
         </Tabs>
     );
 }
+

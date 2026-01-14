@@ -311,21 +311,24 @@ export async function getEmployeeStatement(employeeId: number, startDate: string
         orderBy: desc(advances.date)
     });
 
-    return {
+    return JSON.parse(JSON.stringify({
         payrolls: employeePayrolls,
         advances: employeeAdvances
-    };
+    }));
 }
 
 export async function getAttendance(date: string) {
     const tenantId = await requireTenant();
-    return db.query.attendance.findMany({
+    const data = await db.query.attendance.findMany({
         where: and(eq(attendance.tenantId, tenantId), eq(attendance.date, date)),
         with: {
             employee: true
         }
     });
+
+    return JSON.parse(JSON.stringify(data));
 }
+
 
 export async function recordAttendance(data: {
     employeeId: number;

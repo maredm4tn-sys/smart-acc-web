@@ -451,7 +451,9 @@
             "Errors": {
                 "NameRequired": "اسم العميل مطلوب",
                 "InvalidEmail": "بريد إلكتروني غير صحيح",
-                "AllFieldsRequired": "يرجى التأكد من ملء جميع الحقول المطلوبة"
+                "AllFieldsRequired": "يرجى التأكد من ملء جميع الحقول المطلوبة",
+                "PaymentDayMin": "يوم التحصيل يجب أن يكون 1 على الأقل",
+                "PaymentDayMax": "يوم التحصيل لا يمكن أن يتجاوز 31"
             },
             "Placeholders": {
                 "Name": "اسم العميل",

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 
-export function CustomersClient({ initialCustomers, dict, session, representatives = [] }: { initialCustomers: any[], dict: any, session: any, representatives?: any[] }) {
+export function CustomersClient({ initialCustomers = [], dict, session, representatives = [] }: { initialCustomers?: any[], dict: any, session: any, representatives?: any[] }) {
     const [customers, setCustomers] = useState(initialCustomers);
     const [isOffline, setIsOffline] = useState(false);
 
@@ -23,7 +23,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
         const handleOffline = async () => {
             setIsOffline(true);
             const local = await getLocalData(STORES.CUSTOMERS);
-            if (local.length > 0) setCustomers(local);
+            if (local?.length > 0) setCustomers(local);
         };
 
         const handleOnline = () => {
@@ -74,7 +74,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {customers.length === 0 ? (
+                                    {!customers || customers.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={7} className="text-center h-24 text-gray-500">
                                                 {dict?.Customers?.Table?.NoCustomers || "No customers found"}
@@ -82,26 +82,26 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                                         </TableRow>
                                     ) : (
                                         customers.map((c) => (
-                                            <TableRow key={c.id}>
+                                            <TableRow key={c?.id}>
                                                 <TableCell className="text-center">
-                                                    <div className="truncate max-w-[150px] mx-auto font-medium" title={c.name}>{c.name}</div>
+                                                    <div className="truncate max-w-[150px] mx-auto font-medium" title={c?.name}>{c?.name || "-"}</div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <div className="truncate max-w-[120px] mx-auto" title={c.companyName || ""}>{c.companyName || "-"}</div>
+                                                    <div className="truncate max-w-[120px] mx-auto" title={c?.companyName || ""}>{c?.companyName || "-"}</div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <div className="truncate max-w-[150px] mx-auto" title={c.address || ""}>{c.address || "-"}</div>
+                                                    <div className="truncate max-w-[150px] mx-auto" title={c?.address || ""}>{c?.address || "-"}</div>
                                                 </TableCell>
                                                 <TableCell className="text-center font-mono text-xs">
-                                                    {c.phone || "-"}
+                                                    {c?.phone || "-"}
                                                 </TableCell>
                                                 <TableCell className="text-center text-xs">
-                                                    <div className="truncate max-w-[150px] mx-auto font-mono" title={c.email || ""}>{c.email || "-"}</div>
+                                                    <div className="truncate max-w-[150px] mx-auto font-mono" title={c?.email || ""}>{c?.email || "-"}</div>
                                                 </TableCell>
-                                                <TableCell className={`text-center font-bold ${Number(c.totalDebt) > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                                <TableCell className={`text-center font-bold ${Number(c?.totalDebt || 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                                     <div className="flex flex-col items-center gap-1">
-                                                        <span>{Number(c.totalDebt || 0).toFixed(2)}</span>
-                                                        {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
+                                                        <span>{Number(c?.totalDebt || 0).toFixed(2)}</span>
+                                                        {Number(c?.creditLimit || 0) > 0 && Number(c?.totalDebt || 0) > Number(c?.creditLimit || 0) && (
                                                             <Badge variant="destructive" className="text-[10px] px-1 py-0 flex items-center gap-1">
                                                                 <AlertTriangle size={10} />
                                                                 {dict?.Customers?.Table?.LimitExceeded || "Limit Exceeded"}
@@ -126,29 +126,29 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
 
             {/* Mobile Card List */}
             <div className="lg:hidden space-y-4 pb-20">
-                {customers.length === 0 ? (
+                {!customers || customers.length === 0 ? (
                     <div className="text-center p-8 text-muted-foreground">{dict?.Customers?.Table?.NoCustomers || "No Customers"}</div>
                 ) : (
                     customers.map((c) => (
-                        <Card key={c.id} className="border shadow-sm">
+                        <Card key={c?.id} className="border shadow-sm">
                             <CardContent className="p-4 space-y-3">
                                 <div className="flex items-start justify-between">
                                     <div className="font-bold text-lg flex items-center gap-2">
                                         <Users className="h-4 w-4 text-primary" />
-                                        {c.name}
+                                        {c?.name || "-"}
                                     </div>
                                     <CustomerActions customer={c} currentRole={session?.role} dict={dict} />
                                 </div>
                                 <div className="space-y-1 text-sm text-gray-600">
-                                    {c.companyName && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Company || "Company"}:</span> <span className="text-gray-900">{c.companyName}</span></div>}
-                                    {c.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Phone || "Phone"}:</span> <span className="font-mono">{c.phone}</span></div>}
+                                    {c?.companyName && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Company || "Company"}:</span> <span className="text-gray-900">{c?.companyName}</span></div>}
+                                    {c?.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Phone || "Phone"}:</span> <span className="font-mono">{c?.phone}</span></div>}
                                     <div className="flex justify-between font-bold pt-1">
                                         <span>{dict?.Customers?.Table?.TotalDebt || "Debt"}:</span>
                                         <div className="flex flex-col items-end gap-1">
-                                            <span className={Number(c.totalDebt) > 0 ? 'text-red-600' : 'text-green-600'}>
-                                                {Number(c.totalDebt || 0).toFixed(2)}
+                                            <span className={Number(c?.totalDebt || 0) > 0 ? 'text-red-600' : 'text-green-600'}>
+                                                {Number(c?.totalDebt || 0).toFixed(2)}
                                             </span>
-                                            {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
+                                            {Number(c?.creditLimit || 0) > 0 && Number(c?.totalDebt || 0) > Number(c?.creditLimit || 0) && (
                                                 <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
                                                     {dict?.Customers?.Table?.LimitExceeded || "Limit Exceeded"}
                                                 </Badge>
@@ -164,3 +164,4 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
         </div>
     );
 }
+

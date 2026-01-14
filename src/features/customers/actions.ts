@@ -175,7 +175,7 @@ export async function getCustomerStatement(id: number, dateRange?: { from: Date,
         let transactions = [
             ...invoicesData.map(inv => ({
                 id: `INV-${inv.id}`,
-                date: new Date(inv.issueDate),
+                date: new Date(inv.issueDate).toISOString(),
                 type: 'INVOICE',
                 ref: inv.invoiceNumber,
                 description: `Sales Invoice #${inv.invoiceNumber}`,
@@ -184,7 +184,7 @@ export async function getCustomerStatement(id: number, dateRange?: { from: Date,
             })),
             ...receiptsData.map(pay => ({
                 id: `VCH-${pay.id}`,
-                date: new Date(pay.date),
+                date: new Date(pay.date).toISOString(),
                 type: pay.type === 'receipt' ? 'RECEIPT' : 'PAYMENT', // Receipt = money in
                 ref: pay.voucherNumber,
                 description: pay.description || 'Receipt',
@@ -194,7 +194,7 @@ export async function getCustomerStatement(id: number, dateRange?: { from: Date,
         ];
 
         // Sort
-        transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+        transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         // Calculate balances
         let balance = Number(customer.openingBalance) || 0;
@@ -211,7 +211,7 @@ export async function getCustomerStatement(id: number, dateRange?: { from: Date,
             return { ...t, balance };
         });
 
-        return {
+        return JSON.parse(JSON.stringify({
             customer,
             openingBalance: Number(customer.openingBalance) || 0,
             transactions: statement,
@@ -220,13 +220,14 @@ export async function getCustomerStatement(id: number, dateRange?: { from: Date,
                 totalCredit,
                 netBalance: balance
             }
-        };
+        }));
 
     } catch (e) {
         console.error("getCustomerStatement Error", e);
         return null;
     }
 }
+
 
 export async function getCustomersExport() {
     const { getSession } = await import("@/features/auth/actions");

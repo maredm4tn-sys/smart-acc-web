@@ -54,7 +54,7 @@ export function CustomerActions({ customer, currentRole, dict, representatives =
     const handleDelete = async () => {
         const res = await deleteCustomer(customer.id);
         if (res.success) {
-            toast.success(dict.Customers.Table.Delete + " " + dict.Common.Success);
+            toast.success((dict?.Customers?.Table?.Delete || "Delete") + " " + (dict?.Common?.Success || "Success"));
         } else {
             toast.error(res.message);
         }
@@ -68,7 +68,7 @@ export function CustomerActions({ customer, currentRole, dict, representatives =
                     <Edit2 size={16} />
                 </Button>
                 <Link href={`/dashboard/customers/${customer.id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title={dict.Suppliers?.Statement?.Title || "Account Statement"}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title={dict?.Suppliers?.Statement?.Title || dict?.Customers?.Statement?.Title || "Account Statement"}>
                         <FileText size={16} />
                     </Button>
                 </Link>
@@ -88,17 +88,18 @@ export function CustomerActions({ customer, currentRole, dict, representatives =
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{dict.Common.Confirm} {dict.Customers.Table.Delete}</AlertDialogTitle>
+                        <AlertDialogTitle>{dict?.Common?.Confirm || "Confirm"} {dict?.Customers?.Table?.Delete || "Delete"}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {dict.Suppliers.AddDialog.DeleteConfirm} <strong>{customer.name}</strong>
+                            {dict?.Suppliers?.AddDialog?.DeleteConfirm || dict?.Customers?.Table?.Delete || "Are you sure?"} <strong>{customer?.name || ""}</strong>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>{dict.Common.Cancel}</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">{dict.Common.Yes}</AlertDialogAction>
+                        <AlertDialogCancel>{dict?.Common?.Cancel || "Cancel"}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">{dict?.Common?.Yes || "Yes"}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>
     );
 }
+

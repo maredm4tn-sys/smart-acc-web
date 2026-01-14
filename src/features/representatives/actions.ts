@@ -239,7 +239,7 @@ export async function getRepresentativeReport(
         // If report covers a full month, we might assume full salary, but for now just showing it as "Monthly Salary" ref.
         const totalDue = commissionAmount; // Salary is separate line item generally.
 
-        return {
+        return JSON.parse(JSON.stringify({
             representative,
             invoices: repInvoices,
             summary: {
@@ -252,13 +252,14 @@ export async function getRepresentativeReport(
                 commissionAmount,
                 totalDue
             }
-        };
+        }));
 
     } catch (e) {
         console.error("Report Error:", e);
         return null;
     }
 }
+
 
 const payCommissionSchema = z.object({
     representativeId: z.number(),
