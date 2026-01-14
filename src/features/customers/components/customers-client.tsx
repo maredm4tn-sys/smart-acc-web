@@ -47,7 +47,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
             {isOffline && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center gap-2 text-amber-700 text-sm">
                     <CloudOff size={18} />
-                    <span>{dict.Common.Offline.NoConnection}</span>
+                    <span>{dict?.Common?.Offline?.NoConnection || "No Internet Connection"}</span>
                 </div>
             )}
 
@@ -56,7 +56,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center gap-2">
                             <Users className="h-5 w-5 text-primary" />
-                            {dict.Customers.ListTitle}
+                            {dict?.Customers?.ListTitle || "Customers List"}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6">
@@ -64,20 +64,20 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="text-center">{dict.Customers.Table.Name}</TableHead>
-                                        <TableHead className="text-center">{dict.Customers.Table.Company}</TableHead>
-                                        <TableHead className="text-center">{dict.Customers.Table.Address}</TableHead>
-                                        <TableHead className="text-center">{dict.Customers.Table.Phone}</TableHead>
-                                        <TableHead className="text-center">{dict.Customers.Table.Email}</TableHead>
-                                        <TableHead className="text-center">{dict.Customers.Table.TotalDebt}</TableHead>
-                                        <TableHead className="text-center w-[80px]">{dict.Customers.Table.Actions}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.Name || "Name"}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.Company || "Company"}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.Address || "Address"}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.Phone || "Phone"}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.Email || "Email"}</TableHead>
+                                        <TableHead className="text-center">{dict?.Customers?.Table?.TotalDebt || "Total Debt"}</TableHead>
+                                        <TableHead className="text-center w-[80px]">{dict?.Customers?.Table?.Actions || "Actions"}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {customers.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={7} className="text-center h-24 text-gray-500">
-                                                {dict.Customers.Table.NoCustomers}
+                                                {dict?.Customers?.Table?.NoCustomers || "No customers found"}
                                             </TableCell>
                                         </TableRow>
                                     ) : (
@@ -104,7 +104,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                                                         {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
                                                             <Badge variant="destructive" className="text-[10px] px-1 py-0 flex items-center gap-1">
                                                                 <AlertTriangle size={10} />
-                                                                {dict.Customers.Table.LimitExceeded}
+                                                                {dict?.Customers?.Table?.LimitExceeded || "Limit Exceeded"}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -127,7 +127,7 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
             {/* Mobile Card List */}
             <div className="lg:hidden space-y-4 pb-20">
                 {customers.length === 0 ? (
-                    <div className="text-center p-8 text-muted-foreground">{dict.Customers.Table.NoCustomers}</div>
+                    <div className="text-center p-8 text-muted-foreground">{dict?.Customers?.Table?.NoCustomers || "No Customers"}</div>
                 ) : (
                     customers.map((c) => (
                         <Card key={c.id} className="border shadow-sm">
@@ -140,17 +140,17 @@ export function CustomersClient({ initialCustomers, dict, session, representativ
                                     <CustomerActions customer={c} currentRole={session?.role} dict={dict} />
                                 </div>
                                 <div className="space-y-1 text-sm text-gray-600">
-                                    {c.companyName && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict.Customers.Table.Company}:</span> <span className="text-gray-900">{c.companyName}</span></div>}
-                                    {c.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict.Customers.Table.Phone}:</span> <span className="font-mono">{c.phone}</span></div>}
+                                    {c.companyName && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Company || "Company"}:</span> <span className="text-gray-900">{c.companyName}</span></div>}
+                                    {c.phone && <div className="flex justify-between border-b border-dashed pb-1"><span>{dict?.Customers?.Table?.Phone || "Phone"}:</span> <span className="font-mono">{c.phone}</span></div>}
                                     <div className="flex justify-between font-bold pt-1">
-                                        <span>{dict.Customers.Table.TotalDebt}:</span>
+                                        <span>{dict?.Customers?.Table?.TotalDebt || "Debt"}:</span>
                                         <div className="flex flex-col items-end gap-1">
                                             <span className={Number(c.totalDebt) > 0 ? 'text-red-600' : 'text-green-600'}>
                                                 {Number(c.totalDebt || 0).toFixed(2)}
                                             </span>
                                             {Number(c.creditLimit) > 0 && Number(c.totalDebt) > Number(c.creditLimit) && (
                                                 <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
-                                                    {dict.Customers.Table.LimitExceeded}
+                                                    {dict?.Customers?.Table?.LimitExceeded || "Limit Exceeded"}
                                                 </Badge>
                                             )}
                                         </div>
