@@ -128,47 +128,14 @@ export async function getCustomers() {
             name: customers.name,
             companyName: customers.companyName,
             phone: customers.phone,
-            email: customers.email,
             address: customers.address,
-            taxId: customers.taxId,
-            nationalId: customers.nationalId,
-            creditLimit: customers.creditLimit,
-            paymentDay: customers.paymentDay,
-            openingBalance: customers.openingBalance,
-            priceLevel: customers.priceLevel,
-            representativeId: customers.representativeId,
-            totalDebt: sql<number>`COALESCE(${castNum(customers.openingBalance)}, 0) + COALESCE(SUM(${castNum(invoices.totalAmount)} - COALESCE(${castNum(invoices.amountPaid)}, 0)), 0)`
+            totalDebt: sql<number>`0` // ZERO calculations for now
         })
             .from(customers)
-            .leftJoin(invoices, eq(customers.name, invoices.customerName))
             .where(eq(customers.tenantId, tenantId))
-            .groupBy(
-                customers.id,
-                customers.name,
-                customers.companyName,
-                customers.phone,
-                customers.email,
-                customers.address,
-                customers.taxId,
-                customers.nationalId,
-                customers.creditLimit,
-                customers.paymentDay,
-                customers.openingBalance,
-                customers.priceLevel,
-                customers.representativeId
-            );
+            .limit(10); // Limit to be fast
 
-        // Ultimate Sanitization: Convert to plain JSON to avoid any Serialization errors on Vercel
-        const sanitized = rows.map(r => ({
-            ...r,
-            totalDebt: Number(r.totalDebt || 0),
-            openingBalance: Number(r.openingBalance || 0),
-            creditLimit: Number(r.creditLimit || 0),
-            paymentDay: r.paymentDay ? Number(r.paymentDay) : null,
-            representativeId: r.representativeId ? Number(r.representativeId) : null
-        }));
-
-        return JSON.parse(JSON.stringify(sanitized));
+        return JSON.parse(JSON.stringify(rows));
     } catch (error) {
         console.error("Get Customers Error:", error);
         return [];
