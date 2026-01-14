@@ -28,8 +28,11 @@ export async function updateSettings(inputData: UpdateSettingsInput) {
     const data = validation.data;
 
     try {
-        const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(data.tenantId);
+        const { getSession } = await import("@/features/auth/actions");
+        const session = await getSession();
+        const tenantId = session?.tenantId;
+
+        if (!tenantId) return { success: false, message: "Unauthorized" };
 
         await db.update(tenants)
             .set({
@@ -45,11 +48,7 @@ export async function updateSettings(inputData: UpdateSettingsInput) {
             })
             .where(eq(tenants.id, tenantId));
 
-        try {
-            revalidatePath("/dashboard/settings");
-            revalidatePath("/dashboard/sales");
-        } catch (e) { }
-
+        revalidatePath("/dashboard/settings");
         return { success: true, message: "تم حفظ الإعدادات بنجاح" };
     } catch (error) {
         console.error("Error updating settings:", error);
@@ -57,25 +56,17 @@ export async function updateSettings(inputData: UpdateSettingsInput) {
     }
 }
 
-export async function getSettings(tenantIdInput?: string) {
+export async function getSettings() {
     try {
-        const { getActiveTenantId } = await import("@/lib/actions-utils");
-        const tenantId = await getActiveTenantId(tenantIdInput);
+        const { getSession } = await import("@/features/auth/actions");
+        const session = await getSession();
+        const tenantId = session?.tenantId;
 
-        let tenant = null;
-        try {
-            tenant = await db.query.tenants.findFirst({
-                where: (t, { eq }) => eq(t.id, tenantId)
-            });
-        } catch (dbError) {
-            console.error("Database schema mismatch, falling back to basic select:", dbError);
-            // Fallback for missing columns: Just get name and basic info
-            const result = await db.select({
-                id: tenants.id,
-                name: tenants.name
-            }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
-            if (result.length > 0) tenant = result[0];
-        }
+        if (!tenantId) return null;
+
+        const tenant = await db.query.tenants.findFirst({
+            where: (t, { eq }) => eq(t.id, tenantId)
+        });
 
         return tenant || { name: "المحاسب الذكي", currency: "EGP" };
     } catch (e) {

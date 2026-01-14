@@ -12,30 +12,39 @@ export async function getActiveTenantId(providedId?: string): Promise<string> {
         return providedId;
     }
 
+    // -------------------------------------------------------------------------
+    // SECURITY PATCH: ALWAYS prioritize session-based tenant identification
+    // -------------------------------------------------------------------------
     try {
-        // 1. Try to find the first existing tenant using standard Drizzle select
-        // compatible with both SQLite and Postgres
-        const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);
-        const row = rows[0];
+        const { getSession } = await import("@/features/auth/actions");
+        const session = await getSession();
 
-        if (row && row.id) {
-            return row.id;
+        if (session?.tenantId) {
+            console.log(`[Security] Using session tenantId: ${session.tenantId}`);
+            return session.tenantId;
         }
-
-        // 2. If no tenant exists, create one
-        console.log("No tenant found. Creating default tenant...");
-        const [newTenant] = await db.insert(tenants).values({
-            name: "الشركة الافتراضية",
-            subscriptionPlan: "free",
-            currency: "EGP"
-        }).returning();
-
-        console.log("Created default tenant:", newTenant.id);
-        return newTenant.id;
-    } catch (error) {
-        console.error("CRITICAL ERROR in getActiveTenantId:", error);
-        // Fallback: If DB is completely locked/broken, we can't return a valid ID.
-        // Rethrow with more context.
-        throw new Error(`Could not determine active tenant. Details: ${error instanceof Error ? error.message : String(error)}`);
+    } catch (e) {
+        console.warn("[Security] Session check failed or was attempted from unsupported context.");
     }
+
+    // DESKTOP/OFFLINE ONLY: If no session, pick the first tenant (Safe because it's single-user local)
+    const isWeb = process.env.VERCEL || process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (!isWeb) {
+        try {
+            const rows = await db.select({ id: tenants.id }).from(tenants).limit(1);
+            if (rows[0]?.id) return rows[0].id;
+
+            // Or create one if it doesn't exist (Only for local dev/desktop)
+            const [newTenant] = await db.insert(tenants).values({
+                name: "الشركة الافتراضية",
+                currency: "EGP"
+            }).returning();
+            return newTenant.id;
+        } catch (e) {
+            console.error("Local tenant creation failed:", e);
+        }
+    }
+
+    // WEB MODE: NO FALLBACK. If no session, access MUST be denied.
+    throw new Error("Unauthorized: Access denied. Please log in.");
 }
