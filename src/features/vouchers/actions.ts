@@ -208,7 +208,7 @@ export async function deleteVoucher(id: number) {
                 await deleteJournalEntry(je.id, tx);
             }
 
-            await tx.delete(vouchers).where(eq(vouchers.id, id));
+            await tx.delete(vouchers).where(and(eq(vouchers.id, id), eq(vouchers.tenantId, tenantId)));
         });
 
         revalidatePath('/dashboard/vouchers');

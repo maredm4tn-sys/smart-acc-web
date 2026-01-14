@@ -510,7 +510,7 @@ export async function recordPayment(inputData: z.infer<typeof recordPaymentSchem
                 amountPaid: newPaid.toString(),
                 paymentStatus: newStatus,
                 status: newStatus === 'paid' ? 'paid' : 'issued' // Update main status too if paid
-            }).where(eq(invoices.id, invoice.id));
+            }).where(and(eq(invoices.id, invoice.id), eq(invoices.tenantId, tenantId)));
 
             // 3. Create Journal Entry (Cash Debit, AR Credit)
             // Find Accounts (Re-using logic, ideal to refactor to helper)
@@ -606,7 +606,7 @@ export async function deleteInvoice(id: number) {
 
             // 3. Delete Invoice (Items will be deleted if cascade is enabled, but let's be safe)
             await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, id));
-            await tx.delete(invoices).where(eq(invoices.id, id));
+            await tx.delete(invoices).where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)));
         });
 
         revalidatePath("/dashboard/sales");
@@ -802,7 +802,8 @@ export async function createReturnInvoice(inputData: z.infer<typeof createReturn
         const allReturns = await db.query.invoices.findMany({
             where: (inv, { eq, and }) => and(
                 eq(inv.relatedInvoiceId, originalInvoice.id.toString()),
-                eq(inv.type, 'return')
+                eq(inv.type, 'return'),
+                eq(inv.tenantId, tenantId)
             )
         });
 
@@ -819,7 +820,7 @@ export async function createReturnInvoice(inputData: z.infer<typeof createReturn
         // Update Original Invoice Status
         await db.update(invoices)
             .set({ status: newStatus })
-            .where(eq(invoices.id, originalInvoice.id));
+            .where(and(eq(invoices.id, originalInvoice.id), eq(invoices.tenantId, tenantId)));
 
         revalidatePath("/dashboard/sales");
         revalidatePath("/dashboard/reports/income-statement");

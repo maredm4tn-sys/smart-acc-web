@@ -65,7 +65,7 @@ export async function payInstallment(id: number, paymentDate: string) {
                 status: 'paid',
                 amountPaid: inst.amount,
                 paidDate: paymentDate,
-            }).where(eq(installments.id, id));
+            }).where(and(eq(installments.id, id), eq(installments.tenantId, tenantId)));
 
             // 3. Update Invoice
             const currentInvoicePaid = Number(inst.invoice?.amountPaid || 0);
@@ -73,7 +73,7 @@ export async function payInstallment(id: number, paymentDate: string) {
 
             await tx.update(invoices).set({
                 amountPaid: newInvoicePaid.toFixed(2),
-            }).where(eq(invoices.id, inst.invoiceId));
+            }).where(and(eq(invoices.id, inst.invoiceId), eq(invoices.tenantId, tenantId)));
 
             // 4. Create Journal Entry
             const cashAccount = await tx.query.accounts.findFirst({

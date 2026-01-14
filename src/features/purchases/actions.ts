@@ -34,7 +34,7 @@ export async function getPurchaseInvoiceById(id: number) {
 
     try {
         const data = await db.query.purchaseInvoices.findFirst({
-            where: eq(purchaseInvoices.id, id),
+            where: and(eq(purchaseInvoices.id, id), eq(purchaseInvoices.tenantId, session.tenantId)),
             with: {
                 items: true,
             }
@@ -226,7 +226,7 @@ export async function createPurchaseReturnInvoice(data: {
     try {
         // 1. Get Original Invoice
         const originalInvoice = await db.query.purchaseInvoices.findFirst({
-            where: eq(purchaseInvoices.id, data.originalInvoiceId)
+            where: and(eq(purchaseInvoices.id, data.originalInvoiceId), eq(purchaseInvoices.tenantId, session.tenantId))
         });
 
         if (!originalInvoice) throw new Error("Original Invoice not found");
@@ -277,7 +277,7 @@ export async function createPurchaseReturnInvoice(data: {
         // Update original invoice status
         await db.update(purchaseInvoices)
             .set({ status: 'partially_returned' })
-            .where(eq(purchaseInvoices.id, data.originalInvoiceId));
+            .where(and(eq(purchaseInvoices.id, data.originalInvoiceId), eq(purchaseInvoices.tenantId, session.tenantId)));
 
         // 4. Accounting Entries for Return
         try {
@@ -339,7 +339,7 @@ export async function updatePurchaseInvoice(id: number, data: any) {
     try {
         // 1. Get current invoice and items for stock reconciliation
         const oldInvoice = await db.query.purchaseInvoices.findFirst({
-            where: eq(purchaseInvoices.id, id),
+            where: and(eq(purchaseInvoices.id, id), eq(purchaseInvoices.tenantId, session.tenantId)),
             with: { items: true }
         });
 
@@ -368,7 +368,7 @@ export async function updatePurchaseInvoice(id: number, data: any) {
             amountPaid: (data.amountPaid || 0).toString(),
             totalAmount: data.totalAmount.toString(),
             subtotal: data.subtotal.toString(),
-        }).where(eq(purchaseInvoices.id, id));
+        }).where(and(eq(purchaseInvoices.id, id), eq(purchaseInvoices.tenantId, session.tenantId)));
 
         // 4. Clear old items
         await db.delete(purchaseInvoiceItems).where(eq(purchaseInvoiceItems.purchaseInvoiceId, id));
@@ -535,7 +535,7 @@ export async function deletePurchaseInvoice(id: number) {
 
             // 3. Delete Invoice
             await tx.delete(purchaseInvoiceItems).where(eq(purchaseInvoiceItems.purchaseInvoiceId, id));
-            await tx.delete(purchaseInvoices).where(eq(purchaseInvoices.id, id));
+            await tx.delete(purchaseInvoices).where(and(eq(purchaseInvoices.id, id), eq(purchaseInvoices.tenantId, session.tenantId)));
         });
 
         revalidatePath("/dashboard/purchases");

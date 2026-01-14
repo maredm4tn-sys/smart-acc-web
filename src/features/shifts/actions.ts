@@ -116,8 +116,15 @@ export async function getShiftSummary(shiftId: number) {
 }
 
 export async function closeShift(shiftId: number, actualCash: number, notes?: string) {
+    const session = await getSession();
+    const tenantId = session?.tenantId || await getActiveTenantId();
+    // Strict check: if on web, we really should have a tenantId from session
+    if (!tenantId) return { success: false, message: "Unauthorized" };
+
     try {
-        const shift = await db.query.shifts.findFirst({ where: eq(shifts.id, shiftId) });
+        const shift = await db.query.shifts.findFirst({
+            where: (s, { eq, and }) => and(eq(s.id, shiftId), eq(s.tenantId, tenantId))
+        });
         if (!shift || shift.status !== 'open') return { success: false, message: "Shift not found or already closed" };
 
         const summary = await getShiftSummary(shiftId);
@@ -134,7 +141,7 @@ export async function closeShift(shiftId: number, actualCash: number, notes?: st
             status: 'closed',
             endTime: new Date(),
             notes: notes
-        }).where(eq(shifts.id, shiftId));
+        }).where(and(eq(shifts.id, shiftId), eq(shifts.tenantId, tenantId)));
 
         revalidatePath("/dashboard/pos");
         return { success: true };
