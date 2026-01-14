@@ -287,8 +287,8 @@ export async function getEmployeeStatement(employeeId: number, startDate: string
         where: and(
             eq(payrolls.employeeId, employeeId),
             eq(payrolls.tenantId, tenantId),
-            gte(payrolls.paymentDate, startDate),
-            lte(payrolls.paymentDate, endDate)
+            sql`CAST(${payrolls.paymentDate} AS DATE) >= CAST(${startDate} AS DATE)`,
+            sql`CAST(${payrolls.paymentDate} AS DATE) <= CAST(${endDate} AS DATE)`
         ),
         orderBy: desc(payrolls.paymentDate)
     });
@@ -297,8 +297,8 @@ export async function getEmployeeStatement(employeeId: number, startDate: string
         where: and(
             eq(advances.employeeId, employeeId),
             eq(advances.tenantId, tenantId),
-            gte(advances.date, startDate),
-            lte(advances.date, endDate)
+            sql`CAST(${advances.date} AS DATE) >= CAST(${startDate} AS DATE)`,
+            sql`CAST(${advances.date} AS DATE) <= CAST(${endDate} AS DATE)`
         ),
         orderBy: desc(advances.date)
     });

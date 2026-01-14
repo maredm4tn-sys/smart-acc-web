@@ -192,8 +192,8 @@ export async function getRepresentativeReport(
             .where(and(
                 eq(invoices.tenantId, tenantId),
                 eq(invoices.representativeId, id),
-                sql`${invoices.issueDate} >= ${startDate}`,
-                sql`${invoices.issueDate} <= ${endDate}`
+                sql`CAST(${invoices.issueDate} AS DATE) >= CAST(${startDate} AS DATE)`,
+                sql`CAST(${invoices.issueDate} AS DATE) <= CAST(${endDate} AS DATE)`
             ))
             .orderBy(desc(invoices.issueDate));
 

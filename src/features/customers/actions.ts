@@ -135,25 +135,27 @@ export async function getCustomers() {
             creditLimit: customers.creditLimit,
             paymentDay: customers.paymentDay,
             openingBalance: customers.openingBalance,
-            representativeId: customers.representativeId, // Added
+            priceLevel: customers.priceLevel,
+            representativeId: customers.representativeId,
             totalDebt: sql<number>`COALESCE(${castNum(customers.openingBalance)}, 0) + COALESCE(SUM(${castNum(invoices.totalAmount)} - COALESCE(${castNum(invoices.amountPaid)}, 0)), 0)`
         })
             .from(customers)
-            .leftJoin(invoices, eq(customers.name, invoices.customerName)) // ideally join on ID, but schema uses name currently
+            .leftJoin(invoices, eq(customers.name, invoices.customerName))
             .where(eq(customers.tenantId, tenantId))
             .groupBy(
                 customers.id,
-                customers.openingBalance,
-                customers.nationalId,
-                customers.creditLimit,
-                customers.paymentDay,
                 customers.name,
                 customers.companyName,
                 customers.phone,
                 customers.email,
                 customers.address,
                 customers.taxId,
-                customers.representativeId // Added to group by
+                customers.nationalId,
+                customers.creditLimit,
+                customers.paymentDay,
+                customers.openingBalance,
+                customers.priceLevel,
+                customers.representativeId
             );
 
         return rows.map(r => ({
