@@ -277,7 +277,8 @@ export async function getSession() {
         }
         */
 
-        return payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string; tenantId: string };
+        const session = payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string; tenantId: string };
+        return JSON.parse(JSON.stringify(session));
     } catch (e) {
         return null; // Invalid token
     }

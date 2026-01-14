@@ -158,12 +158,14 @@ export async function getCustomers() {
                 customers.representativeId
             );
 
-        return rows.map(r => ({
+        const sanitized = rows.map(r => ({
             ...r,
             totalDebt: Number(r.totalDebt || 0),
             openingBalance: Number(r.openingBalance || 0),
             creditLimit: Number(r.creditLimit || 0)
         }));
+
+        return JSON.parse(JSON.stringify(sanitized));
     } catch (error) {
         console.error("Get Customers Error:", error);
         return [];
