@@ -1,4 +1,4 @@
-"use server";
+
 
 import { getEmployees } from "@/features/employees/actions";
 import { EmployeesClient } from "@/features/employees/components/employees-client";

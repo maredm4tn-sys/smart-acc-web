@@ -34,12 +34,17 @@ export async function getDictionary(): Promise<Dictionary> {
     // For English, use Arabic as a deep fallback to prevent crashes if keys are missing
     const arDict = await dictionaries["ar"]();
 
-    // Helper to deeply merge/fallback
+    // Helper to deeply merge/fallback correctly handling arrays
     const merge = (target: any, source: any) => {
         for (const key in source) {
             if (source[key] && typeof source[key] === 'object') {
-                if (!target[key]) target[key] = {};
-                merge(target[key], source[key]);
+                if (Array.isArray(source[key])) {
+                    // If it's an array, only use source if target is missing
+                    if (!target[key]) target[key] = source[key];
+                } else {
+                    if (!target[key]) target[key] = {};
+                    merge(target[key], source[key]);
+                }
             } else if (!target[key]) {
                 target[key] = source[key];
             }
