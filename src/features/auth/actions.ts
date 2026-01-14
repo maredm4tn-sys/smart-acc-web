@@ -234,7 +234,7 @@ export async function getSession() {
                     username: "admin",
                     fullName: "مدير النظام",
                     passwordHash: await bcrypt.hash("admin", 10), // Default password, just in case
-                    role: "admin",
+                    role: "SUPER_ADMIN",
                     isActive: true
                 }).returning();
 
@@ -269,13 +269,10 @@ export async function getSession() {
         // Verify against DB to ensure immediate suspension
         const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
-        // TEMPORARY BYPASS FOR DEV PREVIEW
-        /*
         if (!user || !user.isActive || user.status === 'SUSPENDED') {
             console.warn(`Blocked suspended/inactive user session: ${userId}`);
             return null; // Treated as logged out
         }
-        */
 
         const session = payload as { userId: string; username: string; role: 'admin' | 'cashier' | 'SUPER_ADMIN' | 'CLIENT'; fullName: string; tenantId: string };
         return JSON.parse(JSON.stringify(session));

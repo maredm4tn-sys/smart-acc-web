@@ -55,8 +55,8 @@ export async function getLicenseStatus(): Promise<LicenseStatus> {
         return { isActivated: true, isExpired: false, trialDaysLeft: 999, invoicesLeft: 999, totalInvoices: 0, trialInvoicesLimit: 999, machineId: "CLD" };
     }
 
-    // BYPASS FOR TESTING
-    return { isActivated: true, isExpired: false, trialDaysLeft: 999, invoicesLeft: 999, totalInvoices: 0, trialInvoicesLimit: 999, machineId: "DEV" };
+    // BYPASS FOR TESTING REMOVED FOR PRODUCTION BUILD
+    // return { isActivated: true, isExpired: false, trialDaysLeft: 999, invoicesLeft: 999, totalInvoices: 0, trialInvoicesLimit: 999, machineId: "DEV" };
 
     const machineId = getMachineId();
 
