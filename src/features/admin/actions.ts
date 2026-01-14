@@ -187,36 +187,56 @@ export async function createSubscriber(data: {
     try {
         await checkSuperAdmin();
 
-        // 1. Create Tenant
-        const [tenant] = await db.insert(tenants).values({
-            name: data.organizationName,
-            email: data.email,
-            subscriptionPlan: 'standard', // default plan
-        }).returning();
+        // 1. Pre-check: Verify username doesn't exist to avoid generic crash
+        const existingUser = await db.select().from(users).where(eq(users.username, data.username)).limit(1);
+        if (existingUser.length > 0) {
+            return { error: "اسم المستخدم هذا مسجل بالفعل لمشترك آخر" };
+        }
 
-        // 2. Hash Password
+        // 2. Hash Password early
         const passwordHash = await bcrypt.hash(data.password, 10);
 
-        // 3. Create User linked to Tenant
-        await db.insert(users).values({
-            tenantId: tenant.id,
-            fullName: data.fullName,
-            username: data.username,
-            email: data.email,
-            passwordHash,
-            role: 'admin', // Default to admin for the subscriber
-            status: 'ACTIVE',
-            isActive: true
-        });
+        // 3. Create Tenant & User
+        console.log(`[ADMIN] Creating tenant: ${data.organizationName}`);
+        const [tenant] = await db.insert(tenants).values({
+            name: data.organizationName,
+            email: data.email || null,
+            subscriptionPlan: 'standard',
+        }).returning();
+
+        if (!tenant) throw new Error("Failed to create tenant organization");
+        console.log(`[ADMIN] Tenant created: ${tenant.id}. Now creating admin user: ${data.username}`);
+
+        try {
+            await db.insert(users).values({
+                tenantId: tenant.id,
+                fullName: data.fullName,
+                username: data.username,
+                email: data.email || null,
+                passwordHash,
+                role: 'admin',
+                status: 'ACTIVE',
+                isActive: true
+            });
+            console.log(`[ADMIN] User created successfully for tenant ${tenant.id}`);
+        } catch (userError: any) {
+            console.error(`[ADMIN] User creation FAILED for tenant ${tenant.id}:`, userError);
+            // If user creation fails, we should ideally rollback, 
+            // but for now, we report the specific error to the UI.
+            throw new Error(`تعذر إنشاء مستخدم الأدمن: ${userError.message || "خطأ غير معروف"}`);
+        }
 
         revalidatePath("/dashboard/settings");
         return { success: true };
     } catch (error: any) {
         console.error("Create Subscriber Error:", error);
-        if (error.code === '23505') { // Postgres unique violation code
-            return { error: "اسم المستخدم مسجل بالفعل" };
+
+        // Handle both Postgres (23505) and SQLite (SQLITE_CONSTRAINT) unique violations
+        if (error.code === '23505' || (error.message && error.message.includes('UNIQUE constraint failed'))) {
+            return { error: "اسم المستخدم أو البريد الإلكتروني مسجل بالفعل" };
         }
-        return { error: "فشل إنشاء المشترك" };
+
+        return { error: `فشل إنشاء المشترك: ${error.message || "خطأ غير معروف"}` };
     }
 }
 
